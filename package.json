@@ -17,7 +17,8 @@
     "format": "prettier --write .",
     "format:ci": "prettier --check .",
     "test": "vitest run",
-    "frames:validate": "pnpm --filter @cardanvil/frame-kit build && node packages/frame-kit/dist/cli/main.js validate"
+    "frames:validate": "pnpm --filter @cardanvil/frame-kit build && node packages/frame-kit/dist/cli/main.js validate",
+    "frames:build": "pnpm --filter @cardanvil/frame-kit build && node packages/frame-kit/dist/cli/main.js build --out dist-frames"
   },
   "prettier": {
     "plugins": [
