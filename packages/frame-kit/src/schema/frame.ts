@@ -306,6 +306,16 @@ export const LayoutConfigSchema = z.object({
 
 export type LayoutConfig = z.infer<typeof LayoutConfigSchema>;
 
+/**
+ * The canvas a frame's boxes are measured against when it declares none.
+ *
+ * The full printed sheet including bleed — 2.72 x 3.7 in at 1200 DPI, or
+ * 69.09 x 93.98 mm. The card face inside it is 63 x 88 mm, leaving roughly 3 mm
+ * of bleed per edge.
+ */
+export const DEFAULT_CANVAS_WIDTH = 3264;
+export const DEFAULT_CANVAS_HEIGHT = 4440;
+
 export const TemplateConfigSchema = z.object({
   /**
    * Native pixel size this frame's box coordinates are authored in.

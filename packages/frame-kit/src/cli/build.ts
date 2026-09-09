@@ -1,4 +1,4 @@
-import { mkdir, stat } from "node:fs/promises";
+import { copyFile, mkdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import {
@@ -8,11 +8,24 @@ import {
   frameToManifest,
   manifestToFrame,
 } from "../manifest/index.js";
-import type { Frame } from "../schema/frame.js";
+import {
+  DEFAULT_CANVAS_HEIGHT,
+  DEFAULT_CANVAS_WIDTH,
+  type Frame,
+} from "../schema/frame.js";
 import { type LoadOptions, type LoadedFrame, loadFrames } from "./api.js";
 import { describeBytes, writeBundle } from "./bundle.js";
 import { PackagingError } from "./errors.js";
+import {
+  FRAME_INDEX_FILENAME,
+  type FrameIndex,
+  type IndexedFrame,
+  type ReleaseSource,
+  buildIndex,
+  downloadBase,
+} from "./frameIndex.js";
 import { hashFile, mapWithConcurrency } from "./hash.js";
+import { readImageSize } from "./imageSize.js";
 import type { Reporter } from "./report.js";
 import { stableStringify } from "./stableJson.js";
 
@@ -30,6 +43,8 @@ export interface BuildOptions extends LoadOptions {
   /** Stamped into every manifest. One version for every frame in the repo. */
   version: string;
   generator?: string;
+  /** Where the release will live. Omitted for a local build. */
+  source?: ReleaseSource;
 }
 
 export interface BuiltFrame {
@@ -40,6 +55,14 @@ export interface BuiltFrame {
   /** Filename only, which is what a release asset is addressed by. */
   bundleName: string;
   bytes: number;
+  /** This frame's row in the release index. */
+  entry: IndexedFrame;
+}
+
+export interface BuildResult {
+  frames: BuiltFrame[];
+  /** Written to `<out>/frame-index.json` unless nothing built. */
+  index?: FrameIndex;
 }
 
 /**
@@ -51,7 +74,7 @@ export interface BuiltFrame {
 export async function buildFrames(
   options: BuildOptions,
   reporter: Reporter,
-): Promise<BuiltFrame[]> {
+): Promise<BuildResult> {
   if (!VERSION_PATTERN.test(options.version)) {
     throw new PackagingError(
       `"${options.version}" is not a version. Expected MAJOR.MINOR.PATCH, ` +
@@ -70,7 +93,24 @@ export async function buildFrames(
       built.push(result);
     }
   }
-  return built;
+  if (built.length === 0) {
+    return { frames: built };
+  }
+
+  const index = buildIndex({
+    version: options.version,
+    ...(options.generator === undefined
+      ? {}
+      : { generator: options.generator }),
+    ...(options.source === undefined ? {} : { source: options.source }),
+    frames: built.map((frame) => frame.entry),
+  });
+  await writeFile(
+    path.join(outDir, FRAME_INDEX_FILENAME),
+    stableStringify(index),
+    "utf8",
+  );
+  return { frames: built, index };
 }
 
 async function buildOne(
@@ -132,7 +172,15 @@ async function buildOne(
           `is a long download for someone trying the frame out.`,
       });
     }
-    return { loaded, manifest, bundleFile, bundleName, bytes };
+    const entry = await indexEntry(
+      loaded,
+      manifest,
+      { bundleName, bundleFile, bytes },
+      fileByPath,
+      outDir,
+      options,
+    );
+    return { loaded, manifest, bundleFile, bundleName, bytes, entry };
   } catch (cause) {
     reporter.error({
       frame: slug,
@@ -215,4 +263,71 @@ async function packageAssets(
   });
 
   return failures.length > 0 ? undefined : { byUrl, fileByPath };
+}
+
+/**
+ * Builds one frame's row in the release index, and copies its preview out of
+ * the bundle so a browse UI can show the frame without downloading it.
+ */
+async function indexEntry(
+  loaded: LoadedFrame,
+  manifest: FrameManifest,
+  bundle: { bundleName: string; bundleFile: string; bytes: number },
+  fileByPath: ReadonlyMap<string, string>,
+  outDir: string,
+  options: BuildOptions,
+): Promise<IndexedFrame> {
+  const { meta, slug } = loaded.discovered;
+  const previewSource = fileByPath.get(manifest.frame.previewImage);
+  if (previewSource === undefined) {
+    throw new PackagingError(
+      `the preview image is not among the packaged assets — this is a bug in frame-kit`,
+    );
+  }
+
+  const previewName = `${slug}-${options.version}.preview${path.extname(previewSource).toLowerCase()}`;
+  await copyFile(previewSource, path.join(outDir, previewName));
+  const [previewHash, previewStats, size, bundleHash] = await Promise.all([
+    hashFile(previewSource),
+    stat(previewSource),
+    readImageSize(previewSource),
+    hashFile(bundle.bundleFile),
+  ]);
+
+  const base =
+    options.source === undefined ? undefined : downloadBase(options.source);
+  const withUrl = <T extends { file: string }>(artifact: T) =>
+    base === undefined
+      ? artifact
+      : { ...artifact, url: `${base}${artifact.file}` };
+
+  return {
+    id: meta.id,
+    slug,
+    name: manifest.frame.name,
+    description: manifest.frame.description,
+    version: options.version,
+    tags: [...manifest.frame.tags],
+    layouts: Object.keys(manifest.frame.config.layouts).sort(),
+    canvas: manifest.frame.config.canvas ?? {
+      width: DEFAULT_CANVAS_WIDTH,
+      height: DEFAULT_CANVAS_HEIGHT,
+    },
+    author: meta.author,
+    license: meta.license,
+    ...(meta.homepage === undefined ? {} : { homepage: meta.homepage }),
+    contractVersion: manifest.contractVersion,
+    assetCount: manifest.assets.length,
+    bundle: withUrl({
+      file: bundle.bundleName,
+      bytes: bundle.bytes,
+      sha256: bundleHash,
+    }),
+    preview: withUrl({
+      file: previewName,
+      bytes: previewStats.size,
+      sha256: previewHash,
+      ...(size ?? {}),
+    }),
+  };
 }

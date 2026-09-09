@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -5,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { FrameManifestSchema } from "../manifest/contract.js";
 import { buildFrames } from "./build.js";
+import { FrameIndexSchema } from "./frameIndex.js";
 import { Reporter } from "./report.js";
 
 const PNG_A = Buffer.from(
@@ -64,8 +66,11 @@ afterEach(async () => {
 
 const build = async (version = "1.2.3") => {
   const reporter = new Reporter();
-  const built = await buildFrames({ root, outDir: out, version }, reporter);
-  return { reporter, built };
+  const { frames: built, index } = await buildFrames(
+    { root, outDir: out, version },
+    reporter,
+  );
+  return { reporter, built, index };
 };
 
 describe("buildFrames", () => {
@@ -130,11 +135,87 @@ describe("buildFrames", () => {
       new Reporter(),
     );
     const a = await readFile(first.built[0]?.bundleFile ?? "");
-    const b = await readFile(second[0]?.bundleFile ?? "");
+    const b = await readFile(second.frames[0]?.bundleFile ?? "");
     expect(a.equals(b)).toBe(true);
   }, 60_000);
 
   it("refuses a version that is not one", async () => {
     await expect(build("not-a-version")).rejects.toThrow(/is not a version/);
+  }, 60_000);
+});
+
+describe("the release index", () => {
+  it("is written next to the bundles and parses as an index", async () => {
+    const { index } = await build();
+    const onDisk: unknown = JSON.parse(
+      await readFile(path.join(out, "frame-index.json"), "utf8"),
+    );
+    expect(FrameIndexSchema.safeParse(onDisk)).toMatchObject({ success: true });
+    expect(index?.app).toBe("card-anvil");
+    expect(index?.kind).toBe("frame-index");
+    expect(index?.version).toBe("1.2.3");
+  }, 60_000);
+
+  it("describes the frame well enough to browse without downloading it", async () => {
+    const { index } = await build();
+    const entry = index?.frames[0];
+    expect(entry).toMatchObject({
+      id: "com.example.one",
+      slug: "one",
+      name: "One",
+      license: "MIT",
+      layouts: ["normal"],
+      assetCount: 2,
+    });
+    expect(entry?.author.url).toBe("https://example.com");
+    // Declared nowhere, so it falls back to the contract's canvas.
+    expect(entry?.canvas).toEqual({ width: 3264, height: 4440 });
+  }, 60_000);
+
+  it("checksums the bundle itself, not its contents", async () => {
+    const { built, index } = await build();
+    const bundle = await readFile(built[0]?.bundleFile ?? "");
+    const digest = createHash("sha256").update(bundle).digest("hex");
+    expect(index?.frames[0]?.bundle.sha256).toBe(digest);
+    expect(index?.frames[0]?.bundle.bytes).toBe(bundle.length);
+  }, 60_000);
+
+  it("copies the preview out so a browse UI can show it", async () => {
+    const { index } = await build();
+    const preview = index?.frames[0]?.preview;
+    expect(preview?.file).toBe("one-1.2.3.preview.png");
+    expect(preview?.width).toBe(1);
+    expect(preview?.height).toBe(1);
+    await expect(
+      readFile(path.join(out, preview?.file ?? "")),
+    ).resolves.toBeInstanceOf(Buffer);
+  }, 60_000);
+
+  // A local build has no release to point at, so it names files and stops
+  // there. The index is still valid — that is what makes local builds useful.
+  it("omits urls and the source block when there is no release", async () => {
+    const { index } = await build();
+    expect(index?.source).toBeUndefined();
+    expect(index?.frames[0]?.bundle.url).toBeUndefined();
+    expect(index?.frames[0]?.preview.url).toBeUndefined();
+  }, 60_000);
+
+  it("adds download urls and the stable index url when given a release", async () => {
+    const reporter = new Reporter();
+    const { index } = await buildFrames(
+      {
+        root,
+        outDir: out,
+        version: "1.2.3",
+        source: { repository: "jane/frames", tag: "v1.2.3" },
+      },
+      reporter,
+    );
+    expect(index?.source?.latestIndexUrl).toBe(
+      "https://github.com/jane/frames/releases/latest/download/frame-index.json",
+    );
+    expect(index?.frames[0]?.bundle.url).toBe(
+      "https://github.com/jane/frames/releases/download/v1.2.3/one-1.2.3.cardframe",
+    );
   }, 60_000);
 });

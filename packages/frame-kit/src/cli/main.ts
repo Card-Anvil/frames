@@ -27,6 +27,9 @@ build only:
   --out <dir>           where bundles are written (required)
   --version <x.y.z>     version stamped into every frame
                         (default: the version in the repository's package.json)
+  --repository <o/n>    the GitHub repository the release belongs to
+  --tag <vX.Y.Z>        the release tag; with --repository, puts download URLs
+                        in the index
 
 A frame is any directory containing a frame.meta.json.
 `;
@@ -41,6 +44,8 @@ interface Values {
   json?: boolean | undefined;
   out?: string | undefined;
   version?: string | undefined;
+  repository?: string | undefined;
+  tag?: string | undefined;
 }
 
 async function packageVersion(): Promise<string> {
@@ -140,13 +145,17 @@ async function runBuild(
   }
   const version = values.version ?? (await repositoryVersion(root));
   const reporter = new Reporter();
-  const built = await buildFrames(
+  const { frames: built } = await buildFrames(
     {
       root,
       only,
       outDir: values.out,
       version,
       generator: `@cardanvil/frame-kit@${await packageVersion()}`,
+      // Both or neither: a download URL needs the repository and the tag.
+      ...(values.repository !== undefined && values.tag !== undefined
+        ? { source: { repository: values.repository, tag: values.tag } }
+        : {}),
     },
     reporter,
   );
@@ -206,6 +215,8 @@ async function main(argv: string[]): Promise<number> {
         json: { type: "boolean" },
         out: { type: "string" },
         version: { type: "string" },
+        repository: { type: "string" },
+        tag: { type: "string" },
       },
       strict: true,
     }));
