@@ -26,7 +26,8 @@
     "./package.json": "./package.json"
   },
   "peerDependencies": {
-    "zod": "^4"
+    "zod": "^4",
+    "vite": "^6 || ^7"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -49,5 +50,14 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.2",
+    "vite": "^7.3.6"
   }
 }
