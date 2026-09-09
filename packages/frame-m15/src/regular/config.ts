@@ -53,10 +53,10 @@ const boxes: CardBoxes = {
     fontSize: 116,
   },
   pt: {
-    x: 2466,
-    y: 3846,
-    width: 490,
-    height: 230,
+    x: 2446,
+    y: 3826,
+    width: 530,
+    height: 260,
     fontSize: 116,
   },
   ptImage: {
