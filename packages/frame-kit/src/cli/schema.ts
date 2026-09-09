@@ -6,26 +6,38 @@ import { FrameMetaSchema } from "../schema/frameMeta.js";
 import { FrameIndexSchema } from "./frameIndex.js";
 
 /**
- * The formats this package defines, as JSON Schema.
+ * The formats this package defines, and what each is called on disk.
  *
  * Useful to anything that is not TypeScript — an editor offering completion in
  * `frame.meta.json`, or a marketplace validating an index it fetched.
  * TypeScript consumers should use the zod schemas directly instead.
  */
-const SCHEMAS = {
+const SCHEMA_FILES = {
   /** A frame descriptor. Authors write these by hand, so completion helps. */
-  meta: { schema: FrameMetaSchema, file: "frame-meta.schema.json" },
+  meta: "frame-meta.schema.json",
   /** A release index. What an aggregator validates before trusting a repo. */
-  index: { schema: FrameIndexSchema, file: "frame-index.schema.json" },
+  index: "frame-index.schema.json",
   /** A `.cardframe`'s frame.json. Large — emitted on request, not shipped. */
-  manifest: { schema: FrameManifestSchema, file: "frame-manifest.schema.json" },
+  manifest: "frame-manifest.schema.json",
   /** A frame object. Large — emitted on request, not shipped. */
-  frame: { schema: FrameSchema, file: "frame.schema.json" },
+  frame: "frame.schema.json",
 } as const;
 
-export type SchemaName = keyof typeof SCHEMAS;
+export type SchemaName = keyof typeof SCHEMA_FILES;
 
-export const SCHEMA_NAMES = Object.keys(SCHEMAS) as SchemaName[];
+/**
+ * Annotated as `z.ZodType` on purpose. Without it TypeScript inlines each
+ * schema's full inferred type into this module's declarations, which turns a
+ * fifty-line file into a megabyte of .d.ts.
+ */
+const SCHEMAS: Record<SchemaName, z.ZodType> = {
+  meta: FrameMetaSchema,
+  index: FrameIndexSchema,
+  manifest: FrameManifestSchema,
+  frame: FrameSchema,
+};
+
+export const SCHEMA_NAMES = Object.keys(SCHEMA_FILES) as SchemaName[];
 
 /**
  * Emitted with the *input* view: these describe documents being written or
@@ -33,11 +45,11 @@ export const SCHEMA_NAMES = Object.keys(SCHEMAS) as SchemaName[];
  * those required, which is wrong for a document an author is authoring.
  */
 export function toJsonSchema(name: SchemaName): unknown {
-  return z.toJSONSchema(SCHEMAS[name].schema, { io: "input" });
+  return z.toJSONSchema(SCHEMAS[name], { io: "input" });
 }
 
 export function schemaFilename(name: SchemaName): string {
-  return SCHEMAS[name].file;
+  return SCHEMA_FILES[name];
 }
 
 /**

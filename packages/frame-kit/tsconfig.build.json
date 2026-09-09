@@ -7,8 +7,10 @@
     "outDir": "dist",
     "rootDir": "src",
     "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
+    // No source maps: `files` does not ship src, so a map would only point at
+    // files that are not there.
+    "declarationMap": false,
+    "sourceMap": false,
 
     "strict": true,
     "noUnusedLocals": true,
