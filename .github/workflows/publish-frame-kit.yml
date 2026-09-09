@@ -29,6 +29,24 @@ jobs:
           registry-url: https://registry.npmjs.org
           cache: pnpm
 
+      # Trusted publishing needs npm 11.5.1+; fail with the reason rather than
+      # with whatever npm says when it cannot find a token.
+      - name: Check npm supports trusted publishing
+        run: |
+          set -euo pipefail
+          version="$(npm --version)"
+          echo "npm $version"
+          node -e '
+            const [have] = process.argv.slice(1);
+            const need = "11.5.1";
+            const cmp = (a, b) =>
+              a.split(".").map(Number).reduce((acc, n, i) => acc || n - Number(b.split(".")[i]), 0);
+            if (cmp(have, need) < 0) {
+              console.error(`npm ${have} is too old for trusted publishing; needs ${need}+`);
+              process.exit(1);
+            }
+          ' "$version"
+
       - run: pnpm install --frozen-lockfile
 
       # Nothing publishes unless the frames it describes still pack.
@@ -76,7 +94,9 @@ jobs:
             console.log("exports and bin resolve to dist");
           ' "$extracted/package/package.json"
 
+      # No --provenance: with trusted publishing npm generates and publishes
+      # provenance attestations on its own.
       - name: Publish
         env:
           TARBALL: ${{ steps.pack.outputs.tarball }}
-        run: npm publish "$TARBALL" --access public --provenance
+        run: npm publish "$TARBALL" --access public
