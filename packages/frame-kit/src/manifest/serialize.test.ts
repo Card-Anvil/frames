@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 
 import { FrameSchema } from "../schema/frame.js";
 import { CONTRACT_VERSION } from "./contract.js";
@@ -67,6 +68,22 @@ describe("frameToManifest", () => {
     expect(paths).toEqual([...paths].sort((a, b) => a.localeCompare(b)));
   });
 
+  it("carries the licence when one is declared", () => {
+    const m = frameToManifest(testFrame, {
+      id: "com.example.test",
+      version: "1.2.3",
+      license: "CC-BY-4.0",
+      resolveAsset: packager(),
+    });
+    expect(m.license).toBe("CC-BY-4.0");
+    // It survives a load, so an installed frame carries it with it.
+    expect(manifestToFrame(m, { resolveUrl: (p) => p })).toBeTruthy();
+  });
+
+  it("omits the licence key when none is declared", () => {
+    expect("license" in build()).toBe(false);
+  });
+
   it("leaves the authored frame untouched", () => {
     build();
     expect(testFrame.previewImage).toBe("/src/frames/preview.jpg");
@@ -75,6 +92,46 @@ describe("frameToManifest", () => {
     );
   });
 });
+
+/** The fixture's one real layout config, to stand in for any layout key. */
+function known(): unknown {
+  const normal = build().frame.config.layouts.normal;
+  if (!normal) {
+    throw new Error("fixture lost its normal layout");
+  }
+  return normal;
+}
+
+/** A manifest whose layout maps are exactly what the caller passes. */
+function manifestWithLayouts(
+  extraLayouts: Record<string, unknown>,
+  alternateLayouts?: Record<string, Record<string, unknown>>,
+): unknown {
+  const base = build();
+  return {
+    ...base,
+    frame: {
+      ...base.frame,
+      config: {
+        ...base.frame.config,
+        layouts: { normal: known(), ...extraLayouts },
+        ...(alternateLayouts ? { alternateLayouts } : {}),
+      },
+    },
+  };
+}
+
+/** Reads a manifest's layout map back out without trusting its type. */
+function layoutsOf(manifest: unknown): Record<string, unknown> {
+  const record = z
+    .object({
+      frame: z.object({
+        config: z.object({ layouts: z.record(z.string(), z.unknown()) }),
+      }),
+    })
+    .parse(manifest);
+  return record.frame.config.layouts;
+}
 
 describe("manifestToFrame", () => {
   it("round-trips back to the original URLs", () => {
@@ -120,6 +177,47 @@ describe("manifestToFrame", () => {
     expect(() =>
       manifestToFrame({ ...build(), kind: "code" }, { resolveUrl: (p) => p }),
     ).toThrow(/only loads "declarative"/);
+  });
+
+  it("drops a layout this build does not know about", () => {
+    const reasons: string[] = [];
+    const frame = manifestToFrame(manifestWithLayouts({ hologram: known() }), {
+      resolveUrl: (p) => p,
+      onDegraded: (r) => reasons.push(r),
+    });
+    expect(Object.keys(frame.config.layouts)).toEqual(["normal"]);
+    expect(reasons).toHaveLength(1);
+    expect(reasons[0]).toMatch(/hologram/);
+  });
+
+  it("drops an unknown layout from an alternate variant", () => {
+    const reasons: string[] = [];
+    const frame = manifestToFrame(
+      manifestWithLayouts(
+        {},
+        { showcase: { normal: known(), hologram: known() } },
+      ),
+      { resolveUrl: (p) => p, onDegraded: (r) => reasons.push(r) },
+    );
+    expect(Object.keys(frame.config.alternateLayouts?.showcase ?? {})).toEqual([
+      "normal",
+    ]);
+    expect(reasons[0]).toMatch(/hologram/);
+  });
+
+  it("leaves the caller's manifest untouched when it drops a layout", () => {
+    const manifest = manifestWithLayouts({ hologram: known() });
+    manifestToFrame(manifest, { resolveUrl: (p) => p });
+    expect(Object.keys(layoutsOf(manifest))).toEqual(["normal", "hologram"]);
+  });
+
+  it("says nothing when every layout is known", () => {
+    const reasons: string[] = [];
+    manifestToFrame(build(), {
+      resolveUrl: (p) => p,
+      onDegraded: (r) => reasons.push(r),
+    });
+    expect(reasons).toEqual([]);
   });
 
   it("reports where a malformed manifest went wrong", () => {
