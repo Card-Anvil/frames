@@ -1,0 +1,33 @@
+{
+  "name": "@cardanvil/frame-extended",
+  "version": "0.1.0",
+  "description": "Card Anvil's Extended Art frame, derived from M15 and Borderless.",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Card-Anvil/frames.git",
+    "directory": "packages/frame-extended"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./extend": {
+      "types": "./src/extend.ts",
+      "default": "./src/extend.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "@cardanvil/frame-m15": "workspace:^",
+    "@cardanvil/frame-borderless": "workspace:^"
+  },
+  "peerDependencies": {
+    "@cardanvil/frame-kit": "workspace:^"
+  },
+  "devDependencies": {
+    "@cardanvil/frame-kit": "workspace:^"
+  }
+}

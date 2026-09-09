@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [trunk]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: package.json
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # frame-kit is consumed from source in this workspace, so the build is
+      # not a prerequisite for the checks below — it runs to prove the
+      # published artifact still compiles.
+      - run: pnpm run build
+
+      - run: pnpm run typecheck
+      - run: pnpm run lint
+      - run: pnpm run format:ci
+      - run: pnpm run test

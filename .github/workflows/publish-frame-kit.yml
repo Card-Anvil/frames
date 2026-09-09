@@ -1,0 +1,36 @@
+name: Publish frame-kit
+
+# Frames themselves are not published to npm — they are far too large, and are
+# distributed as source (this repo) or as manifest bundles. Only the contract
+# ships as a package.
+on:
+  push:
+    tags: ["frame-kit-v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # npm provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: package.json
+          registry-url: https://registry.npmjs.org
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run typecheck
+      - run: pnpm run test
+      - run: pnpm run build
+
+      - run: pnpm publish --filter @cardanvil/frame-kit --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,0 +1,53 @@
+{
+  "name": "@cardanvil/frame-kit",
+  "version": "0.1.0",
+  "description": "The contract Card Anvil frames are authored against: schemas, types, authoring helpers, and the distributable manifest format.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Card-Anvil/frames.git",
+    "directory": "packages/frame-kit"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./manifest": {
+      "types": "./src/manifest/index.ts",
+      "default": "./src/manifest/index.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "peerDependencies": {
+    "zod": "^4"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "pnpm run build"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./manifest": {
+        "types": "./dist/manifest/index.d.ts",
+        "default": "./dist/manifest/index.js"
+      },
+      "./package.json": "./package.json"
+    }
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

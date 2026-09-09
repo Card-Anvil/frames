@@ -1,0 +1,9 @@
+export { default as compasslanddfc } from "./compasslanddfc.png";
+export { default as convertdfc } from "./convertdfc.png";
+export { default as fandfc } from "./fandfc.png";
+export { default as meld } from "./meld.png";
+export { default as mooneldrazidfc } from "./mooneldrazidfc.png";
+export { default as originpwdfc } from "./originpwdfc.png";
+export { default as sunmoondfc } from "./sunmoondfc.png";
+export { default as upsidedowndfc } from "./upsidedowndfc.png";
+export { default as lesson } from "./lesson.png";

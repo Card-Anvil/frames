@@ -1,0 +1,29 @@
+{
+  "name": "@cardanvil/frame-borderless-source-material",
+  "version": "0.1.0",
+  "description": "Card Anvil's Borderless Source Material frame.",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Card-Anvil/frames.git",
+    "directory": "packages/frame-borderless-source-material"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./extend": {
+      "types": "./src/extend.ts",
+      "default": "./src/extend.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "peerDependencies": {
+    "@cardanvil/frame-kit": "workspace:^"
+  },
+  "devDependencies": {
+    "@cardanvil/frame-kit": "workspace:^"
+  }
+}

@@ -1,0 +1,6 @@
+export { default as w } from "./w.png";
+export { default as u } from "./u.png";
+export { default as b } from "./b.png";
+export { default as r } from "./r.png";
+export { default as g } from "./g.png";
+export { default as m } from "./m.png";

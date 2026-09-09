@@ -1,0 +1,9 @@
+# Text is normalized to LF in the repository and checked out as LF everywhere,
+# so frame configs are byte-identical across platforms.
+* text=auto eol=lf
+
+# Frame art must never be touched by line-ending conversion: the renderer's
+# output filenames are content hashes, so a single altered byte changes them.
+*.png binary
+*.jpg binary
+*.jpeg binary
