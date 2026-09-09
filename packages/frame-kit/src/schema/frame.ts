@@ -308,9 +308,12 @@ export type LayoutConfig = z.infer<typeof LayoutConfigSchema>;
 
 export const TemplateConfigSchema = z.object({
   /**
-   * Native pixel size this frame's box coordinates are authored in. Defaults
-   * to the app's standard 3264x4440 (1200 DPI) canvas when omitted — see
-   * `DEFAULT_CANVAS_WIDTH`/`DEFAULT_CANVAS_HEIGHT` in `@/utils/print`.
+   * Native pixel size this frame's box coordinates are authored in.
+   *
+   * Defaults to 3264 x 4440 when omitted: the full printed sheet *including*
+   * bleed, 2.72 x 3.7 in (69.09 x 93.98 mm) at 1200 DPI. The card face inside
+   * it is 63 x 88 mm, leaving roughly 3 mm of bleed on every edge — so box
+   * coordinates are relative to the sheet, not to the card.
    */
   canvas: z
     .object({

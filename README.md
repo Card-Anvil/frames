@@ -60,9 +60,20 @@ against the contract, `as const` keeps the literal types.
 
 ## The coordinate space
 
-Every box is **absolute pixels** on a **3264 × 4440** canvas — a 2.5″ × 3.5″
-card at 1200 DPI. Override it per frame with `config.canvas` if your art is
-authored at a different size.
+Every box is **absolute pixels** on a **3264 × 4440** canvas.
+
+⚠ **A Magic card face is 63 × 88 mm.** It is _not_ 2.5 × 3.5 inches — that is the
+poker-card size, and the difference is 0.5 mm across and 0.9 mm tall, roughly
+24 × 43 pixels at 1200 DPI. Write millimetres. If you must write inches, the card
+is 2.48 × 3.46 in.
+
+The canvas is **not** the card face: it is the full printed sheet **including
+bleed** — 2.72 × 3.7 in (69.09 × 93.98 mm) at 1200 DPI, leaving about 3 mm of
+bleed on every edge. A box at `y: 0` therefore sits in the bleed, above the top
+of the card.
+
+Override the canvas per frame with `config.canvas` if your art is authored at a
+different size.
 
 `fontSize` is in **points**, not pixels; the renderer converts.
 
