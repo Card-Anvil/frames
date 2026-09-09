@@ -18,5 +18,8 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  // Tests and their fixtures are not part of the published package. The
+  // fixtures also import *.png / *.svg, which only Vite can resolve.
+  "exclude": ["**/*.test.ts", "**/__fixtures__/**"]
 }

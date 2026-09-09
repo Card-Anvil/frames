@@ -16,7 +16,8 @@
     "lint:fix": "eslint --fix .",
     "format": "prettier --write .",
     "format:ci": "prettier --check .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "frames:validate": "pnpm --filter @cardanvil/frame-kit build && node packages/frame-kit/dist/cli/main.js validate"
   },
   "prettier": {
     "plugins": [
