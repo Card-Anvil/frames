@@ -45,10 +45,37 @@ keeps the literal types.
 
 ## Entry points
 
-| Import                          | What it gives you                                                                                                                                                                    |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `@cardanvil/frame-kit`          | The schemas (`FrameSchema`, `LayoutConfigSchema`, `FrameAssetsSchema`, …), the inferred types (`Frame`, `LayoutConfig`, `CardBoxes`, `TextBox`, `Layout`), and the authoring helpers |
-| `@cardanvil/frame-kit/manifest` | The distributable format: `frameToManifest`, `manifestToFrame`, `walkAssets`, `FrameManifestSchema`, `isContractCompatible`, `assertDeclarative`                                     |
+| Import                           | What it gives you                                                                                                                                                                    |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@cardanvil/frame-kit`           | The schemas (`FrameSchema`, `LayoutConfigSchema`, `FrameAssetsSchema`, …), the inferred types (`Frame`, `LayoutConfig`, `CardBoxes`, `TextBox`, `Layout`), and the authoring helpers |
+| `@cardanvil/frame-kit/manifest`  | The distributable format: `frameToManifest`, `manifestToFrame`, `walkAssets`, `FrameManifestSchema`, `isContractCompatible`, `assertDeclarative`                                     |
+| `@cardanvil/frame-kit/packaging` | The packaging tools the CLI is built on: `validateFrames`, `buildFrames`, `FrameIndexSchema`. Needs Node and Vite, so it is deliberately not on the main entry point                 |
+
+## The `frame-kit` command
+
+```bash
+frame-kit validate                # check every frame, write nothing
+frame-kit build --out dist        # check, then pack each one
+frame-kit schema meta             # a format as JSON Schema
+frame-kit --help
+```
+
+A frame is any directory holding a `frame.meta.json`, so this works both in a
+workspace of packages and in a flat repository.
+
+`validate` loads every frame through Vite, parses it against `FrameSchema`,
+resolves every asset to a file that exists, and round-trips it through the
+manifest in memory. Problems are collected rather than thrown, so one run
+reports everything; under GitHub Actions they become inline annotations.
+
+`build` adds hashing, zipping and the release index. Each frame becomes a
+`<slug>-<version>.cardframe`, and `frame-index.json` describes the set.
+
+Exit codes: `0` clean, `1` one or more frames failed, `2` used wrongly.
+
+Packaging needs Vite — it is what turns `import w from "./w.png"` into a file —
+so it is an **optional** peer dependency, loaded only when packaging runs. The
+schemas above work under plain Node and in a browser without it.
 
 ## Type it, then validate it
 

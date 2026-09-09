@@ -152,15 +152,46 @@ Prefer copying a single asset over taking a dependency for one file:
 `frame-borderless` keeps its own copy of the saga ability badge rather than
 depending on `frame-m15` for one 30 KB image.
 
+## Every frame has a descriptor
+
+A `frame.meta.json` beside a frame is what marks the directory as one. It
+carries the things the `Frame` object cannot: stable identity, which module to
+read, and who made the art.
+
+```jsonc
+{
+  "id": "com.cardanvil.m15", // permanent; a marketplace binds it to a repo
+  "slug": "m15", // names the bundle file; defaults to the folder
+  "entry": "./src/index.ts",
+  "export": "m15Frame",
+  "author": { "name": "Card Anvil", "url": "https://github.com/Card-Anvil" },
+  "license": "NOASSERTION",
+}
+```
+
+There is no `version` field on purpose: every frame in a repository is released
+together under one version, and a version here would be a per-frame version by
+the back door. `name`, `description` and `tags` live in the `Frame`, so there is
+one place to change each of them.
+
 ## Validate your frame
 
 ```bash
-pnpm test
+pnpm validate        # in a frame repository
+pnpm frames:validate # here
 ```
 
-Every package asserts its frame against `FrameSchema`. Typing a config as
-`Frame` is not enough — the schema is what a loading app enforces, and it
-catches things the type system cannot.
+`frame-kit validate` loads every frame through Vite, parses it against
+`FrameSchema`, resolves every asset URL to a file that actually exists, and
+packs and unpacks it in memory to prove the bundle it would produce is one a
+loader could read back. It writes nothing.
+
+Problems are collected rather than thrown, so one run reports everything that
+needs fixing. Under GitHub Actions it also emits workflow commands, so problems
+land as inline annotations on the diff.
+
+Typing a config as `Frame` is not enough — the schema is what a loading app
+enforces, and it catches things the type system cannot.
 
 ## Testing against Card Anvil
 
@@ -176,19 +207,71 @@ checkout.** The app resolves this source through path aliases; a `node_modules`
 there would shadow the app's `zod` and produce two incompatible copies of every
 schema type. Develop frames in a separate clone of this repository.
 
-## Shipping a frame outside this repo
+## Packaging a frame
 
-`@cardanvil/frame-kit/manifest` converts a `Frame` into a distributable package:
-a `frame.json` with every asset URL rewritten to a package-relative path, plus
-the files themselves. Asset positions are found by walking the schema, so a new
-asset field in the contract is picked up automatically.
+```bash
+frame-kit build --out dist
+```
 
-The manifest's `contractVersion` is `MAJOR.MINOR` and is independent of
-frame-kit's own version. A differing major is refused; a newer minor loads with
-a reduced-fidelity warning, because added fields are always optional.
+Each frame becomes a `<slug>-<version>.cardframe` — a zip holding `frame.json`
+and the art it names — plus its preview, plus one `frame-index.json` describing
+the lot.
 
-Packaging preserves everything the contract defines and drops everything it does
-not — keys outside the schema do not survive the round trip.
+```
+frame.json                       the manifest, keys sorted, deflated
+assets/0f3a91c2b47e5d10.jpg      stored uncompressed, named by content hash
+assets/1a7e4402ff9b0c33.png
+```
+
+Asset positions are found by **walking the schema**, so a new asset field in the
+contract is picked up automatically rather than needing a list kept in step.
+
+Naming each asset after its own sha256 makes deduplication automatic — two
+identical files claim the same path — and makes the output independent of
+traversal order. Art is stored rather than deflated: PNG and JPEG are already
+compressed, so re-deflating buys about a percent and makes the bytes depend on
+the zlib version. With fixed timestamps, **the same source produces byte-identical
+bundles**.
+
+A bundle carries only what its frame references, so it is self-contained and
+installable on its own — a frame that extends another ships that other frame's
+art too.
+
+`frame.json`'s `contractVersion` is `MAJOR.MINOR` and is independent of
+frame-kit's version. A differing major is refused; a newer minor loads with a
+reduced-fidelity warning, because added fields are always optional. Packaging
+preserves everything the contract defines and drops everything it does not —
+keys outside the schema do not survive the round trip.
+
+### The release index
+
+`frame-index.json` lists every frame in a release with its name, description,
+tags, layouts, licence, preview and checksums — enough to browse without
+downloading anything. Published to a GitHub release it is reachable at a fixed
+URL:
+
+```
+https://github.com/<owner>/<repo>/releases/latest/download/frame-index.json
+```
+
+That URL needs no API call and no authentication, and always resolves to the
+newest published release — which is why a release must be published rather than
+drafted. It is what a marketplace polls.
+
+Both the bundle and the preview carry a `sha256`, so a client can verify what it
+downloaded and re-download only what actually changed.
+
+### Other commands
+
+```bash
+frame-kit validate                     # check everything, write nothing
+frame-kit build --out dist             # check, then pack
+frame-kit schema meta                  # a format as JSON Schema
+frame-kit --help
+```
+
+Exit codes: `0` clean, `1` one or more frames failed, `2` the command was used
+wrongly.
 
 ## Repository layout
 

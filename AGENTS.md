@@ -9,14 +9,16 @@ Frame templates for [Card Anvil](https://github.com/Card-Anvil), and `@cardanvil
 contract they are authored against. A pnpm workspace: one package per frame, plus the kit. Card
 Anvil consumes this repo as a git submodule and compiles it from source.
 
-| Task      | Command          |
-| --------- | ---------------- |
-| Install   | `pnpm install`   |
-| Typecheck | `pnpm typecheck` |
-| Test      | `pnpm test`      |
-| Lint      | `pnpm lint`      |
-| Format    | `pnpm format`    |
-| Build kit | `pnpm build`     |
+| Task         | Command                |
+| ------------ | ---------------------- |
+| Install      | `pnpm install`         |
+| Typecheck    | `pnpm typecheck`       |
+| Test         | `pnpm test`            |
+| Lint         | `pnpm lint`            |
+| Format       | `pnpm format`          |
+| Build kit    | `pnpm build`           |
+| Check frames | `pnpm frames:validate` |
+| Pack frames  | `pnpm frames:build`    |
 
 Node 24+, pnpm (both pinned).
 
@@ -63,6 +65,7 @@ a change shifted pixels. A frame change is two pull requests: merge here, then i
 
 [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/), matching Card Anvil:
 `<type>(<scope>): <description>`, imperative, lower case, no trailing period. Scopes follow the
-package or area touched — `frame-kit`, `m15`, `borderless`, `extended`, `manifest`, `cicd`.
+package or area touched — `frame-kit`, `m15`, `borderless`, `extended`, `manifest`, `cli`,
+`packaging`, `cicd`.
 
 The default branch is **`trunk`**.
