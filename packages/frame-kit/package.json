@@ -1,6 +1,6 @@
 {
   "name": "@cardanvil/frame-kit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "The contract Card Anvil frames are authored against: schemas, types, authoring helpers, and the distributable manifest format.",
   "license": "MIT",
   "type": "module",
@@ -12,6 +12,7 @@
   },
   "files": [
     "dist",
+    "schema",
     "README.md"
   ],
   "exports": {
@@ -23,13 +24,18 @@
       "types": "./src/manifest/index.ts",
       "default": "./src/manifest/index.ts"
     },
+    "./packaging": {
+      "types": "./src/cli/index.ts",
+      "default": "./src/cli/index.ts"
+    },
     "./package.json": "./package.json"
   },
   "peerDependencies": {
+    "vite": "^6 || ^7",
     "zod": "^4"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node dist/cli/emitSchemas.js",
     "prepublishOnly": "pnpm run build"
   },
   "publishConfig": {
@@ -44,10 +50,30 @@
         "types": "./dist/manifest/index.d.ts",
         "default": "./dist/manifest/index.js"
       },
+      "./packaging": {
+        "types": "./dist/cli/index.d.ts",
+        "default": "./dist/cli/index.js"
+      },
       "./package.json": "./package.json"
     }
   },
   "engines": {
     "node": ">=22"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.2",
+    "@types/yazl": "^3.3.1",
+    "vite": "^7.3.6"
+  },
+  "dependencies": {
+    "yazl": "^3.3.1"
+  },
+  "bin": {
+    "frame-kit": "./dist/cli/main.js"
   }
 }

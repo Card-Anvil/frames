@@ -7,8 +7,10 @@
     "outDir": "dist",
     "rootDir": "src",
     "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
+    // No source maps: `files` does not ship src, so a map would only point at
+    // files that are not there.
+    "declarationMap": false,
+    "sourceMap": false,
 
     "strict": true,
     "noUnusedLocals": true,
@@ -18,5 +20,8 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  // Tests and their fixtures are not part of the published package. The
+  // fixtures also import *.png / *.svg, which only Vite can resolve.
+  "exclude": ["**/*.test.ts", "**/__fixtures__/**"]
 }

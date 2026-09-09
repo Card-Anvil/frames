@@ -1,0 +1,41 @@
+name: Vite canary
+
+# Packaging loads frames through Vite's ssrLoadModule, which Vite 6 soft-
+# deprecated in favour of the Environment API and which is a candidate for
+# removal in Vite 8. This turns that removal into a red build here, rather
+# than a broken release in somebody else's repository.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: package.json
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install the newest Vite
+        run: |
+          pnpm --filter @cardanvil/frame-kit add -D vite@latest
+          node -e "console.log('vite', require('vite/package.json').version)"
+
+      - run: pnpm run build
+
+      # Loading a frame is the only thing that touches Vite, so validating one
+      # is the whole test.
+      - name: Load and validate every frame
+        run: pnpm run frames:validate

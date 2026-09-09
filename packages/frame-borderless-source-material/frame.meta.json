@@ -1,0 +1,12 @@
+{
+  "id": "com.cardanvil.borderless-source-material",
+  "slug": "borderless-source-material",
+  "entry": "./src/index.ts",
+  "export": "borderlessSourceMaterialFrame",
+  "author": {
+    "name": "Card Anvil",
+    "url": "https://github.com/Card-Anvil"
+  },
+  "license": "NOASSERTION",
+  "homepage": "https://github.com/Card-Anvil/frames"
+}

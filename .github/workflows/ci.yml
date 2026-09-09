@@ -22,10 +22,24 @@ jobs:
 
       # frame-kit is consumed from source in this workspace, so the build is
       # not a prerequisite for the checks below — it runs to prove the
-      # published artifact still compiles.
+      # published artifact still compiles, and because the CLI runs from dist.
       - run: pnpm run build
 
+      # Every check runs even after an earlier one fails, so one push reports
+      # everything that is wrong rather than the first thing.
       - run: pnpm run typecheck
+        if: success() || failure()
       - run: pnpm run lint
+        if: success() || failure()
       - run: pnpm run format:ci
+        if: success() || failure()
       - run: pnpm run test
+        if: success() || failure()
+
+      # The same gate every author's repository runs, against our own frames.
+      # Deliberately validate rather than build: the four frames come to some
+      # 380 MB packed, and validate answers the correctness question in
+      # seconds. Packing is exercised by build-frame-bundles.yml.
+      - name: Validate frames with the packaging CLI
+        if: success() || failure()
+        run: pnpm run frames:validate

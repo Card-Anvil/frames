@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { FrameSchema } from "@cardanvil/frame-kit";
+import { FrameMetaSchema, FrameSchema } from "@cardanvil/frame-kit";
 
+import frameMeta from "../frame.meta.json";
+import * as exported from "./index";
 import { borderlessFrame } from "./index";
 
 describe("Borderless frame", () => {
@@ -20,5 +22,18 @@ describe("Borderless frame", () => {
     expect(Object.keys(borderlessFrame.config.layouts).length).toBeGreaterThan(
       0,
     );
+  });
+});
+
+describe("frame.meta.json", () => {
+  it("describes this package", () => {
+    const meta = FrameMetaSchema.parse(frameMeta);
+    expect(meta.export).toBe("borderlessFrame");
+  });
+
+  // Catches a typo in `export` here rather than at packaging time.
+  it("names an export that exists", () => {
+    const parsed = FrameMetaSchema.parse(frameMeta);
+    expect(exported).toHaveProperty(parsed.export);
   });
 });

@@ -1,0 +1,70 @@
+name: Build frame bundles
+
+# Packing all four frames writes a few hundred megabytes, which is not worth
+# doing on every pull request — CI validates instead, which catches the same
+# errors in seconds. This is how the packer gets exercised against the real
+# thing when that matters: before a frame-kit release, or after changing the
+# packing code.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to stamp into the bundles"
+        required: false
+        default: 0.0.0-dev
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  bundles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: package.json
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+
+      - name: Pack every frame
+        env:
+          # Through the environment rather than into the script body: a
+          # workflow input interpolated into `run:` is a command-injection hole.
+          VERSION: ${{ inputs.version }}
+        run: |
+          node packages/frame-kit/dist/cli/main.js build \
+            --out dist-frames \
+            --version "$VERSION" \
+            --summary-md "$GITHUB_STEP_SUMMARY"
+
+      - name: Check the bundles are reproducible
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          node packages/frame-kit/dist/cli/main.js build \
+            --out dist-frames-again --version "$VERSION"
+          for bundle in dist-frames/*.cardframe; do
+            name="$(basename "$bundle")"
+            if ! cmp -s "$bundle" "dist-frames-again/$name"; then
+              echo "$name differs between two builds of the same source" >&2
+              exit 1
+            fi
+          done
+          echo "Every bundle is byte-identical across two builds."
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frame-bundles
+          path: |
+            dist-frames/*.cardframe
+            dist-frames/*.preview.*
+            dist-frames/frame-index.json
+          retention-days: 7

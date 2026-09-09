@@ -1,0 +1,7 @@
+{
+  "id": "com.example.simple",
+  "entry": "./index.ts",
+  "export": "simpleFrame",
+  "author": { "name": "Test" },
+  "license": "MIT"
+}

@@ -5,7 +5,10 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "moduleDetection": "force",
-    "types": ["vite/client"],
+    // "vite/client" declares *.png as modules for frame packages; "node" is
+    // for the packaging CLI, which is a Node program living under
+    // packages/frame-kit/src/cli.
+    "types": ["vite/client", "node"],
     "skipLibCheck": true,
     "noEmit": true,
 
