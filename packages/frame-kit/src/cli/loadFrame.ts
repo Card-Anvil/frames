@@ -27,6 +27,21 @@ async function importVite(): Promise<typeof import("vite")> {
   }
 }
 
+/**
+ * Drops the SSR module graph so the next load re-reads from disk.
+ *
+ * Watch mode reuses one server across rebuilds, because starting one costs a
+ * second or two and a fresh dependency cache. Without this, ssrLoadModule
+ * serves the module it loaded the first time, and a rebuild produces
+ * byte-identical output no matter what the author just changed — the watch
+ * loop would appear to run and do nothing.
+ */
+export function invalidateFrameModules(frameServer: FrameServer): void {
+  // Both supported Vite majors expose the SSR module graph here; the legacy
+  // top-level accessor is deprecated.
+  frameServer.server.environments.ssr.moduleGraph.invalidateAll();
+}
+
 export interface FrameServer {
   readonly server: ViteDevServer;
   /** Absolute project root every asset URL is relative to. */
