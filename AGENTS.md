@@ -61,6 +61,34 @@ Visual regression snapshots live in Card Anvil, not here, so this repo's CI cann
 a change shifted pixels. A frame change is two pull requests: merge here, then in Card Anvil run
 `git submodule update --remote frames`, `npm run test:e2e`, and commit snapshot updates separately.
 
+## Releasing frame-kit
+
+Push a `frame-kit-v*` tag and `publish-frame-kit.yml` does the rest, using npm
+trusted publishing — there is no NPM_TOKEN in this repository and there should
+never be one.
+
+⚠ **Pack with pnpm, publish with npm.** `publishConfig.exports` is a pnpm
+feature: the package resolves to TypeScript source in the workspace, and pnpm
+rewrites those entries to `dist` when it packs. npm does not implement that
+rewrite, so `npm pack` here would produce a package whose entry points aim at
+source files `files` does not ship. Publishing the _tarball_ with npm is what
+gets OIDC, which pnpm does not implement. The workflow asserts no export still
+points into `src` before it publishes.
+
+If a package has never been published, trusted publishing has no settings page
+to configure yet, so the first release goes out by hand:
+
+```bash
+npm login
+cd packages/frame-kit
+pnpm pack                                    # rewrites exports to dist
+npm publish cardanvil-frame-kit-0.2.0.tgz --access public
+```
+
+Then add the trusted publisher on the package's npm settings page — org
+`Card-Anvil`, repository `frames`, workflow `publish-frame-kit.yml` — and every
+release after that is a tag push with no credential involved.
+
 ## Commits
 
 [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/), matching Card Anvil:
