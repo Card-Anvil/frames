@@ -12,6 +12,7 @@
   },
   "files": [
     "dist",
+    "schema",
     "README.md"
   ],
   "exports": {
@@ -30,7 +31,7 @@
     "zod": "^4"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node dist/cli/emitSchemas.js",
     "prepublishOnly": "pnpm run build"
   },
   "publishConfig": {

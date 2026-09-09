@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { appendFile, readFile } from "node:fs/promises";
+import { appendFile, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
 
@@ -8,12 +8,16 @@ import { buildFrames } from "./build.js";
 import { describeBytes } from "./bundle.js";
 import { PackagingError } from "./errors.js";
 import { Reporter, inGitHubActions } from "./report.js";
+import { SCHEMA_NAMES, type SchemaName, toJsonSchema } from "./schema.js";
+import { stableStringify } from "./stableJson.js";
 
 const USAGE = `frame-kit — package Card Anvil frames
 
 Usage:
   frame-kit validate [options]           check every frame, write nothing
   frame-kit build --out <dir> [options]  check every frame, then pack each one
+  frame-kit schema <name> [--out <file>] print a format as JSON Schema
+                                         (${SCHEMA_NAMES.join(" | ")})
   frame-kit --help
   frame-kit --version
 
@@ -188,6 +192,45 @@ async function runBuild(
   return reporter.ok ? EXIT.ok : EXIT.failed;
 }
 
+function isSchemaName(name: string): name is SchemaName {
+  return (SCHEMA_NAMES as string[]).includes(name);
+}
+
+async function runSchema(argv: string[]): Promise<number> {
+  const name = argv[0];
+  if (name === undefined || !isSchemaName(name)) {
+    console.error(
+      `schema needs one of: ${SCHEMA_NAMES.join(", ")}.
+
+${USAGE}`,
+    );
+    return EXIT.usage;
+  }
+  let values: { out?: string | undefined };
+  try {
+    ({ values } = parseArgs({
+      args: argv.slice(1),
+      options: { out: { type: "string" } },
+      strict: true,
+    }));
+  } catch (cause) {
+    console.error(
+      `${cause instanceof Error ? cause.message : String(cause)}
+
+${USAGE}`,
+    );
+    return EXIT.usage;
+  }
+
+  const json = stableStringify(toJsonSchema(name));
+  if (values.out === undefined) {
+    process.stdout.write(json);
+  } else {
+    await writeFile(values.out, json, "utf8");
+  }
+  return EXIT.ok;
+}
+
 async function main(argv: string[]): Promise<number> {
   const command = argv[0];
 
@@ -198,6 +241,9 @@ async function main(argv: string[]): Promise<number> {
   if (command === "--version" || command === "-v") {
     console.log(await packageVersion());
     return EXIT.ok;
+  }
+  if (command === "schema") {
+    return await runSchema(argv.slice(1));
   }
   if (command !== "validate" && command !== "build") {
     console.error(`Unknown command "${command}".\n\n${USAGE}`);
