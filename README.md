@@ -223,6 +223,17 @@ assets/0f3a91c2b47e5d10.jpg      stored uncompressed, named by content hash
 assets/1a7e4402ff9b0c33.png
 ```
 
+Add `--watch` to rebuild on save:
+
+```bash
+frame-kit build --out <the folder Card Anvil is linked to> --watch
+```
+
+It builds once, then repacks only the frames whose files changed. A failed
+rebuild keeps the previous bundle and prints the problem, and bundles are
+written atomically, so the app never reads a half-written file. See
+[`packages/frame-kit/README.md`](packages/frame-kit/README.md) for the details.
+
 Asset positions are found by **walking the schema**, so a new asset field in the
 contract is picked up automatically rather than needing a list kept in step.
 
@@ -268,6 +279,7 @@ downloaded and re-download only what actually changed.
 ```bash
 frame-kit validate                     # check everything, write nothing
 frame-kit build --out dist             # check, then pack
+frame-kit build --out dist --watch     # …and repack on every change
 frame-kit schema meta                  # a format as JSON Schema
 frame-kit --help
 ```
