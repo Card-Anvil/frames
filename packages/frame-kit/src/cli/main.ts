@@ -10,6 +10,7 @@ import { PackagingError } from "./errors.js";
 import { Reporter, inGitHubActions } from "./report.js";
 import { SCHEMA_NAMES, type SchemaName, toJsonSchema } from "./schema.js";
 import { stableStringify } from "./stableJson.js";
+import { watchFrames } from "./watch.js";
 
 const USAGE = `frame-kit — package Card Anvil frames
 
@@ -34,6 +35,7 @@ build only:
   --repository <o/n>    the GitHub repository the release belongs to
   --tag <vX.Y.Z>        the release tag; with --repository, puts download URLs
                         in the index
+  --watch               rebuild a frame whenever its source changes
 
 A frame is any directory containing a frame.meta.json.
 `;
@@ -50,6 +52,7 @@ interface Values {
   version?: string | undefined;
   repository?: string | undefined;
   tag?: string | undefined;
+  watch?: boolean | undefined;
 }
 
 async function packageVersion(): Promise<string> {
@@ -148,6 +151,24 @@ async function runBuild(
     return EXIT.usage;
   }
   const version = values.version ?? (await repositoryVersion(root));
+
+  if (values.watch) {
+    // Both are one-shot shapes meant for CI, and neither means anything for a
+    // process that never finishes.
+    if (values.json || values["summary-md"] !== undefined) {
+      console.error("--watch cannot be combined with --json or --summary-md.");
+      return EXIT.usage;
+    }
+    await watchFrames({
+      root,
+      only,
+      outDir: values.out,
+      version,
+      generator: `@cardanvil/frame-kit@${await packageVersion()}`,
+    });
+    return EXIT.ok;
+  }
+
   const reporter = new Reporter();
   const { frames: built } = await buildFrames(
     {
@@ -263,6 +284,7 @@ async function main(argv: string[]): Promise<number> {
         version: { type: "string" },
         repository: { type: "string" },
         tag: { type: "string" },
+        watch: { type: "boolean" },
       },
       strict: true,
     }));

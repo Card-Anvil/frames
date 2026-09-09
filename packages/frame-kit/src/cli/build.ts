@@ -27,6 +27,7 @@ import {
 } from "./frameIndex.js";
 import { hashFile, mapWithConcurrency } from "./hash.js";
 import { readImageSize } from "./imageSize.js";
+import type { FrameServer } from "./loadFrame.js";
 import type { Reporter } from "./report.js";
 import { stableStringify } from "./stableJson.js";
 
@@ -75,6 +76,8 @@ export interface BuildResult {
 export async function buildFrames(
   options: BuildOptions,
   reporter: Reporter,
+  /** A server to reuse. Passed straight to loadFrames; see its note. */
+  existingServer?: FrameServer,
 ): Promise<BuildResult> {
   if (!VERSION_PATTERN.test(options.version)) {
     throw new PackagingError(
@@ -83,7 +86,7 @@ export async function buildFrames(
     );
   }
 
-  const loaded = await loadFrames(options, reporter);
+  const loaded = await loadFrames(options, reporter, existingServer);
   const outDir = path.resolve(options.outDir);
   await mkdir(outDir, { recursive: true });
 
