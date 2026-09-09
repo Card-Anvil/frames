@@ -129,8 +129,10 @@ package.
 
 A manifest carries a `contractVersion` of the form `MAJOR.MINOR`, independent of this package's
 version. A differing major is refused; a newer minor loads with a reduced-fidelity warning, because
-added fields are always optional. Packaging preserves everything the contract defines and drops
-everything it does not — keys outside the schema do not survive the round trip.
+added fields are always optional. A layout the loader does not recognise is dropped with a
+degraded note rather than failing the frame, so one new layout cannot cost an author every other
+one. Packaging preserves everything the contract defines and drops everything it does not — keys
+outside the schema do not survive the round trip.
 
 ## Licence
 

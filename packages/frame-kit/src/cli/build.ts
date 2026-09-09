@@ -139,6 +139,7 @@ async function buildOne(
         ? {}
         : { generator: options.generator }),
       author: loaded.discovered.meta.author,
+      license: loaded.discovered.meta.license,
       resolveAsset: (url) => {
         const asset = byUrl.get(url);
         if (asset === undefined) {

@@ -20,6 +20,7 @@ export interface FrameToManifestOptions {
   version: string;
   generator?: string;
   author?: { name: string; url?: string };
+  license?: string;
   /**
    * Maps a build-time asset URL to its packaged location.
    *
@@ -75,6 +76,7 @@ export function frameToManifest(
       ? {}
       : { generator: options.generator }),
     ...(options.author === undefined ? {} : { author: options.author }),
+    ...(options.license === undefined ? {} : { license: options.license }),
     frame: rewritten,
     // Sorted so the manifest is byte-stable across builds and diffs cleanly.
     assets: [...assetsByPath.values()].sort((a, b) =>

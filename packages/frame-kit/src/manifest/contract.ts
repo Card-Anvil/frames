@@ -14,7 +14,7 @@ import { FrameSchema } from "../schema/frame.js";
  *   because parsing strips unknown keys; they should warn that the frame may
  *   render with reduced fidelity.
  */
-export const CONTRACT_VERSION = "1.0";
+export const CONTRACT_VERSION = "1.1";
 
 /** The only manifest kind any loader understands today. */
 export const DECLARATIVE_KIND = "declarative";
@@ -43,6 +43,14 @@ export const FrameManifestSchema = z.object({
   version: z.string(),
   generator: z.string().optional(),
   author: z.object({ name: z.string(), url: z.string().optional() }).optional(),
+  /**
+   * How the frame's art is licensed, as declared in its descriptor.
+   *
+   * Optional because contract 1.0 bundles predate it. Added in 1.1 so an
+   * installed frame carries its licence with it — before this it existed only
+   * in the release index, which an installed bundle does not travel with.
+   */
+  license: z.string().optional(),
   /** The frame itself, with every asset URL rewritten to a relative path. */
   frame: FrameSchema,
   /** Integrity index for the packaged files. Loaders may ignore it. */
