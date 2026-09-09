@@ -19,6 +19,7 @@ Anvil consumes this repo as a git submodule and compiles it from source.
 | Build kit    | `pnpm build`           |
 | Check frames | `pnpm frames:validate` |
 | Pack frames  | `pnpm frames:build`    |
+| Watch frames | `pnpm frames:watch`    |
 
 Node 24+, pnpm (both pinned).
 
@@ -60,6 +61,23 @@ the kind of error that silently propagates into layout maths and documentation.
 Visual regression snapshots live in Card Anvil, not here, so this repo's CI cannot tell you whether
 a change shifted pixels. A frame change is two pull requests: merge here, then in Card Anvil run
 `git submodule update --remote frames`, `npm run test:e2e`, and commit snapshot updates separately.
+
+## The watch loop
+
+`build --watch` exists so a frame author can point Card Anvil at a folder and see a save land in
+the preview. Two things in it are load-bearing and easy to break:
+
+- **The Vite server is reused across rebuilds, and its SSR module cache must be invalidated every
+  pass** (`invalidateFrameModules`). Without that a rebuild re-serves the module Vite loaded first,
+  so an edited layout number rebuilds byte-identically and the watch silently does nothing. Starting
+  a fresh server per rebuild is correct but costs a second or two per save, which is the whole
+  point of the loop.
+- **Bundles and the index are written atomically** (temp file plus rename). The consumer is
+  watching the same directory, so a plain write hands it a truncated zip.
+
+Rebuilds are debounced, and one already in flight finishes before the next starts — two builds
+writing one bundle race. Anything the build itself produces is ignored, so a rebuild cannot
+retrigger itself.
 
 ## Releasing frame-kit
 

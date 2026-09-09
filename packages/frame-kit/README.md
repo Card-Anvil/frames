@@ -56,6 +56,7 @@ keeps the literal types.
 ```bash
 frame-kit validate                # check every frame, write nothing
 frame-kit build --out dist        # check, then pack each one
+frame-kit build --out dist --watch  # …and repack whenever a source changes
 frame-kit schema meta             # a format as JSON Schema
 frame-kit --help
 ```
@@ -72,6 +73,38 @@ reports everything; under GitHub Actions they become inline annotations.
 `<slug>-<version>.cardframe`, and `frame-index.json` describes the set.
 
 Exit codes: `0` clean, `1` one or more frames failed, `2` used wrongly.
+
+### `--watch`
+
+`build --watch` builds once, then rebuilds only the frames whose files changed,
+until you stop it. It is meant to be pointed at a folder Card Anvil is linked to,
+so saving a source file updates the preview without any manual step.
+
+```bash
+frame-kit build --out ~/CardAnvilFrames --watch
+```
+
+A failed rebuild leaves the previous bundle in place and prints the problem — the
+app keeps rendering the last good build rather than losing the frame mid-edit.
+Bundles are written atomically, so a watcher on the other side never reads a
+half-written file. `--watch` refuses to combine with `--json` or `--summary-md`,
+which describe a single run that has finished.
+
+Changes are debounced 200 ms, and a rebuild already in flight is allowed to
+finish before the next one starts: two builds writing one bundle would race.
+Output files, dotfiles, `node_modules`, `dist` and editor droppings are ignored,
+so a rebuild cannot trigger itself.
+
+Because bundles are byte-deterministic, saving a file that does not change the
+built output produces an identical bundle, and a consumer watching for content
+changes sees nothing happen — which is correct.
+
+⚠ **Frames are loaded through a long-lived Vite server**, and its SSR module
+cache is invalidated on each pass. Without that a rebuild would re-serve the
+module Vite loaded first, so an edited layout number would rebuild
+byte-identically and the watch would appear to do nothing. If you embed the
+build API yourself, call `invalidateFrameModules` between passes on a server you
+reuse.
 
 Packaging needs Vite — it is what turns `import w from "./w.png"` into a file —
 so it is an **optional** peer dependency, loaded only when packaging runs. The
