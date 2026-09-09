@@ -55,6 +55,11 @@ function toPlain(frame: Frame): unknown {
 export async function loadFrames(
   options: LoadOptions,
   reporter: Reporter,
+  /**
+   * A server to reuse. When supplied the caller owns its lifetime and this
+   * function will not close it — watch mode keeps one alive across rebuilds.
+   */
+  existingServer?: FrameServer,
 ): Promise<LoadedFrame[]> {
   const root = path.resolve(options.root);
   const discovered = await discoverFrames(root, reporter);
@@ -81,10 +86,9 @@ export async function loadFrames(
     return [];
   }
 
-  let frameServer: FrameServer | undefined;
+  const frameServer = existingServer ?? (await startFrameServer(root));
   const loaded: LoadedFrame[] = [];
   try {
-    frameServer = await startFrameServer(root);
     for (const frame of wanted) {
       const result = await loadOne(frameServer, root, frame, reporter);
       if (result) {
@@ -92,7 +96,9 @@ export async function loadFrames(
       }
     }
   } finally {
-    await frameServer?.close();
+    if (!existingServer) {
+      await frameServer.close();
+    }
   }
   return loaded;
 }
