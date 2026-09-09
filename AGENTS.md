@@ -82,8 +82,13 @@ to configure yet, so the first release goes out by hand:
 npm login
 cd packages/frame-kit
 pnpm pack                                    # rewrites exports to dist
-npm publish cardanvil-frame-kit-0.2.0.tgz --access public
+npm publish cardanvil-frame-kit-<version>.tgz --access public
 ```
+
+`publishConfig` deliberately does **not** set `provenance`. Provenance needs a
+CI provider to attest the build, so setting it fails a local publish outright
+with `provider: null` — and it is unnecessary anyway, because trusted publishing
+generates attestations on its own.
 
 Then add the trusted publisher on the package's npm settings page — org
 `Card-Anvil`, repository `frames`, workflow `publish-frame-kit.yml` — and every
