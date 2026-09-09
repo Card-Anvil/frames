@@ -1,0 +1,12 @@
+{
+  "id": "com.cardanvil.borderless",
+  "slug": "borderless",
+  "entry": "./src/index.ts",
+  "export": "borderlessFrame",
+  "author": {
+    "name": "Card Anvil",
+    "url": "https://github.com/Card-Anvil"
+  },
+  "license": "NOASSERTION",
+  "homepage": "https://github.com/Card-Anvil/frames"
+}

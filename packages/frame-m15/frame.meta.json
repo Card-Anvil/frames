@@ -1,0 +1,12 @@
+{
+  "id": "com.cardanvil.m15",
+  "slug": "m15",
+  "entry": "./src/index.ts",
+  "export": "m15Frame",
+  "author": {
+    "name": "Card Anvil",
+    "url": "https://github.com/Card-Anvil"
+  },
+  "license": "NOASSERTION",
+  "homepage": "https://github.com/Card-Anvil/frames"
+}

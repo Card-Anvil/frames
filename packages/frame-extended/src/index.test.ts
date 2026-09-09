@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { FrameSchema } from "@cardanvil/frame-kit";
+import { FrameMetaSchema, FrameSchema } from "@cardanvil/frame-kit";
 
+import frameMeta from "../frame.meta.json";
+import * as exported from "./index";
 import { extendedFrame } from "./index";
 
 describe("Extended Art frame", () => {
@@ -18,5 +20,18 @@ describe("Extended Art frame", () => {
 
   it("declares at least one layout", () => {
     expect(Object.keys(extendedFrame.config.layouts).length).toBeGreaterThan(0);
+  });
+});
+
+describe("frame.meta.json", () => {
+  it("describes this package", () => {
+    const meta = FrameMetaSchema.parse(frameMeta);
+    expect(meta.export).toBe("extendedFrame");
+  });
+
+  // Catches a typo in `export` here rather than at packaging time.
+  it("names an export that exists", () => {
+    const parsed = FrameMetaSchema.parse(frameMeta);
+    expect(exported).toHaveProperty(parsed.export);
   });
 });
