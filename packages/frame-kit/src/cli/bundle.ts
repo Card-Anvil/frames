@@ -1,8 +1,7 @@
-import { createWriteStream } from "node:fs";
-import { pipeline } from "node:stream/promises";
 import yazl from "yazl";
 
 import type { FrameManifest } from "../manifest/contract.js";
+import { writeStreamAtomic } from "./atomic.js";
 import { PackagingError } from "./errors.js";
 import { stableStringify } from "./stableJson.js";
 
@@ -67,11 +66,10 @@ export async function writeBundle(
   }
   zip.end();
 
-  let bytes = 0;
-  zip.outputStream.on("data", (chunk: Buffer) => {
-    bytes += chunk.length;
-  });
-  await pipeline(zip.outputStream, createWriteStream(outFile));
+  // Written to a temp file and renamed: watch mode means Card Anvil may be
+  // reading this directory while it is being written, and a partial zip is
+  // indistinguishable from a corrupt one.
+  const bytes = await writeStreamAtomic(outFile, zip.outputStream);
 
   if (bytes > MAX_BUNDLE_BYTES) {
     throw new PackagingError(

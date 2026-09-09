@@ -1,4 +1,4 @@
-import { copyFile, mkdir, stat, writeFile } from "node:fs/promises";
+import { mkdir, stat } from "node:fs/promises";
 import path from "node:path";
 
 import {
@@ -14,6 +14,7 @@ import {
   type Frame,
 } from "../schema/frame.js";
 import { type LoadOptions, type LoadedFrame, loadFrames } from "./api.js";
+import { copyFileAtomic, writeFileAtomic } from "./atomic.js";
 import { describeBytes, writeBundle } from "./bundle.js";
 import { PackagingError } from "./errors.js";
 import {
@@ -105,10 +106,9 @@ export async function buildFrames(
     ...(options.source === undefined ? {} : { source: options.source }),
     frames: built.map((frame) => frame.entry),
   });
-  await writeFile(
+  await writeFileAtomic(
     path.join(outDir, FRAME_INDEX_FILENAME),
     stableStringify(index),
-    "utf8",
   );
   return { frames: built, index };
 }
@@ -286,7 +286,7 @@ async function indexEntry(
   }
 
   const previewName = `${slug}-${options.version}.preview${path.extname(previewSource).toLowerCase()}`;
-  await copyFile(previewSource, path.join(outDir, previewName));
+  await copyFileAtomic(previewSource, path.join(outDir, previewName));
   const [previewHash, previewStats, size, bundleHash] = await Promise.all([
     hashFile(previewSource),
     stat(previewSource),
