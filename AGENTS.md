@@ -23,6 +23,16 @@ Anvil consumes this repo as a git submodule and compiles it from source.
 
 Node 24+, pnpm (both pinned).
 
+## Where to look
+
+| Question                                                 | File                                                                          |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| How do I author a frame?                                 | [`README.md`](README.md)                                                      |
+| What does a field in the schema mean?                    | `packages/frame-kit/src/schema/frame.ts` — commented, and the source of truth |
+| What does the contract package expose?                   | [`packages/frame-kit/README.md`](packages/frame-kit/README.md)                |
+| How does a frame reach a user? What can a browser fetch? | [`docs/distribution.md`](docs/distribution.md)                                |
+| What happens once a bundle reaches the app?              | Card Anvil's `docs/third-party-frames.md`                                     |
+
 ## Card dimensions — be exact
 
 **A Magic card face is 63 × 88 mm.**
