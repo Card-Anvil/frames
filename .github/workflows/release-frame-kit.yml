@@ -42,23 +42,42 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Check the release token is present
+      - name: Check the release app is configured
         env:
-          TOKEN: ${{ secrets.CROSS_REPO_PAT }}
+          CLIENT_ID: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          PRIVATE_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
         run: |
           set -euo pipefail
-          if [ -z "$TOKEN" ]; then
-            echo "::error::CROSS_REPO_PAT is not set. Add it under Settings → Secrets and variables → Actions — and make sure the token itself grants Contents: write and Pull requests: write on THIS repository. An organisation secret shares the value, not the token's permissions." >&2
+          missing=""
+          [ -z "$CLIENT_ID" ] && missing="${missing}the RELEASE_APP_CLIENT_ID variable "
+          [ -z "$PRIVATE_KEY" ] && missing="${missing}the RELEASE_APP_PRIVATE_KEY secret "
+          if [ -n "$missing" ]; then
+            echo "::error::Missing ${missing}— see 'Releasing frame-kit' in AGENTS.md. The client id is a variable, not a secret." >&2
             exit 1
           fi
 
+      # An identity of its own, rather than the default GITHUB_TOKEN: a pull
+      # request opened with that token does not start other workflows, so `ci`
+      # would never run on it and a protected branch would never let it merge.
+      #
+      # A GitHub App rather than a personal token because nothing about it
+      # expires, it belongs to the organisation rather than to a person, and
+      # installing it is the grant — no resource-owner trap and no approval
+      # queue. The token minted here lives about an hour and reaches only this
+      # repository.
+      - uses: actions/create-github-app-token@v3
+        id: app-token
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          # Narrower than the app may hold, so this workflow states what it
+          # actually needs and stays least-privilege if the app ever gains more.
+          permission-contents: write
+          permission-pull-requests: write
+
       - uses: actions/checkout@v5
         with:
-          # A pull request opened with the default GITHUB_TOKEN does not start
-          # other workflows, so `ci` would never run on it and a protected
-          # branch would never let it merge. That is the whole reason this
-          # needs a token of its own.
-          token: ${{ secrets.CROSS_REPO_PAT }}
+          token: ${{ steps.app-token.outputs.token }}
 
       - uses: pnpm/action-setup@v4
 
@@ -124,21 +143,26 @@ jobs:
 
       - name: Open the release pull request
         env:
-          GH_TOKEN: ${{ secrets.CROSS_REPO_PAT }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           VERSION: ${{ steps.version.outputs.version }}
           BRANCH: ${{ steps.version.outputs.branch }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
           # Through the environment, never into the script body: a workflow
           # input pasted straight into `run:` is a command-injection hole.
           NOTES: ${{ inputs.notes }}
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Attribute the commit to the release app rather than to
+          # github-actions[bot], so it is obvious what made it. The numeric id
+          # is what links the address to the bot account.
+          bot_id="$(gh api "/users/${APP_SLUG}[bot]" --jq .id)"
+          git config user.name "${APP_SLUG}[bot]"
+          git config user.email "${bot_id}+${APP_SLUG}[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
           git add packages/frame-kit/package.json
           git commit -m "chore(frame-kit): release $VERSION"
           if ! git push origin "$BRANCH"; then
-            echo "::error::Could not push $BRANCH. The release token needs Contents: write on this repository." >&2
+            echo "::error::Could not push $BRANCH. Check the release app is installed on this repository with Contents: write." >&2
             exit 1
           fi
 
