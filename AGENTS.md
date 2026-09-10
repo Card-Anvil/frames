@@ -91,29 +91,34 @@ retrigger itself.
 
 ## Releasing frame-kit
 
-**Actions → Release frame-kit → Run workflow → pick `patch`, `minor` or `major` → Run.**
+Two steps, because `trunk` is protected and locked and a release does not get to talk its way
+around that.
 
-That is the whole process. The workflow works out the next version from the one in
-`packages/frame-kit/package.json`, checks the frames still pack, commits the bump, tags
-`frame-kit-v<version>`, cuts a GitHub release, and publishes to npm with trusted publishing —
-there is no NPM_TOKEN in this repository and there should never be one.
+1. **Actions → Release frame-kit → Run workflow → pick `patch`, `minor` or `major` → Run.**
+   It works out the next version, checks the frames still pack, and opens a pull request with the
+   bump.
+2. **Merge that pull request.** The push to `trunk` starts _Publish frame-kit_, which tags
+   `frame-kit-v<version>`, cuts the GitHub release, and publishes to npm with trusted publishing —
+   there is no NPM_TOKEN in this repository and there should never be one.
 
-Deriving the version from the package rather than from tags is deliberate: 0.2.0 was published
-before this repository tagged anything, so tags are not a complete history of what is on the
+The version comes from the one in `packages/frame-kit/package.json`, not from tags: 0.2.0 was
+published before this repository tagged anything, so tags are not a complete history of the
 registry.
 
-Pushing the bump needs `CROSS_REPO_PAT`, because the default `GITHUB_TOKEN` cannot push to a
-protected branch. The workflow fails on its first step, with that reason, if the secret is missing.
+Publishing keys off the version changing rather than the pull request merging, so a version npm
+already has is a no-op — that file changes for plenty of reasons that are not a release. Every step
+is skipped if it has already happened, so a run that fails at the npm step can be re-run from the
+Actions tab without cutting another version.
+
+Opening the pull request needs `CROSS_REPO_PAT`, and the token itself must grant **Contents:
+write** and **Pull requests: write on this repository** — an organisation secret shares the value,
+not the token's permissions. A pull request opened with the default `GITHUB_TOKEN` does not start
+other workflows, so `ci` would never run on it and a protected branch would never let it merge.
+Publishing needs no PAT: the default token tags and releases.
 
 The release is created with `--latest=false` on purpose: `releases/latest` in this repository is
 reserved for frame bundles, which is the URL a marketplace reads. A package release must not take
 that slot.
-
-**There is no way to publish without cutting a release.** A version on npm that no tag points at
-is a version nobody can check out.
-
-Publishing runs as its own job, so a publish that fails after the tag is pushed can be re-run from
-the Actions tab on its own, without cutting another version.
 
 ⚠ **Pack with pnpm, publish with npm.** `publishConfig.exports` is a pnpm feature: the package
 resolves to TypeScript source in the workspace, and pnpm rewrites those entries to `dist` when it

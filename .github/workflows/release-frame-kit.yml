@@ -1,14 +1,18 @@
 name: Release frame-kit
 
-# Pick how big a jump this is and press Run. You never type a version number
-# and never touch git.
+# Step one of two. Pick how big a jump this is and press Run: this works out
+# the version, checks the frames still pack, and opens a pull request with the
+# bump. Merging that pull request publishes — see publish-frame-kit.yml.
+#
+# It opens a pull request rather than pushing to the default branch because
+# `trunk` is protected and locked, which is a deliberate property of this
+# repository and not something a release should be allowed to talk its way
+# around. The cost is one extra click; the benefit is that a release goes
+# through the same CI and review as everything else.
 #
 # Frames themselves are not published to npm — they are far too large, and are
 # distributed as source (this repo) or as .cardframe bundles on a release. Only
 # the contract ships as a package.
-#
-# There is deliberately no way to publish without cutting a release: a version
-# on npm that no tag points at is a version nobody can check out.
 on:
   workflow_dispatch:
     inputs:
@@ -22,30 +26,21 @@ on:
           - minor
           - major
       notes:
-        description: "Optional note to put at the top of the release"
+        description: "Optional note to put at the top of the pull request"
         required: false
         type: string
 
 permissions:
-  contents: write
-  # Trusted publishing: npm exchanges this for a short-lived credential, so
-  # there is no long-lived npm token in this repository to leak or rotate.
-  id-token: write
+  contents: read
 
 concurrency:
   group: release-frame-kit
   cancel-in-progress: false
 
 jobs:
-  # Everything that changes the repository. Nothing is committed until the
-  # frames it describes have been checked, so a bad build never leaves a stray
-  # tag behind.
-  release:
+  propose:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    outputs:
-      version: ${{ steps.version.outputs.version }}
-      tag: ${{ steps.version.outputs.tag }}
     steps:
       - name: Check the release token is present
         env:
@@ -53,14 +48,16 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "$TOKEN" ]; then
-            echo "::error::CROSS_REPO_PAT is not set. It is what pushes the version bump and the tag; add it under Settings → Secrets and variables → Actions." >&2
+            echo "::error::CROSS_REPO_PAT is not set. Add it under Settings → Secrets and variables → Actions — and make sure the token itself grants Contents: write and Pull requests: write on THIS repository. An organisation secret shares the value, not the token's permissions." >&2
             exit 1
           fi
 
       - uses: actions/checkout@v5
         with:
-          # The default GITHUB_TOKEN cannot push to a protected branch, and a
-          # push made with it does not trigger other workflows.
+          # A pull request opened with the default GITHUB_TOKEN does not start
+          # other workflows, so `ci` would never run on it and a protected
+          # branch would never let it merge. That is the whole reason this
+          # needs a token of its own.
           token: ${{ secrets.CROSS_REPO_PAT }}
 
       - uses: pnpm/action-setup@v4
@@ -91,14 +88,13 @@ jobs:
             *) echo "Unknown bump '$BUMP'" >&2; exit 1 ;;
           esac
           VERSION="${MAJOR}.${MINOR}.${PATCH}"
-          TAG="frame-kit-v${VERSION}"
 
-          if git rev-parse "$TAG" >/dev/null 2>&1; then
-            echo "::error::Tag $TAG already exists." >&2
+          if git rev-parse "frame-kit-v${VERSION}" >/dev/null 2>&1; then
+            echo "::error::Tag frame-kit-v${VERSION} already exists." >&2
             exit 1
           fi
-          # Catch a duplicate before anything is committed, rather than at the
-          # publish step with a tag already pushed.
+          # Catch a duplicate now, rather than after a pull request has been
+          # reviewed and merged.
           published="$(npm view "@cardanvil/frame-kit@${VERSION}" version 2>/dev/null || true)"
           if [ -n "$published" ]; then
             echo "::error::@cardanvil/frame-kit@${VERSION} is already on npm." >&2
@@ -107,9 +103,11 @@ jobs:
 
           echo "Current version: $BASE. This release: $VERSION"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "branch=release/frame-kit-v${VERSION}" >> "$GITHUB_OUTPUT"
 
-      # Nothing is released unless the frames the contract describes still pack.
+      # Nothing is proposed unless the frames the contract describes still pack.
+      # CI runs these again on the pull request; running them here means a
+      # broken release never becomes a pull request at all.
       - run: pnpm run typecheck
       - run: pnpm run test
       - run: pnpm run build
@@ -124,135 +122,37 @@ jobs:
           jq --arg v "$VERSION" '.version = $v' package.json > package.json.tmp
           mv package.json.tmp package.json
 
-      - name: Commit and tag
+      - name: Open the release pull request
         env:
-          TAG: ${{ steps.version.outputs.tag }}
+          GH_TOKEN: ${{ secrets.CROSS_REPO_PAT }}
+          VERSION: ${{ steps.version.outputs.version }}
+          BRANCH: ${{ steps.version.outputs.branch }}
+          # Through the environment, never into the script body: a workflow
+          # input pasted straight into `run:` is a command-injection hole.
+          NOTES: ${{ inputs.notes }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
           git add packages/frame-kit/package.json
-          git commit -m "chore(frame-kit): release $TAG"
-          git tag -a "$TAG" -m "frame-kit $TAG"
-          if ! git push origin HEAD; then
-            echo "::error::Could not push to the default branch. If it is protected, allow the release token to bypass the rules." >&2
+          git commit -m "chore(frame-kit): release $VERSION"
+          if ! git push origin "$BRANCH"; then
+            echo "::error::Could not push $BRANCH. The release token needs Contents: write on this repository." >&2
             exit 1
           fi
-          git push origin "$TAG"
 
-      - name: Publish the release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ steps.version.outputs.tag }}
-          # Through the environment, never into the script body: a workflow
-          # input pasted straight into `run:` is a command-injection hole.
-          NOTES: ${{ inputs.notes }}
-          VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          set -euo pipefail
           {
             if [ -n "$NOTES" ]; then printf '%s\n\n' "$NOTES"; fi
-            printf '## Installing\n\n    pnpm add -D @cardanvil/frame-kit@%s\n' "$VERSION"
-          } > RELEASE_NOTES.md
-          # Deliberately not --latest: releases/latest in this repository is
-          # reserved for frame bundles, which is the URL a marketplace reads.
-          # A package release must not take that slot.
-          gh release create "$TAG" \
-            --title "frame-kit $VERSION" \
-            --notes-file RELEASE_NOTES.md \
-            --generate-notes \
-            --latest=false \
-            --verify-tag
+            printf 'Raises `@cardanvil/frame-kit` to **%s**.\n\n' "$VERSION"
+            printf 'Merging this publishes it: the push to `trunk` starts *Publish frame-kit*,\n'
+            printf 'which tags `frame-kit-v%s`, cuts the GitHub release, and publishes to npm.\n\n' "$VERSION"
+            printf 'Typecheck, tests, build and `frames:validate` all passed before this was\n'
+            printf 'opened; CI runs them again here.\n'
+          } > "$RUNNER_TEMP/pr-body.md"
 
-  # Separate so a failed publish can be re-run on its own, without cutting
-  # another version. It checks out the tag, so what reaches npm is exactly what
-  # was released.
-  publish:
-    needs: release
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          ref: ${{ needs.release.outputs.tag }}
-
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version-file: package.json
-          registry-url: https://registry.npmjs.org
-          cache: pnpm
-
-      # Trusted publishing needs npm 11.5.1+; fail with the reason rather than
-      # with whatever npm says when it cannot find a token.
-      - name: Check npm supports trusted publishing
-        run: |
-          set -euo pipefail
-          version="$(npm --version)"
-          echo "npm $version"
-          node -e '
-            const [have] = process.argv.slice(1);
-            const need = "11.5.1";
-            const cmp = (a, b) =>
-              a.split(".").map(Number).reduce((acc, n, i) => acc || n - Number(b.split(".")[i]), 0);
-            if (cmp(have, need) < 0) {
-              console.error(`npm ${have} is too old for trusted publishing; needs ${need}+`);
-              process.exit(1);
-            }
-          ' "$version"
-
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run build
-
-      # Packed by pnpm, published by npm, deliberately.
-      #
-      # publishConfig.exports is a pnpm feature: locally the package resolves to
-      # TypeScript source, and pnpm rewrites those entries to dist when it packs.
-      # npm does not implement that rewrite, so packing with npm would publish a
-      # package whose exports point at source files it does not ship.
-      #
-      # Publishing the tarball with npm is what gets OIDC, which pnpm does not
-      # implement either. Each tool does the half it actually supports.
-      - name: Pack
-        id: pack
-        working-directory: packages/frame-kit
-        run: |
-          set -euo pipefail
-          npm --version
-          tarball="$(pnpm pack | tail -n 1)"
-          echo "tarball=packages/frame-kit/$tarball" >> "$GITHUB_OUTPUT"
-          echo "Packed $tarball"
-
-      - name: Verify the tarball is the released version and resolves to dist
-        env:
-          TARBALL: ${{ steps.pack.outputs.tarball }}
-          VERSION: ${{ needs.release.outputs.version }}
-        run: |
-          set -euo pipefail
-          extracted="$(mktemp -d)"
-          tar -xzf "$TARBALL" -C "$extracted"
-          node -e '
-            const fs = require("node:fs");
-            const [manifest, expected] = process.argv.slice(1);
-            const pkg = JSON.parse(fs.readFileSync(manifest, "utf8"));
-            if (pkg.version !== expected) {
-              console.error(`packed ${pkg.version}, expected ${expected}`);
-              process.exit(1);
-            }
-            const targets = Object.values(pkg.exports)
-              .flatMap((entry) => (typeof entry === "string" ? [entry] : Object.values(entry)));
-            const bad = targets.filter((t) => t.includes("/src/"));
-            if (bad.length > 0) {
-              console.error("exports still point at source:", bad);
-              process.exit(1);
-            }
-            console.log(`${pkg.version}: exports and bin resolve to dist`);
-          ' "$extracted/package/package.json" "$VERSION"
-
-      # No --provenance: with trusted publishing npm generates and publishes
-      # provenance attestations on its own.
-      - name: Publish
-        env:
-          TARBALL: ${{ steps.pack.outputs.tarball }}
-        run: npm publish "$TARBALL" --access public
+          gh pr create \
+            --base trunk \
+            --head "$BRANCH" \
+            --title "chore(frame-kit): release $VERSION" \
+            --body-file "$RUNNER_TEMP/pr-body.md"
