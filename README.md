@@ -293,7 +293,13 @@ wrongly.
 packages/frame-kit/     the contract (published to npm)
 packages/frame-*/       one package per frame
 attic/                  art no package references; kept, not shipped
+docs/                   how frames are distributed, and to what
 ```
+
+[`docs/distribution.md`](docs/distribution.md) covers how a frame reaches a user,
+what a browser can and cannot fetch from a GitHub release (measured, and it
+decides whether a marketplace can be static), and the marketplace this is all
+designed around.
 
 `attic/` exists so nothing was lost in the split from Card Anvil's
 `src/templates/`. See [`attic/README.md`](attic/README.md).
