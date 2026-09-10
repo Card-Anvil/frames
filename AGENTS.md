@@ -128,9 +128,14 @@ resource-owner setting and an approval queue that are easy to get wrong and give
 `Permission ... denied` when you do. Installing an app _is_ the grant.
 
 The app needs **Contents: write** and **Pull requests: write**, and to be installed on this
-repository. The token minted per run lives about an hour, reaches only this repository, and is
+repository. Both are load-bearing and they fail differently: without contents the push is refused,
+and without pull requests the branch lands but `gh pr create` says `Resource not accessible`. The token minted per run lives about an hour, reaches only this repository, and is
 narrowed again by `permission-` inputs in the workflow so it states what it uses. If the release
 fails at the push, the app is almost certainly not installed here.
+
+Re-running a failed release is fine. The branch is recreated rather than appended to, so a run that
+died after pushing does not wedge every run after it — but a version with an **open** release pull
+request is refused, because rewriting one somebody may be reading is worse than stopping.
 
 The release is created with `--latest=false` on purpose: `releases/latest` in this repository is
 reserved for frame bundles, which is the URL a marketplace reads. A package release must not take

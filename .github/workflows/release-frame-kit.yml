@@ -92,6 +92,7 @@ jobs:
         id: version
         env:
           BUMP: ${{ inputs.bump }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           set -euo pipefail
           # From the package, not from tags: the package's version is what npm
@@ -120,9 +121,19 @@ jobs:
             exit 1
           fi
 
+          BRANCH="release/frame-kit-v${VERSION}"
+          # A release already proposed is not a release to propose again.
+          # Rewriting a pull request someone may be reading is worse than
+          # stopping and saying so.
+          open_pr="$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')"
+          if [ -n "$open_pr" ]; then
+            echo "::error::#${open_pr} already proposes ${VERSION}. Merge or close it first." >&2
+            exit 1
+          fi
+
           echo "Current version: $BASE. This release: $VERSION"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "branch=release/frame-kit-v${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
 
       # Nothing is proposed unless the frames the contract describes still pack.
       # CI runs these again on the pull request; running them here means a
@@ -161,7 +172,13 @@ jobs:
           git checkout -b "$BRANCH"
           git add packages/frame-kit/package.json
           git commit -m "chore(frame-kit): release $VERSION"
-          if ! git push origin "$BRANCH"; then
+          # Forced because a run that failed after pushing leaves the branch
+          # behind, and re-running is the obvious next thing to do — an
+          # ordinary push is then refused as a non-fast-forward, which says
+          # nothing about what is actually wrong. Safe: the branch is this
+          # workflow's own, named after the exact version, and the check above
+          # already refused to touch one with an open pull request.
+          if ! git push --force origin "$BRANCH"; then
             echo "::error::Could not push $BRANCH. Check the release app is installed on this repository with Contents: write." >&2
             exit 1
           fi
@@ -175,8 +192,11 @@ jobs:
             printf 'opened; CI runs them again here.\n'
           } > "$RUNNER_TEMP/pr-body.md"
 
-          gh pr create \
+          if ! gh pr create \
             --base trunk \
             --head "$BRANCH" \
             --title "chore(frame-kit): release $VERSION" \
-            --body-file "$RUNNER_TEMP/pr-body.md"
+            --body-file "$RUNNER_TEMP/pr-body.md"; then
+            echo "::error::Pushed $BRANCH but could not open the pull request. 'Resource not accessible' means the release app is missing Pull requests: write." >&2
+            exit 1
+          fi
