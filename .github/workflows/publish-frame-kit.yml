@@ -1,0 +1,180 @@
+name: Publish frame-kit
+
+# Step two of two, and not something you start by hand. Merging a release pull
+# request from release-frame-kit.yml changes the package's version on trunk,
+# which is what this watches for. It then tags, cuts the GitHub release, and
+# publishes to npm.
+#
+# Every step is skipped if it has already happened, so a run that fails at the
+# npm step can be re-run from the Actions tab without cutting another version
+# or tripping over the tag it already created.
+on:
+  push:
+    branches: [trunk]
+    paths:
+      - packages/frame-kit/package.json
+
+permissions:
+  contents: write
+  # Trusted publishing: npm exchanges this for a short-lived credential, so
+  # there is no long-lived npm token in this repository to leak or rotate.
+  id-token: write
+
+concurrency:
+  group: publish-frame-kit
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # Tags are how this decides whether the release already exists.
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: package.json
+          registry-url: https://registry.npmjs.org
+          cache: pnpm
+
+      - name: Work out what, if anything, to release
+        id: version
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p "require('./packages/frame-kit/package.json').version")"
+          # That file changes for reasons other than a release — a dependency
+          # range, a script, an export map. Only a version npm has never seen
+          # is a release.
+          published="$(npm view "@cardanvil/frame-kit@${VERSION}" version 2>/dev/null || true)"
+          if [ -n "$published" ]; then
+            echo "@cardanvil/frame-kit@${VERSION} is already published; nothing to do."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Releasing @cardanvil/frame-kit@${VERSION}"
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=frame-kit-v${VERSION}" >> "$GITHUB_OUTPUT"
+
+      # Trusted publishing needs npm 11.5.1+; fail with the reason rather than
+      # with whatever npm says when it cannot find a token.
+      - name: Check npm supports trusted publishing
+        if: steps.version.outputs.release == 'true'
+        run: |
+          set -euo pipefail
+          version="$(npm --version)"
+          echo "npm $version"
+          node -e '
+            const [have] = process.argv.slice(1);
+            const need = "11.5.1";
+            const cmp = (a, b) =>
+              a.split(".").map(Number).reduce((acc, n, i) => acc || n - Number(b.split(".")[i]), 0);
+            if (cmp(have, need) < 0) {
+              console.error(`npm ${have} is too old for trusted publishing; needs ${need}+`);
+              process.exit(1);
+            }
+          ' "$version"
+
+      - name: Tag the release
+        if: steps.version.outputs.release == 'true'
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists; leaving it alone."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "frame-kit $TAG"
+          git push origin "$TAG"
+
+      - name: Cut the GitHub release
+        if: steps.version.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; leaving it alone."
+            exit 0
+          fi
+          printf '## Installing\n\n    pnpm add -D @cardanvil/frame-kit@%s\n' "$VERSION" > "$RUNNER_TEMP/notes.md"
+          # Deliberately not --latest: releases/latest in this repository is
+          # reserved for frame bundles, which is the URL a marketplace reads.
+          # A package release must not take that slot.
+          gh release create "$TAG" \
+            --title "frame-kit $VERSION" \
+            --notes-file "$RUNNER_TEMP/notes.md" \
+            --generate-notes \
+            --latest=false \
+            --verify-tag
+
+      - run: pnpm install --frozen-lockfile
+        if: steps.version.outputs.release == 'true'
+
+      - run: pnpm run build
+        if: steps.version.outputs.release == 'true'
+
+      # Packed by pnpm, published by npm, deliberately.
+      #
+      # publishConfig.exports is a pnpm feature: locally the package resolves to
+      # TypeScript source, and pnpm rewrites those entries to dist when it packs.
+      # npm does not implement that rewrite, so packing with npm would publish a
+      # package whose exports point at source files it does not ship.
+      #
+      # Publishing the tarball with npm is what gets OIDC, which pnpm does not
+      # implement either. Each tool does the half it actually supports.
+      - name: Pack
+        id: pack
+        if: steps.version.outputs.release == 'true'
+        working-directory: packages/frame-kit
+        run: |
+          set -euo pipefail
+          npm --version
+          tarball="$(pnpm pack | tail -n 1)"
+          echo "tarball=packages/frame-kit/$tarball" >> "$GITHUB_OUTPUT"
+          echo "Packed $tarball"
+
+      - name: Verify the tarball is the released version and resolves to dist
+        if: steps.version.outputs.release == 'true'
+        env:
+          TARBALL: ${{ steps.pack.outputs.tarball }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          extracted="$(mktemp -d)"
+          tar -xzf "$TARBALL" -C "$extracted"
+          node -e '
+            const fs = require("node:fs");
+            const [manifest, expected] = process.argv.slice(1);
+            const pkg = JSON.parse(fs.readFileSync(manifest, "utf8"));
+            if (pkg.version !== expected) {
+              console.error(`packed ${pkg.version}, expected ${expected}`);
+              process.exit(1);
+            }
+            const targets = Object.values(pkg.exports)
+              .flatMap((entry) => (typeof entry === "string" ? [entry] : Object.values(entry)));
+            const bad = targets.filter((t) => t.includes("/src/"));
+            if (bad.length > 0) {
+              console.error("exports still point at source:", bad);
+              process.exit(1);
+            }
+            console.log(`${pkg.version}: exports and bin resolve to dist`);
+          ' "$extracted/package/package.json" "$VERSION"
+
+      # No --provenance: with trusted publishing npm generates and publishes
+      # provenance attestations on its own.
+      - name: Publish
+        if: steps.version.outputs.release == 'true'
+        env:
+          TARBALL: ${{ steps.pack.outputs.tarball }}
+        run: npm publish "$TARBALL" --access public
