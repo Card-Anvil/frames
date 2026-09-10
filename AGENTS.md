@@ -91,36 +91,40 @@ retrigger itself.
 
 ## Releasing frame-kit
 
-Push a `frame-kit-v*` tag and `publish-frame-kit.yml` does the rest, using npm
-trusted publishing — there is no NPM_TOKEN in this repository and there should
-never be one.
+**Actions → Release frame-kit → Run workflow → pick `patch`, `minor` or `major` → Run.**
 
-⚠ **Pack with pnpm, publish with npm.** `publishConfig.exports` is a pnpm
-feature: the package resolves to TypeScript source in the workspace, and pnpm
-rewrites those entries to `dist` when it packs. npm does not implement that
-rewrite, so `npm pack` here would produce a package whose entry points aim at
-source files `files` does not ship. Publishing the _tarball_ with npm is what
-gets OIDC, which pnpm does not implement. The workflow asserts no export still
-points into `src` before it publishes.
+That is the whole process. The workflow works out the next version from the one in
+`packages/frame-kit/package.json`, checks the frames still pack, commits the bump, tags
+`frame-kit-v<version>`, cuts a GitHub release, and publishes to npm with trusted publishing —
+there is no NPM_TOKEN in this repository and there should never be one.
 
-If a package has never been published, trusted publishing has no settings page
-to configure yet, so the first release goes out by hand:
+Deriving the version from the package rather than from tags is deliberate: 0.2.0 was published
+before this repository tagged anything, so tags are not a complete history of what is on the
+registry.
 
-```bash
-npm login
-cd packages/frame-kit
-pnpm pack                                    # rewrites exports to dist
-npm publish cardanvil-frame-kit-<version>.tgz --access public
-```
+Pushing the bump needs `CROSS_REPO_PAT`, because the default `GITHUB_TOKEN` cannot push to a
+protected branch. The workflow fails on its first step, with that reason, if the secret is missing.
 
-`publishConfig` deliberately does **not** set `provenance`. Provenance needs a
-CI provider to attest the build, so setting it fails a local publish outright
-with `provider: null` — and it is unnecessary anyway, because trusted publishing
-generates attestations on its own.
+The release is created with `--latest=false` on purpose: `releases/latest` in this repository is
+reserved for frame bundles, which is the URL a marketplace reads. A package release must not take
+that slot.
 
-Then add the trusted publisher on the package's npm settings page — org
-`Card-Anvil`, repository `frames`, workflow `publish-frame-kit.yml` — and every
-release after that is a tag push with no credential involved.
+**There is no way to publish without cutting a release.** A version on npm that no tag points at
+is a version nobody can check out.
+
+Publishing runs as its own job, so a publish that fails after the tag is pushed can be re-run from
+the Actions tab on its own, without cutting another version.
+
+⚠ **Pack with pnpm, publish with npm.** `publishConfig.exports` is a pnpm feature: the package
+resolves to TypeScript source in the workspace, and pnpm rewrites those entries to `dist` when it
+packs. npm does not implement that rewrite, so `npm pack` here would produce a package whose entry
+points aim at source files `files` does not ship. Publishing the _tarball_ with npm is what gets
+OIDC, which pnpm does not implement. The workflow asserts the packed version matches the release
+and that no export still points into `src` before it publishes.
+
+`publishConfig` deliberately does **not** set `provenance`. Provenance needs a CI provider to
+attest the build, so setting it fails a local publish outright with `provider: null` — and it is
+unnecessary anyway, because trusted publishing generates attestations on its own.
 
 ## Commits
 
