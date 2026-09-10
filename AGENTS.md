@@ -110,11 +110,27 @@ already has is a no-op — that file changes for plenty of reasons that are not 
 is skipped if it has already happened, so a run that fails at the npm step can be re-run from the
 Actions tab without cutting another version.
 
-Opening the pull request needs `CROSS_REPO_PAT`, and the token itself must grant **Contents:
-write** and **Pull requests: write on this repository** — an organisation secret shares the value,
-not the token's permissions. A pull request opened with the default `GITHUB_TOKEN` does not start
-other workflows, so `ci` would never run on it and a protected branch would never let it merge.
-Publishing needs no PAT: the default token tags and releases.
+Opening the pull request uses a **GitHub App**, not a personal token. A pull request opened with
+the default `GITHUB_TOKEN` does not start other workflows, so `ci` would never run on it and a
+protected branch would never let it merge — that is the only reason a separate identity is needed
+at all. Publishing needs no app: the default token tags and releases.
+
+The app is configured by two values on this repository:
+
+| Name                      | Kind     | What it is                                     |
+| ------------------------- | -------- | ---------------------------------------------- |
+| `RELEASE_APP_CLIENT_ID`   | variable | The app's client id, which is not secret       |
+| `RELEASE_APP_PRIVATE_KEY` | secret   | The whole `.pem`, `BEGIN`/`END` lines included |
+
+**Nothing about it expires**, which is the point: a personal token has a lifetime, belongs to a
+person, and needs the organisation to approve its access to organisation repositories — a
+resource-owner setting and an approval queue that are easy to get wrong and give an unhelpful
+`Permission ... denied` when you do. Installing an app _is_ the grant.
+
+The app needs **Contents: write** and **Pull requests: write**, and to be installed on this
+repository. The token minted per run lives about an hour, reaches only this repository, and is
+narrowed again by `permission-` inputs in the workflow so it states what it uses. If the release
+fails at the push, the app is almost certainly not installed here.
 
 The release is created with `--latest=false` on purpose: `releases/latest` in this repository is
 reserved for frame bundles, which is the URL a marketplace reads. A package release must not take
