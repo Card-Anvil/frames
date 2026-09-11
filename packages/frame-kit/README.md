@@ -74,6 +74,25 @@ reports everything; under GitHub Actions they become inline annotations.
 
 Exit codes: `0` clean, `1` one or more frames failed, `2` used wrongly.
 
+### Frames you do not want to ship
+
+A descriptor can opt its frame out of every build:
+
+```json
+{
+  "id": "com.example.example",
+  "private": true,
+  "author": { "name": "Your Name" },
+  "license": "CC-BY-4.0"
+}
+```
+
+`validate` still loads and checks it; `build` reports it as skipped and packs
+nothing, so it never reaches a bundle, the index, or a release. That is the
+combination a worked example needs — a reference frame stays in the repository
+and stays correct, without an `id` that is permanent identity ending up in
+somebody's release by accident.
+
 ### `--watch`
 
 `build --watch` builds once, then rebuilds only the frames whose files changed,

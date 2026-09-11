@@ -219,3 +219,99 @@ describe("the release index", () => {
     );
   }, 60_000);
 });
+
+describe("private frames", () => {
+  /** A second, well-formed frame that says it is not for shipping. */
+  const addPrivateFrame = async (slug = "two") => {
+    await mkdir(path.join(root, slug), { recursive: true });
+    await writeFile(path.join(root, slug, "a.png"), PNG_A);
+    await writeFile(path.join(root, slug, "b.png"), PNG_B);
+    await writeFile(
+      path.join(root, slug, "frame.meta.json"),
+      JSON.stringify({
+        id: `com.example.${slug}`,
+        private: true,
+        export: "theFrame",
+        author: { name: "Jane" },
+        license: "MIT",
+      }),
+    );
+    await writeFile(
+      path.join(root, slug, "index.ts"),
+      `
+import a from "./a.png";
+import b from "./b.png";
+export const theFrame = {
+  name: "Two", description: "d", previewImage: b, tags: ["T"],
+  config: { layouts: { normal: {
+    boxes: {
+      art: { x: 0, y: 0, width: 1, height: 1 },
+      mana: { x: 0, y: 0, width: 1, height: 1, fontSize: 1 },
+      title: { x: 0, y: 0, width: 1, height: 1, fontSize: 1 },
+      type: { x: 0, y: 0, width: 1, height: 1, fontSize: 1 },
+      setSymbol: { x: 0, y: 0, width: 1, height: 1 },
+    },
+    frameAssets: { base: { w: a } },
+  } } },
+};
+`,
+    );
+  };
+
+  it("packs no bundle and claims no row in the index", async () => {
+    await addPrivateFrame();
+    const { reporter, built, index } = await build();
+    expect(reporter.toText()).toBe("");
+    expect(built.map((frame) => frame.loaded.discovered.slug)).toEqual(["one"]);
+    expect(index?.frames.map((frame) => frame.slug)).toEqual(["one"]);
+    await expect(
+      readFile(path.join(out, "two-1.2.3.cardframe")),
+    ).rejects.toThrow();
+  }, 60_000);
+
+  it("is reported as skipped rather than silently dropped", async () => {
+    await addPrivateFrame();
+    const { built } = await build();
+    const { skipped } = await buildFrames(
+      { root, outDir: path.join(root, "out2"), version: "1.2.3" },
+      new Reporter(),
+    );
+    expect(built).toHaveLength(1);
+    expect(skipped.map((frame) => frame.discovered.slug)).toEqual(["two"]);
+  }, 60_000);
+
+  // The whole point of skipping at build rather than at discovery: a frame
+  // nobody ships is still held to the contract, so it cannot quietly rot.
+  it("is still checked, and its problems still fail the run", async () => {
+    await addPrivateFrame();
+    await rm(path.join(root, "two/a.png"));
+    const { reporter, built } = await build();
+    expect(built).toHaveLength(1);
+    expect(reporter.ok).toBe(false);
+    expect(reporter.toText()).toMatch(/two/);
+  }, 60_000);
+
+  it("warns when it is the frame that was asked for by name", async () => {
+    await addPrivateFrame();
+    const reporter = new Reporter();
+    const { frames, index } = await buildFrames(
+      { root, outDir: out, version: "1.2.3", only: ["two"] },
+      reporter,
+    );
+    expect(frames).toEqual([]);
+    expect(index).toBeUndefined();
+    expect(reporter.ok).toBe(true); // a warning, not a failure
+    expect(reporter.toText()).toMatch(/two — is private, so it was not built/);
+  }, 60_000);
+
+  it("writes no index at all when every frame is private", async () => {
+    await rm(path.join(root, "one"), { recursive: true });
+    await addPrivateFrame();
+    const { built, index } = await build();
+    expect(built).toEqual([]);
+    expect(index).toBeUndefined();
+    await expect(
+      readFile(path.join(out, "frame-index.json")),
+    ).rejects.toThrow();
+  }, 60_000);
+});
