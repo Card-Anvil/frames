@@ -1,6 +1,6 @@
 # Card Anvil frames
 
-The frame templates [Card Anvil](https://github.com/Card-Anvil) ships, and the
+The frame templates [Card Anvil](https://cardanvil.app) ships, and the
 contract third-party frames are authored against.
 
 Card Anvil consumes this repository as a git submodule and compiles the frame
