@@ -1,6 +1,6 @@
 {
   "name": "@cardanvil/frame-kit",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "The contract Card Anvil frames are authored against: schemas, types, authoring helpers, and the distributable manifest format.",
   "license": "MIT",
   "type": "module",
