@@ -195,6 +195,9 @@ export async function slugsFor(
     if (!owner) {
       return undefined; // outside every frame — something shared changed
     }
+    if (owner.meta.private) {
+      continue; // a build would skip it anyway; do not announce a rebuild
+    }
     if (wanted.size === 0 || wanted.has(owner.slug)) {
       slugs.add(owner.slug);
     }

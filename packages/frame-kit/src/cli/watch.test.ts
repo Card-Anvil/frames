@@ -86,4 +86,28 @@ describe("slugsFor", () => {
       await slugsFor(root, [at("frames", "alpha", "a.png")], ["beta"]),
     ).toEqual([]);
   });
+
+  // A build would drop it anyway, and announcing "1 frame rebuilt" for a frame
+  // that never reached dist/ is worse than saying nothing.
+  it("ignores a change to a private frame", async () => {
+    await writeFile(
+      at("frames", "alpha", "frame.meta.json"),
+      JSON.stringify({
+        id: "com.example.alpha",
+        private: true,
+        author: { name: "Jane" },
+        license: "MIT",
+      }),
+    );
+    expect(
+      await slugsFor(root, [at("frames", "alpha", "a.png")], undefined),
+    ).toEqual([]);
+    expect(
+      await slugsFor(
+        root,
+        [at("frames", "alpha", "a.png"), at("frames", "beta", "b.png")],
+        undefined,
+      ),
+    ).toEqual(["beta"]);
+  });
 });

@@ -37,7 +37,8 @@ build only:
                         in the index
   --watch               rebuild a frame whenever its source changes
 
-A frame is any directory containing a frame.meta.json.
+A frame is any directory containing a frame.meta.json. One with "private": true
+is checked by validate but never built.
 `;
 
 /** 0 clean · 1 one or more frames failed · 2 the command was used wrongly. */
@@ -170,7 +171,7 @@ async function runBuild(
   }
 
   const reporter = new Reporter();
-  const { frames: built } = await buildFrames(
+  const { frames: built, skipped } = await buildFrames(
     {
       root,
       only,
@@ -197,6 +198,11 @@ async function runBuild(
             bundle: frame.bundleName,
             bytes: frame.bytes,
           })),
+          skipped: skipped.map((frame) => ({
+            id: frame.discovered.meta.id,
+            slug: frame.discovered.slug,
+            reason: "private",
+          })),
           problems: reporter.problems,
         },
         null,
@@ -207,6 +213,9 @@ async function runBuild(
     await emit(reporter, values["summary-md"]);
     for (const frame of built) {
       console.log(`${frame.bundleName}  ${describeBytes(frame.bytes)}`);
+    }
+    for (const frame of skipped) {
+      console.log(`${frame.discovered.slug}  skipped (private)`);
     }
     summarise(reporter, built.length);
   }

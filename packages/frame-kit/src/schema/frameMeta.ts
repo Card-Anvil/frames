@@ -45,6 +45,19 @@ export const FrameMetaSchema = z.object({
   /** Named export to read from `entry`. */
   export: z.string().default("default"),
 
+  /**
+   * Keeps the frame out of every build: it is never packaged, never indexed
+   * and never released. `validate` still loads and checks it, so a frame
+   * nobody ships cannot quietly rot.
+   *
+   * The author template's `example` frame is the case this exists for. It has
+   * to stay in the repository because `new-frame` copies it, but an id is
+   * permanent identity — publishing it would put the same
+   * `com.example.example` in every release by every author who forgot to
+   * delete it.
+   */
+  private: z.boolean().default(false),
+
   author: z.object({
     name: z.string().min(1),
     url: z.url().optional(),

@@ -16,6 +16,7 @@ import {
 import { type LoadOptions, type LoadedFrame, loadFrames } from "./api.js";
 import { copyFileAtomic, writeFileAtomic } from "./atomic.js";
 import { describeBytes, writeBundle } from "./bundle.js";
+import { relativePosix } from "./discover.js";
 import { PackagingError } from "./errors.js";
 import {
   FRAME_INDEX_FILENAME,
@@ -63,6 +64,8 @@ export interface BuiltFrame {
 
 export interface BuildResult {
   frames: BuiltFrame[];
+  /** Frames marked `private` in their descriptor. Checked, then left alone. */
+  skipped: LoadedFrame[];
   /** Written to `<out>/frame-index.json` unless nothing built. */
   index?: FrameIndex;
 }
@@ -87,18 +90,40 @@ export async function buildFrames(
   }
 
   const loaded = await loadFrames(options, reporter, existingServer);
+
+  // Validated above like any other frame, then dropped: `private` says this
+  // one exists to be read, not shipped.
+  const skipped = loaded.filter((frame) => frame.discovered.meta.private);
+  const shippable = loaded.filter((frame) => !frame.discovered.meta.private);
+  for (const frame of skipped) {
+    // Silence would look like a broken build to whoever asked for this frame
+    // by name. Frames merely swept up by a whole-repository build say nothing.
+    if (options.only?.includes(frame.discovered.slug)) {
+      reporter.warn({
+        frame: frame.discovered.slug,
+        file: relativePosix(
+          path.resolve(options.root),
+          frame.discovered.metaFile,
+        ),
+        message:
+          `is private, so it was not built. Remove "private" from its ` +
+          `frame.meta.json to ship it.`,
+      });
+    }
+  }
+
   const outDir = path.resolve(options.outDir);
   await mkdir(outDir, { recursive: true });
 
   const built: BuiltFrame[] = [];
-  for (const frame of loaded) {
+  for (const frame of shippable) {
     const result = await buildOne(frame, outDir, options, reporter);
     if (result) {
       built.push(result);
     }
   }
   if (built.length === 0) {
-    return { frames: built };
+    return { frames: built, skipped };
   }
 
   const index = buildIndex({
@@ -113,7 +138,7 @@ export async function buildFrames(
     path.join(outDir, FRAME_INDEX_FILENAME),
     stableStringify(index),
   );
-  return { frames: built, index };
+  return { frames: built, skipped, index };
 }
 
 async function buildOne(
