@@ -202,10 +202,16 @@ not here. So a frame change is two pull requests:
 2. In Card Anvil, bump the submodule (`git submodule update --remote frames`),
    run `npm run test:e2e`, and commit any snapshot updates separately.
 
-⚠ **Do not run `pnpm install` inside Card Anvil's `frames/` submodule
-checkout.** The app resolves this source through path aliases; a `node_modules`
-there would shadow the app's `zod` and produce two incompatible copies of every
-schema type. Develop frames in a separate clone of this repository.
+You can develop frames in Card Anvil's `frames/` submodule checkout rather than
+in a separate clone. The app resolves this source through path aliases, so an
+edit there is live with no install and no build step, and `pnpm install` inside
+the checkout is safe when you want the tests and tooling above.
+
+That install does put a second `zod` on disk, which would otherwise give the
+frame packages a different copy of every schema type than the app has. The app
+neutralises it twice — `resolve.dedupe` in its `vite.config.ts` for the bundler,
+a `zod` entry in its `tsconfig.app.json` `paths` for the type-checker. Both are
+needed; dedupe alone does not reach `tsc`.
 
 ## Packaging a frame
 
