@@ -13,8 +13,12 @@ import { FrameSchema } from "../schema/frame.js";
  * - MINOR changes only ever add optional fields. Older loaders stay compatible
  *   because parsing strips unknown keys; they should warn that the frame may
  *   render with reduced fidelity.
+ *
+ * Version history:
+ * - 1.2: added the optional `mask` asset URL on text boxes (shaped text).
+ * - 1.1: added the optional `license` field on the manifest.
  */
-export const CONTRACT_VERSION = "1.1";
+export const CONTRACT_VERSION = "1.2";
 
 /** The only manifest kind any loader understands today. */
 export const DECLARATIVE_KIND = "declarative";
