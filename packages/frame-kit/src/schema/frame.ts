@@ -37,6 +37,17 @@ export const TextBoxSchema = BoundsSchema.extend({
    * true when omitted (matches the original behavior). Set to false to
    * disable the shadow (e.g. flipside mana-cost badges on light backgrounds). */
   shadow: z.boolean().optional(),
+  /** Shaped-text mask: a full-canvas-sized PNG whose opaque pixels define the
+   * region text in this box may occupy. Alpha is what matters (any pixel with
+   * alpha > ~12% counts as inside), so color is irrelevant. Each wrapped line
+   * is measured against the mask's horizontal extent at the line's vertical
+   * band instead of the box's plain rectangle; lines are aligned/centered
+   * within that extent. The box still bounds everything: a mask region wider
+   * than the box is clamped to it, and a mask region narrower than the box
+   * shrinks the usable width. When the box has no width at a line's vertical
+   * position (the shape is absent there), the line falls back to the full box
+   * width. */
+  mask: AssetUrlSchema.optional(),
 });
 
 export type TextBox = z.infer<typeof TextBoxSchema>;
