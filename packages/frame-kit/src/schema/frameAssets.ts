@@ -180,13 +180,22 @@ export type FrameAssets = z.infer<typeof FrameAssetsSchema>;
 /**
  * Section masks the renderer actually reads. `rightHalf` overrides the global
  * default (`globalMasks.rightHalf`) when a layout ships its own. The legacy
- * `frame`/`border` mask keys are intentionally absent — nothing reads them.
+ * `frame` mask key is intentionally absent — nothing reads it.
  */
 export const LayoutMasksSchema = z.object({
   pinlines: AssetUrlSchema.optional(),
   titleAndType: AssetUrlSchema.optional(),
   rules: AssetUrlSchema.optional(),
   noBorder: AssetUrlSchema.optional(),
+  /**
+   * Alpha mask opaque only over the outer border ring itself (everything
+   * else — art, text boxes, and the framing surface between them —
+   * transparent). Clipped via `destination-in` to isolate the ring's shape
+   * so the global border-color setting can recolor just that ring. Distinct
+   * from `noBorder`, which cuts the internal framing band too for the
+   * extended-art trim — the two are not interchangeable.
+   */
+  border: AssetUrlSchema.optional(),
   legendary: AssetUrlSchema.optional(),
   /** Legendary crown mask variant for transforming MDFC front faces — the
    * composited top-half frame uses a different legendary crown cutout than

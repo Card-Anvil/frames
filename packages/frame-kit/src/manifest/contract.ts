@@ -15,10 +15,12 @@ import { FrameSchema } from "../schema/frame.js";
  *   render with reduced fidelity.
  *
  * Version history:
+ * - 1.3: added the optional `border` layout mask, isolating the outer
+ *   border ring's own shape so it can be recolored.
  * - 1.2: added the optional `mask` asset URL on text boxes (shaped text).
  * - 1.1: added the optional `license` field on the manifest.
  */
-export const CONTRACT_VERSION = "1.2";
+export const CONTRACT_VERSION = "1.3";
 
 /** The only manifest kind any loader understands today. */
 export const DECLARATIVE_KIND = "declarative";
