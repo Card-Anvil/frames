@@ -61,13 +61,7 @@ export function SharedEditDialog(
               same literal. Saving moves {many ? "them all" : "it"}.
             </DialogDescription>
 
-            <VStack
-              align="stretch"
-              gap="0"
-              overflowY="auto"
-              p="2"
-              maxH="240px"
-            >
+            <VStack align="stretch" gap="0" overflowY="auto" p="2" maxH="240px">
               {shared.map((impact) => (
                 <Text
                   key={`${impact.variant ?? "-"}/${impact.layout}/${impact.boxSet}`}
