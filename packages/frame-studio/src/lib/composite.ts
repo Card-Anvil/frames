@@ -1,13 +1,26 @@
-import type { FrameAssets } from "@cardanvil/frame-kit";
+import type {
+  FrameAssets,
+  FrameColor as FrameColorToken,
+} from "@cardanvil/frame-kit";
 import {
+  type BannerColors,
   type CardShape,
+  type DecorationCard,
   type Placement,
   type PlacementConfig,
+  crownColors,
+  decorationsFor,
   familyFor,
   frameDetailsFor,
+  nicknameColors,
   placeAsset,
+  ptBoxColor,
   resolveBaseFrame,
+  resolveCrownAsset,
   resolveFrameAsset,
+  resolveNicknameAsset,
+  resolveNyxInsertAsset,
+  resolvePtBoxAsset,
   selectFrameLayers,
 } from "@cardanvil/frame-kit/layout";
 
@@ -32,9 +45,12 @@ export interface CompositeInput {
   readonly maskSlot: FrameSlot | undefined;
   readonly boxSlot: FrameSlot | undefined;
   readonly shape: CardShape;
+  /** Nickname text and power/toughness, which decide the banners. */
+  readonly card: Omit<DecorationCard, "isLegendary">;
   readonly useNyxBorder: boolean;
-  /** Extra art (crowns, nicknames, PT plates) the user switched on. */
-  readonly extras: ReadonlySet<string>;
+  /** Template settings that swap in alternate crown art. */
+  readonly useNyxInsert: boolean;
+  readonly useUBCrowns: boolean;
   /** Section masks switched on for inspection, applied over everything. */
   readonly inspectMasks: ReadonlySet<string>;
 }
@@ -77,8 +93,10 @@ export function composite(input: CompositeInput): CompositeResult {
     maskSlot,
     boxSlot,
     shape,
+    card,
     useNyxBorder,
-    extras,
+    useNyxInsert,
+    useUBCrowns,
     inspectMasks,
   } = input;
 
@@ -147,8 +165,10 @@ export function composite(input: CompositeInput): CompositeResult {
     }
   }
 
-  // Decorations, placed from the layout's own render config.
-  // The knob configs sit on the layout, one level above the box set.
+  // Decorations: which ones a card gets, and in what colour, are decided the
+  // same way the renderer decides them — legendary gets a crown, nickname text
+  // gets a plate, power *and* toughness get a PT box — so the studio shows what
+  // the app would show instead of asking the author to guess.
   const layoutPath = boxSlot?.path.slice(0, -1) ?? [];
   const numbersAt = (
     ...path: string[]
@@ -158,24 +178,73 @@ export function composite(input: CompositeInput): CompositeResult {
       ? (value as unknown as { x: number; y: number })
       : undefined;
   };
+
+  // `isLegendary` is a type-line switch, so it lives with the other type
+  // switches in the shape rather than being restated here.
+  const wanted = decorationsFor({ ...card, isLegendary: shape.isLegendary });
+  const hasNickname = wanted.nickname;
   const placement: PlacementConfig = {
     crownConfig: asRecord(
       atPath(payload.frame, [...layoutPath, "crownConfig"]),
     ) as PlacementConfig["crownConfig"] | undefined,
     nicknameConfig: numbersAt(...layoutPath, "nicknameConfig"),
     ...(boxSlot ? { ptImage: numbersAt(...boxSlot.path, "ptImage") } : {}),
-    hasNickname: [...extras].some((id) => id.startsWith("nickname")),
+    hasNickname,
   };
 
-  for (const id of [...extras].sort()) {
-    const url = atPath(payload.frame, [
-      ...(assetSlot?.path ?? []),
-      ...id.split("."),
-    ]);
-    if (typeof url !== "string") {
-      continue;
+  /** A banner colour is one token, or two halves for a two-colour card. */
+  const halves = (colors: BannerColors): FrameColorToken[] =>
+    Array.isArray(colors) ? colors : [colors];
+
+  const addDecoration = (id: string, url: string | undefined) => {
+    if (url !== undefined) {
+      layers.push({ id, url, placement: placeAsset(id, placement) });
     }
-    layers.push({ id, url, placement: placeAsset(id, placement) });
+  };
+
+  if (wanted.crownBlackBar && typeof assets.black === "string") {
+    addDecoration("black", assets.black);
+  }
+
+  if (wanted.crown) {
+    for (const color of halves(crownColors(details, shape))) {
+      addDecoration(
+        `crown.${color}`,
+        resolveCrownAsset(assets, color, {
+          nickname: hasNickname,
+          useUBCrowns,
+        }),
+      );
+    }
+    if (useNyxInsert) {
+      for (const color of halves(crownColors(details, shape))) {
+        addDecoration(
+          `crown.nyxInsert.${color}`,
+          resolveNyxInsertAsset(assets, color, useUBCrowns),
+        );
+      }
+    }
+  }
+
+  // A frame whose crown art already includes the nickname needs no separate
+  // plate — the same test the renderer makes.
+  const crownCarriesNickname =
+    wanted.crown &&
+    halves(crownColors(details, shape)).some(
+      (color) =>
+        resolveCrownAsset(assets, color, { nickname: true, useUBCrowns }) !==
+        resolveCrownAsset(assets, color, { nickname: false, useUBCrowns }),
+    );
+
+  if (hasNickname && !crownCarriesNickname) {
+    for (const color of halves(nicknameColors(details, shape))) {
+      addDecoration(`nickname.${color}`, resolveNicknameAsset(assets, color));
+    }
+  }
+
+  if (wanted.ptBox) {
+    const color = ptBoxColor(details, shape);
+    addDecoration(`pt.${color}`, resolvePtBoxAsset(assets, color));
   }
 
   const cutoutUrls = [...inspectMasks]

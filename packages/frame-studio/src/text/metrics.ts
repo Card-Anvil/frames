@@ -26,6 +26,7 @@ export const PREVIEWABLE = [
   "type",
   "nicknameTitle",
   "keyword",
+  "pt",
 ] as const;
 
 export type PreviewableBox = (typeof PREVIEWABLE)[number];

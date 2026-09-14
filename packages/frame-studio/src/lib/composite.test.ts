@@ -41,7 +41,9 @@ const payload = (overrides: Record<string, unknown> = {}): FramePayload => ({
               a: "/a.png",
               c: "/c.png",
             },
-            crown: { base: "/crown.png" },
+            // `crown.base` is a colour set, like the other banner families.
+            crown: { base: { w: "/crown.png" } },
+            black: "/black.png",
             nickname: { w: "/nickname.png" },
             pt: { w: "/pt.png" },
           },
@@ -62,8 +64,9 @@ const payload = (overrides: Record<string, unknown> = {}): FramePayload => ({
 
 const run = (
   shape: Parameters<typeof composite>[0]["shape"],
-  extras: string[] = [],
+  card: Parameters<typeof composite>[0]["card"] = {},
   overrides: Record<string, unknown> = {},
+  settings: { useNyxInsert?: boolean; useUBCrowns?: boolean } = {},
 ) =>
   composite({
     payload: payload(overrides),
@@ -71,8 +74,10 @@ const run = (
     maskSlot,
     boxSlot,
     shape,
+    card,
     useNyxBorder: true,
-    extras: new Set(extras),
+    useNyxInsert: settings.useNyxInsert ?? false,
+    useUBCrowns: settings.useUBCrowns ?? false,
     inspectMasks: new Set(),
   });
 
@@ -116,11 +121,15 @@ describe("frame body", () => {
   // asked for. The overlays were composed for that base, so the renderer drops
   // them rather than layering them onto the wrong frame — and so does this.
   it("drops overlays when the base frame falls back, and says so", () => {
-    const result = run({ colors: ["w", "u"] }, [], {
-      frameAssets: {
-        base: { w: "/w.png", u: "/u.png", c: "/c.png" },
+    const result = run(
+      { colors: ["w", "u"] },
+      {},
+      {
+        frameAssets: {
+          base: { w: "/w.png", u: "/u.png", c: "/c.png" },
+        },
       },
-    });
+    );
     expect(result.layers).toHaveLength(1);
     expect(result.layers[0]?.url).toBe("/w.png");
     expect(result.fallbackNote).toContain("overlays dropped");
@@ -132,52 +141,160 @@ describe("frame body", () => {
   });
 
   it("skips an overlay whose mask the layout does not ship", () => {
-    const { layers } = run({ colors: ["w", "u"] }, [], {
-      masks: { rightHalf: "/rightHalf.png" },
-    });
+    const { layers } = run(
+      { colors: ["w", "u"] },
+      {},
+      {
+        masks: { rightHalf: "/rightHalf.png" },
+      },
+    );
     // No pinlines/rules/twins masks, so only the base survives.
     expect(layers).toHaveLength(1);
   });
 });
 
-describe("decoration placement", () => {
-  // The bug this guards: a crown drawn centred lands in the middle of the card
-  // instead of along its top edge.
-  it("places a crown from the layout's crown config, not centred", () => {
-    const { layers } = run({ colors: ["w"] }, ["crown.base"]);
-    const crown = layers.find((layer) => layer.id === "crown.base");
+describe("decorations are derived from the card", () => {
+  // The renderer draws a crown only on legendary cards; so does this.
+  it("draws no crown on a card that is not legendary", () => {
+    const { layers } = run({ colors: ["w"] });
+    expect(layers.some((layer) => layer.id.startsWith("crown"))).toBe(false);
+  });
+
+  it("draws a colour-matched crown on a legendary card", () => {
+    const { layers } = run({ colors: ["w"], isLegendary: true });
+    const crown = layers.find((layer) => layer.id.startsWith("crown"));
+    expect(crown?.url).toBe("/crown.png");
+    // The bug this guards: a crown centred on the sheet lands mid-card.
     expect(crown?.placement).toEqual({ kind: "at", at: { x: 192, y: 220 } });
   });
 
-  it("places a nickname plate from the nickname config", () => {
-    const { layers } = run({ colors: ["w"] }, ["nickname.w"]);
-    expect(layers.find((l) => l.id === "nickname.w")?.placement).toEqual({
+  it("draws the crown's black bar with the crown", () => {
+    const { layers } = run({ colors: ["w"], isLegendary: true });
+    expect(layers.find((layer) => layer.id === "black")?.placement).toEqual({
+      kind: "at",
+      at: { x: 220, y: 200 },
+    });
+  });
+
+  it("needs nickname text before it draws a nickname plate", () => {
+    expect(
+      run({ colors: ["w"] }).layers.some((l) => l.id.startsWith("nickname")),
+    ).toBe(false);
+    const named = run({ colors: ["w"] }, { nickname: "The Fallen" });
+    expect(named.layers.find((l) => l.id === "nickname.w")?.placement).toEqual({
       kind: "at",
       at: { x: 378, y: 577 },
     });
   });
 
-  it("places the PT plate from the box set's ptImage", () => {
-    const { layers } = run({ colors: ["w"] }, ["pt.w"]);
-    expect(layers.find((l) => l.id === "pt.w")?.placement).toEqual({
-      kind: "at",
-      at: { x: 2441, y: 3847 },
-    });
+  // A PT plate means the card is a creature, which needs both halves.
+  it("needs both power and toughness before it draws a PT plate", () => {
+    const hasPt = (card: Parameters<typeof run>[1]) =>
+      run({ colors: ["w"] }, card).layers.some((l) => l.id.startsWith("pt."));
+    expect(hasPt({ power: "4", toughness: "4" })).toBe(true);
+    expect(hasPt({ power: "4" })).toBe(false);
+    expect(hasPt({ toughness: "4" })).toBe(false);
+    expect(hasPt({})).toBe(false);
   });
 
-  it("moves the crown when a nickname plate is also on", () => {
-    const { layers } = run({ colors: ["w"] }, ["crown.base", "nickname.w"], {
-      crownConfig: { x: 192, y: 220, nicknameCrownX: 210, nicknameCrownY: 90 },
-    });
-    expect(layers.find((l) => l.id === "crown.base")?.placement).toEqual({
+  it("colour-matches the PT plate to the card", () => {
+    const { layers } = run({ colors: ["w"] }, { power: "4", toughness: "4" });
+    expect(layers.find((l) => l.id.startsWith("pt."))?.id).toBe("pt.w");
+  });
+
+  // Vehicles take the dedicated plate whatever colour they are.
+  it("gives a vehicle the vehicle PT plate", () => {
+    const { layers } = run(
+      { colors: ["w"], isVehicle: true },
+      { power: "4", toughness: "4" },
+      {
+        frameAssets: {
+          base: { w: "/w.png" },
+          pt: { w: "/pt.png", v: "/ptv.png" },
+        },
+      },
+    );
+    expect(layers.find((l) => l.id.startsWith("pt."))?.id).toBe("pt.v");
+  });
+
+  it("splits a two-colour crown into both halves", () => {
+    const { layers } = run(
+      { colors: ["w", "u"], isLegendary: true },
+      {},
+      {
+        frameAssets: {
+          base: { w: "/w.png", u: "/u.png", m: "/m.png" },
+          crown: { base: { w: "/crown-w.png", u: "/crown-u.png" } },
+        },
+      },
+    );
+    expect(
+      layers.filter((l) => l.id.startsWith("crown")).map((l) => l.url),
+    ).toEqual(["/crown-w.png", "/crown-u.png"]);
+  });
+
+  it("adds the nyx insert only when the setting is on", () => {
+    const assets = {
+      base: { w: "/w.png" },
+      crown: { base: { w: "/crown.png" }, nyxInsert: { w: "/insert.png" } },
+    };
+    const off = run(
+      { colors: ["w"], isLegendary: true },
+      {},
+      { frameAssets: assets },
+    );
+    expect(off.layers.some((l) => l.id.includes("nyxInsert"))).toBe(false);
+
+    const on = run(
+      { colors: ["w"], isLegendary: true },
+      {},
+      { frameAssets: assets },
+      { useNyxInsert: true },
+    );
+    const insert = on.layers.find((l) => l.id.includes("nyxInsert"));
+    expect(insert?.url).toBe("/insert.png");
+    expect(insert?.placement).toEqual({ kind: "at", at: { x: 611, y: 222 } });
+  });
+
+  // A frame whose crown art already carries the nickname needs no plate.
+  it("skips the nickname plate when the crown includes it", () => {
+    const { layers } = run(
+      { colors: ["w"], isLegendary: true },
+      { nickname: "The Fallen" },
+      {
+        frameAssets: {
+          base: { w: "/w.png" },
+          crown: {
+            base: { w: "/crown.png" },
+            nickname: { w: "/crown-nick.png" },
+          },
+          nickname: { w: "/nickname.png" },
+        },
+      },
+    );
+    expect(layers.find((l) => l.id.startsWith("crown"))?.url).toBe(
+      "/crown-nick.png",
+    );
+    expect(layers.some((l) => l.id.startsWith("nickname"))).toBe(false);
+  });
+
+  it("moves the crown when the card is nicknamed", () => {
+    const { layers } = run(
+      { colors: ["w"], isLegendary: true },
+      { nickname: "The Fallen" },
+      {
+        crownConfig: {
+          x: 192,
+          y: 220,
+          nicknameCrownX: 210,
+          nicknameCrownY: 90,
+        },
+      },
+    );
+    expect(layers.find((l) => l.id.startsWith("crown"))?.placement).toEqual({
       kind: "at",
       at: { x: 210, y: 90 },
     });
-  });
-
-  it("ignores a decoration the frame does not ship", () => {
-    const { layers } = run({ colors: ["w"] }, ["nickname.zzz"]);
-    expect(layers.every((layer) => layer.id !== "nickname.zzz")).toBe(true);
   });
 });
 
@@ -189,8 +306,10 @@ describe("inspection masks", () => {
       maskSlot,
       boxSlot,
       shape: { colors: ["w"] },
+      card: {},
       useNyxBorder: true,
-      extras: new Set(),
+      useNyxInsert: false,
+      useUBCrowns: false,
       inspectMasks: new Set(["pinlines", "nope"]),
     });
     expect(result.cutoutUrls).toEqual(["/pinlines.png"]);

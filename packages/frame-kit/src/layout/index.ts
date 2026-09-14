@@ -21,6 +21,22 @@ export {
   placementOrigin,
 } from "./assetPlacement.js";
 export {
+  type BannerColors,
+  type DecorationCard,
+  type DecorationFacts,
+  type DecorationState,
+  crownColors,
+  decorationsFor,
+  identityColors,
+  nicknameColors,
+  ptBoxColor,
+  resolveCrownAsset,
+  resolveCrownNicknameAsset,
+  resolveNicknameAsset,
+  resolveNyxInsertAsset,
+  resolvePtBoxAsset,
+} from "./decorations.js";
+export {
   COLOR_ORDER,
   type CardShape,
   type FrameDetails,

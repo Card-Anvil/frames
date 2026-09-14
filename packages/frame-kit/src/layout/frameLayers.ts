@@ -323,6 +323,8 @@ export interface CardShape {
   readonly isColorless?: boolean;
   /** Two colours paid with hybrid mana, which splits the frame down the middle. */
   readonly isHybrid?: boolean;
+  /** Legendary cards get the crown. */
+  readonly isLegendary?: boolean;
 }
 
 /** WUBRG order, which every colour combination is normalised into. */

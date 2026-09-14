@@ -31,13 +31,13 @@ import { CanvasPanel } from "./components/CanvasPanel.js";
 import { CardShapePanel } from "./components/CardShapePanel.js";
 import { Inspector } from "./components/Inspector.js";
 import { KnobPanel } from "./components/KnobPanel.js";
-import { LayerPanel } from "./components/LayerPanel.js";
+import { MaskPanel } from "./components/MaskPanel.js";
 import { SharedEditDialog } from "./components/SharedEditDialog.js";
 import { DEFAULT_SHAPE, describeSelection } from "./lib/cardShape.js";
 import { composite } from "./lib/composite.js";
 import { atPath, boxesIn, layoutsOf } from "./lib/frameModel.js";
 import { boxColor } from "./lib/hues.js";
-import { assetLayers, maskLayers } from "./lib/layers.js";
+import { maskLayers } from "./lib/layers.js";
 import { PRESETS, useSampleText } from "./state/useSampleText.js";
 import { isPreviewable } from "./text/singleLine.js";
 
@@ -64,10 +64,8 @@ export function App(): React.JSX.Element {
   >();
   const undoRef = useRef<{ edits: Edit[]; inverse: Edit[] }[]>([]);
   const redoRef = useRef<{ edits: Edit[]; inverse: Edit[] }[]>([]);
-  /** Decorative art switched on by hand: crowns, nicknames, PT plates. */
-  const [enabledExtras, setEnabledExtras] = useState<ReadonlySet<string>>(
-    new Set(),
-  );
+  const [useNyxInsert, setUseNyxInsert] = useState(false);
+  const [useUBCrowns, setUseUBCrowns] = useState(false);
   const [maskOverride, setMaskOverride] = useState<ReadonlySet<string>>(
     new Set(),
   );
@@ -138,24 +136,9 @@ export function App(): React.JSX.Element {
   );
   const selectedBox = boxes.find((entry) => entry.key === selected)?.box;
 
-  const layers = useMemo(
-    () => (payload ? assetLayers(payload, assetSlot) : []),
-    [payload, assetSlot],
-  );
   const masks = useMemo(
     () => (payload ? maskLayers(payload, maskSlot) : []),
     [payload, maskSlot],
-  );
-
-  // The frame body is derived from the card shape; only the decorations are
-  // picked by hand, so the layer list offers just those.
-  const decorations = useMemo(
-    () =>
-      layers.filter(
-        (layer) =>
-          !["base", "land", "nyx", "tall", "creature"].includes(layer.family),
-      ),
-    [layers],
   );
 
   const composed = useMemo(
@@ -168,7 +151,13 @@ export function App(): React.JSX.Element {
             boxSlot,
             shape,
             useNyxBorder,
-            extras: enabledExtras,
+            card: {
+              nickname: sampleText.nicknameTitle ?? "",
+              power: sampleText.power ?? "",
+              toughness: sampleText.toughness ?? "",
+            },
+            useNyxInsert,
+            useUBCrowns,
             inspectMasks: maskOverride,
           })
         : { layers: [], cutoutUrls: [] },
@@ -178,15 +167,16 @@ export function App(): React.JSX.Element {
       maskSlot,
       boxSlot,
       shape,
+      sampleText,
       useNyxBorder,
-      enabledExtras,
+      useNyxInsert,
+      useUBCrowns,
       maskOverride,
     ],
   );
 
-  // A different frame or layout ships different art; start its decorations off.
+  // A different frame or layout ships different masks.
   useEffect(() => {
-    setEnabledExtras(new Set());
     setMaskOverride(new Set());
   }, [slug, variant, layout]);
 
@@ -507,21 +497,10 @@ export function App(): React.JSX.Element {
             </Text>
           )}
 
-          <LayerPanel
-            layers={decorations}
+          <MaskPanel
             masks={masks}
-            enabled={enabledExtras}
-            enabledMasks={maskOverride}
+            enabled={maskOverride}
             onToggle={(id) => {
-              setEnabledExtras((current) => {
-                const next = new Set(current);
-                if (!next.delete(id)) {
-                  next.add(id);
-                }
-                return next;
-              });
-            }}
-            onToggleMask={(id) => {
               setMaskOverride((current) => {
                 const next = new Set(current);
                 if (!next.delete(id)) {
@@ -549,6 +528,7 @@ export function App(): React.JSX.Element {
             }}
             onHover={() => undefined}
             sampleText={sampleText}
+            ptIsVehicle={shape.isVehicle === true}
             onOverflow={setOverflow}
           />
         ) : (
@@ -580,8 +560,12 @@ export function App(): React.JSX.Element {
             shape={shape}
             useNyxBorder={useNyxBorder}
             summary={describeSelection(shape, useNyxBorder)}
+            useNyxInsert={useNyxInsert}
+            useUBCrowns={useUBCrowns}
             onChange={setShape}
             onNyxBorderChange={setUseNyxBorder}
+            onNyxInsertChange={setUseNyxInsert}
+            onUBCrownsChange={setUseUBCrowns}
           />
           <VStack
             align="stretch"
@@ -592,8 +576,22 @@ export function App(): React.JSX.Element {
             <Text fontSize="10px" textTransform="uppercase" color="#9d9d9d">
               Sample text
             </Text>
+            {["power", "toughness"].map((key) => (
+              <HStack key={key} gap="2">
+                <Text fontSize="xs" color="#9d9d9d" w="80px" truncate>
+                  {key}
+                </Text>
+                <Input
+                  size="xs"
+                  value={sampleText[key] ?? ""}
+                  onChange={(event) => {
+                    setField(key, event.target.value);
+                  }}
+                />
+              </HStack>
+            ))}
             {boxes
-              .filter(({ key }) => isPreviewable(key))
+              .filter(({ key }) => isPreviewable(key) && key !== "pt")
               .map(({ key }) => (
                 <HStack key={key} gap="2">
                   <Text fontSize="xs" color="#9d9d9d" w="80px" truncate>

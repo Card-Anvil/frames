@@ -48,15 +48,38 @@ const TOGGLES: {
     label: "colourless",
     hint: "No colours at all — Eldrazi and friends",
   },
+  {
+    key: "isLegendary",
+    label: "legendary",
+    hint: "Draws the crown, colour-matched to the card's identity",
+  },
+];
+
+/** Template settings that swap in alternate crown art. */
+const CROWN_SETTINGS = [
+  {
+    key: "nyxInsert" as const,
+    label: "nyx insert",
+    hint: "Draws the nyx insert inside the crown",
+  },
+  {
+    key: "ubCrowns" as const,
+    label: "UB crowns",
+    hint: "Prefers the Universes Beyond crown art where a frame ships it",
+  },
 ];
 
 export interface CardShapePanelProps {
   shape: CardShape;
   useNyxBorder: boolean;
+  useNyxInsert: boolean;
+  useUBCrowns: boolean;
   /** What the shape resolved to, for the line under the controls. */
   summary: string;
   onChange: (shape: CardShape) => void;
   onNyxBorderChange: (on: boolean) => void;
+  onNyxInsertChange: (on: boolean) => void;
+  onUBCrownsChange: (on: boolean) => void;
 }
 
 /**
@@ -69,7 +92,21 @@ export interface CardShapePanelProps {
  * likely to have a test card for.
  */
 export function CardShapePanel(props: CardShapePanelProps): React.JSX.Element {
-  const { shape, useNyxBorder, summary, onChange, onNyxBorderChange } = props;
+  const {
+    shape,
+    useNyxBorder,
+    useNyxInsert,
+    useUBCrowns,
+    summary,
+    onChange,
+    onNyxBorderChange,
+    onNyxInsertChange,
+    onUBCrownsChange,
+  } = props;
+  const settings: Record<string, [boolean, (on: boolean) => void]> = {
+    nyxInsert: [useNyxInsert, onNyxInsertChange],
+    ubCrowns: [useUBCrowns, onUBCrownsChange],
+  };
   const colors = shape.colors ?? [];
 
   const toggleColor = (code: FrameColor) => {
@@ -151,6 +188,28 @@ export function CardShapePanel(props: CardShapePanelProps): React.JSX.Element {
         >
           nyx borders
         </Box>
+        {CROWN_SETTINGS.map((setting) => {
+          const [on, set] = settings[setting.key] ?? [false, () => undefined];
+          return (
+            <Box
+              as="button"
+              key={setting.key}
+              px="2"
+              py="0.5"
+              borderRadius="4px"
+              border="1px solid"
+              borderColor={on ? "#4ec9b0" : "#3c3c3c"}
+              color={on ? "#4ec9b0" : "#9d9d9d"}
+              fontSize="10px"
+              title={setting.hint}
+              onClick={() => {
+                set(!on);
+              }}
+            >
+              {setting.label}
+            </Box>
+          );
+        })}
       </HStack>
 
       <Text fontSize="10px" color="#9d9d9d">
