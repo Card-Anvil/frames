@@ -21,6 +21,7 @@ import {
   subscribe,
 } from "./api/client.js";
 import type {
+  Bounds,
   Edit,
   FramePayload,
   FrameSummary,
@@ -38,8 +39,11 @@ import { composite } from "./lib/composite.js";
 import { atPath, boxesIn, layoutsOf } from "./lib/frameModel.js";
 import { boxColor } from "./lib/hues.js";
 import { maskLayers } from "./lib/layers.js";
+import { type PendingEdits, pathKey, withPending } from "./lib/optimistic.js";
 import { PRESETS, useSampleText } from "./state/useSampleText.js";
 import { isPreviewable } from "./text/singleLine.js";
+
+const noop = () => undefined;
 
 export function App(): React.JSX.Element {
   const [info, setInfo] = useState<StudioInfo | undefined>();
@@ -64,6 +68,9 @@ export function App(): React.JSX.Element {
   >();
   const undoRef = useRef<{ edits: Edit[]; inverse: Edit[] }[]>([]);
   const redoRef = useRef<{ edits: Edit[]; inverse: Edit[] }[]>([]);
+  /** Committed but not yet confirmed by a reload. See `withPending`. */
+  const [pending, setPending] = useState<PendingEdits>(new Map());
+  const awaitingRef = useRef<number | undefined>(undefined);
   const [useNyxInsert, setUseNyxInsert] = useState(false);
   const [useUBCrowns, setUseUBCrowns] = useState(false);
   const [maskOverride, setMaskOverride] = useState<ReadonlySet<string>>(
@@ -106,6 +113,11 @@ export function App(): React.JSX.Element {
     });
   }, [slug, refresh]);
 
+  const view = useMemo(
+    () => (payload ? withPending(payload, pending) : undefined),
+    [payload, pending],
+  );
+
   const variants = useMemo(
     () => (payload ? layoutsOf(payload) : []),
     [payload],
@@ -131,21 +143,21 @@ export function App(): React.JSX.Element {
     [slotsHere],
   );
   const boxes = useMemo(
-    () => (payload && boxSlot ? boxesIn(payload, boxSlot) : []),
-    [payload, boxSlot],
+    () => (view && boxSlot ? boxesIn(view, boxSlot) : []),
+    [view, boxSlot],
   );
   const selectedBox = boxes.find((entry) => entry.key === selected)?.box;
 
   const masks = useMemo(
-    () => (payload ? maskLayers(payload, maskSlot) : []),
-    [payload, maskSlot],
+    () => (view ? maskLayers(view, maskSlot) : []),
+    [view, maskSlot],
   );
 
   const composed = useMemo(
     () =>
-      payload
+      view
         ? composite({
-            payload,
+            payload: view,
             assetSlot,
             maskSlot,
             boxSlot,
@@ -162,7 +174,7 @@ export function App(): React.JSX.Element {
           })
         : { layers: [], cutoutUrls: [] },
     [
-      payload,
+      view,
       assetSlot,
       maskSlot,
       boxSlot,
@@ -216,11 +228,15 @@ export function App(): React.JSX.Element {
         return;
       }
       if (!result.ok) {
+        // Nothing was written, so the overlay would be a lie.
+        setPending(new Map());
+        awaitingRef.current = undefined;
         const first = result.rejected?.[0];
         setStatus(first ? `${first.reason}: ${first.detail}` : "refused");
         refresh(slug);
         return;
       }
+      awaitingRef.current = result.revision;
       if (options.track !== false) {
         undoRef.current = [...undoRef.current.slice(-49), { edits, inverse }];
         redoRef.current = [];
@@ -238,7 +254,7 @@ export function App(): React.JSX.Element {
       if (!slug || !boxSlot || !payload) {
         return;
       }
-      const current = boxesIn(payload, boxSlot).find(
+      const current = boxesIn(view ?? payload, boxSlot).find(
         (entry) => entry.key === key,
       )?.box as Record<string, number | string | boolean> | undefined;
 
@@ -255,10 +271,17 @@ export function App(): React.JSX.Element {
         }
       }
       if (edits.length > 0) {
+        setPending((current) => {
+          const next = new Map(current);
+          for (const edit of edits) {
+            next.set(pathKey(edit.path), edit.value);
+          }
+          return next;
+        });
         void send(edits, inverse);
       }
     },
-    [slug, boxSlot, payload, send],
+    [slug, boxSlot, payload, view, send],
   );
 
   // Ctrl+Z / Ctrl+Shift+Z. An undo goes through the same checks as any edit —
@@ -299,6 +322,18 @@ export function App(): React.JSX.Element {
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [send]);
+
+  /**
+   * Stable identities: the canvas rebuilds every box node when these change,
+   * so an inline arrow here would tear the scene down on every render — and
+   * redraw it from whatever the payload said at that moment.
+   */
+  const handleCommit = useCallback(
+    (key: string, bounds: Bounds) => {
+      commit(key, { ...bounds });
+    },
+    [commit],
+  );
 
   const editable = info?.writeEnabled === true;
 
@@ -512,9 +547,9 @@ export function App(): React.JSX.Element {
           />
         </VStack>
 
-        {payload ? (
+        {view ? (
           <CanvasPanel
-            payload={payload}
+            payload={view}
             boxSlot={boxSlot}
             art={composed.layers}
             cutoutUrls={composed.cutoutUrls}
@@ -523,10 +558,8 @@ export function App(): React.JSX.Element {
             showCardFace={showCardFace}
             editable={editable}
             onSelect={setSelected}
-            onCommit={(key, bounds) => {
-              commit(key, { ...bounds });
-            }}
-            onHover={() => undefined}
+            onCommit={handleCommit}
+            onHover={noop}
             sampleText={sampleText}
             ptIsVehicle={shape.isVehicle === true}
             onOverflow={setOverflow}
@@ -613,14 +646,14 @@ export function App(): React.JSX.Element {
               here may still fit there.
             </Text>
           </VStack>
-          {slug && payload && knobSlots.length > 0 && (
+          {slug && view && knobSlots.length > 0 && (
             <KnobPanel
               slug={slug}
-              payload={payload}
+              payload={view}
               slots={knobSlots}
               editable={editable}
               onChange={(path, value) => {
-                const before = atPath(payload.frame, path);
+                const before = atPath(view.frame, path);
                 void send(
                   [{ path: [...path], value }],
                   typeof before === "number" || typeof before === "boolean"
