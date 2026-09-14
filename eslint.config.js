@@ -46,4 +46,18 @@ export default defineConfig([
       curly: ["error", "all"],
     },
   },
+  // Chakra snippets, added by `@chakra-ui/cli snippet add` and meant to be
+  // replaced by re-running it. Holding generated code to the repo's own style
+  // just means re-editing it after every regeneration, so the type-aware
+  // rules it trips are off here and nowhere else.
+  {
+    files: ["packages/frame-studio/src/components/ui/**/*"],
+    rules: {
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/restrict-template-expressions": "off",
+      "@typescript-eslint/unbound-method": "off",
+      curly: "off",
+    },
+  },
 ]);
