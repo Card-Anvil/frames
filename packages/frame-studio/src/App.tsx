@@ -345,7 +345,7 @@ export function App(): React.JSX.Element {
   return (
     <Grid templateRows="auto 1fr" h="100vh">
       <HStack gap="3" px="3" py="2" borderBottomWidth="1px" flexWrap="wrap">
-        <Text fontWeight="heavy">Frame Studio</Text>
+        <Text fontWeight="bold">Frame Studio</Text>
         <ToolbarSelect
           label="Frame"
           width="200px"
@@ -435,7 +435,6 @@ export function App(): React.JSX.Element {
         <VStack
           align="stretch"
           gap="0"
-          bg="bg.panel"
           borderRightWidth="1px"
           overflowY="auto"
           p="2"
@@ -500,6 +499,10 @@ export function App(): React.JSX.Element {
             shared={pendingShared.shared}
             onCancel={() => {
               setPendingShared(undefined);
+              // The refusal left the overlay showing a value no file has, so
+              // it has to go back to what is on disk, not stay optimistic.
+              setPending(new Map());
+              awaitingRef.current = undefined;
               setStatus("cancelled");
               if (slug) {
                 refresh(slug);
@@ -513,7 +516,7 @@ export function App(): React.JSX.Element {
           />
         )}
 
-        <Box bg="bg.panel" borderLeftWidth="1px" overflowY="auto">
+        <Box borderLeftWidth="1px" overflowY="auto">
           <CardShapePanel
             shape={shape}
             useNyxBorder={useNyxBorder}
@@ -559,7 +562,7 @@ export function App(): React.JSX.Element {
                   />
                 </HStack>
               ))}
-            <Text fontSize="sm" color="fg.muted" mt="1">
+            <Text fontSize="xs" color="fg.muted" mt="1">
               One line, at the size you authored — no wrapping, no mana symbols
               and no auto-shrink. Card Anvil shrinks the title around the mana
               cost and the type line around the set symbol, so a box flagged
