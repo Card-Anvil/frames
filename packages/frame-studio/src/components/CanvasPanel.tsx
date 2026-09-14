@@ -403,6 +403,7 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
         }
         // The vehicle plate is dark art; the renderer switches to white on it.
         const preview = buildPreviewText(
+          key,
           sample,
           key === "pt" && ptIsVehicle ? { ...box, color: "white" } : box,
         );

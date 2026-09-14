@@ -2,7 +2,69 @@ import Konva from "konva";
 
 import type { TextBox } from "../api/types.js";
 import { resolveFamily } from "./fonts.js";
-import { ptToPx } from "./metrics.js";
+import { type PreviewableBox, ptToPx } from "./metrics.js";
+
+/**
+ * How the renderer draws each single-line box.
+ *
+ * Taken from `drawCardToStage`'s own `buildOutlinedText` calls rather than
+ * guessed: each box has its own font, weight and horizontal default, and
+ * every one of them is vertically centred. A box's own `textAlign` still
+ * wins over the default here, exactly as `buildOutlinedText` resolves it.
+ */
+interface BoxTextSpec {
+  readonly family: string;
+  readonly fontStyle: "bold" | "italic" | "normal";
+  readonly align: "left" | "center" | "right";
+  /** Whether a box's `fontFamily` override applies; only the title's does. */
+  readonly honoursFontFamily: boolean;
+}
+
+const SPECS: Record<PreviewableBox, BoxTextSpec> = {
+  title: {
+    family: "Beleren",
+    fontStyle: "bold",
+    align: "left",
+    honoursFontFamily: true,
+  },
+  type: {
+    family: "Beleren",
+    fontStyle: "bold",
+    align: "left",
+    honoursFontFamily: false,
+  },
+  nicknameTitle: {
+    family: "Plantin MT Pro",
+    fontStyle: "italic",
+    align: "center",
+    honoursFontFamily: false,
+  },
+  pt: {
+    family: "Beleren Small Caps",
+    fontStyle: "bold",
+    align: "center",
+    honoursFontFamily: false,
+  },
+};
+
+/** The font, style and alignment a box is actually drawn with. */
+function specFor(
+  key: PreviewableBox,
+  box: TextBox,
+): { family: string; fontStyle: string; align: string; substituted: boolean } {
+  const spec = SPECS[key];
+  const wanted =
+    spec.honoursFontFamily && box.fontFamily !== undefined
+      ? box.fontFamily
+      : spec.family;
+  const { family, substituted } = resolveFamily(wanted);
+  return {
+    family,
+    fontStyle: spec.fontStyle,
+    align: box.textAlign ?? spec.align,
+    substituted,
+  };
+}
 
 let measureCtx: CanvasRenderingContext2D | undefined;
 
@@ -18,11 +80,14 @@ function measureContext(): CanvasRenderingContext2D {
 }
 
 /** Rendered width of one line, in canvas pixels. Fonts must be loaded first. */
-export function measureLine(text: string, box: TextBox): number {
-  const { family } = resolveFamily(box.fontFamily);
-  const size = ptToPx(box.fontSize ?? 0);
+export function measureLine(
+  key: PreviewableBox,
+  text: string,
+  box: TextBox,
+): number {
+  const { family, fontStyle } = specFor(key, box);
   const context = measureContext();
-  context.font = `bold ${String(size)}px "${family}"`;
+  context.font = `${fontStyle} ${String(ptToPx(box.fontSize ?? 0))}px "${family}"`;
   return context.measureText(text).width;
 }
 
@@ -35,7 +100,7 @@ export interface PreviewText {
 }
 
 /**
- * One line of text laid out in a box, as the frame describes it.
+ * One line of text laid out in a box, as the renderer lays it out.
  *
  * Drawn at the **authored** `fontSize`. Card Anvil shrinks the title to clear
  * the real mana cost and the type line to clear the set symbol's measured
@@ -43,9 +108,12 @@ export interface PreviewText {
  * than silently shrunk. For a box-authoring tool that is the useful signal —
  * you want to be told the box is too small.
  */
-export function buildPreviewText(text: string, box: TextBox): PreviewText {
-  const { family, substituted } = resolveFamily(box.fontFamily);
-  const size = ptToPx(box.fontSize ?? 0);
+export function buildPreviewText(
+  key: PreviewableBox,
+  text: string,
+  box: TextBox,
+): PreviewText {
+  const { family, fontStyle, align, substituted } = specFor(key, box);
   const hasOutline =
     box.outlineColor !== undefined && (box.outlineWidth ?? 0) > 0;
 
@@ -55,11 +123,13 @@ export function buildPreviewText(text: string, box: TextBox): PreviewText {
     y: box.y,
     width: box.width,
     height: box.height,
-    align: box.textAlign ?? "left",
-    verticalAlign: box.verticalAlign === "center" ? "middle" : "top",
+    align,
+    // Every single-line box is vertically centred in the renderer; none of
+    // them read the box's `verticalAlign`.
+    verticalAlign: "middle",
     fontFamily: family,
-    fontStyle: "bold",
-    fontSize: size,
+    fontStyle,
+    fontSize: ptToPx(box.fontSize ?? 0),
     fill: box.color ?? "black",
     wrap: "none",
     listening: false,
@@ -76,7 +146,7 @@ export function buildPreviewText(text: string, box: TextBox): PreviewText {
 
   return {
     node,
-    overflow: Math.max(0, Math.round(measureLine(text, box) - box.width)),
+    overflow: Math.max(0, Math.round(measureLine(key, text, box) - box.width)),
     substituted,
   };
 }
