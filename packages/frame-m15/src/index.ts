@@ -16,7 +16,8 @@ export const defaultCollectorInfoBounds = {
   height: 200,
   fontSize: 50,
   color: "white",
-  letterSpacing: 7.5,} as const satisfies TextBox;
+  letterSpacing: 7.5,
+} as const satisfies TextBox;
 
 export const defaultSettings = {
   useNyxBorder: {
