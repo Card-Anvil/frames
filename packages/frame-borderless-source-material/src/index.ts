@@ -9,10 +9,11 @@ export const defaultCollectorInfoBounds = {
   y: 4019,
   width: 2200,
   height: 200,
-  fontSize: 53,
+  fontSize: 50,
   color: "white",
   outlineColor: "black",
   outlineWidth: 30,
+  letterSpacing: 5,
 } as const satisfies TextBox;
 
 export const borderlessSourceMaterialFrame = {

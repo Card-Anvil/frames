@@ -29,6 +29,12 @@ export const TextBoxSchema = BoundsSchema.extend({
   outlineWidth: z.number().optional(),
   verticalAlign: z.enum(["top", "center"]).optional(),
   textAlign: z.enum(["left", "center", "right"]).optional(),
+  /** Extra spacing between characters, in px (Konva `letterSpacing`),
+   * expressed at the box's own `fontSize` — each run scales it by its font
+   * size so it reads as constant tracking. Non-zero spacing switches Konva
+   * to per-character drawing with kerning off; the canvas measurement path
+   * mirrors that so measured widths match the render. */
+  letterSpacing: z.number().optional(),
   /** Per-box font family override. When set, the renderer uses this instead
    * of the language-resolved default (e.g. title font). */
   fontFamily: z.string().optional(),
