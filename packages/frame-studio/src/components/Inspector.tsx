@@ -48,7 +48,7 @@ function ProvenanceBadge({ value }: { value: Provenance | undefined }) {
     return (
       <Text
         fontSize="10px"
-        color={shared > 0 ? "#e2b93d" : "#6a9955"}
+        color={shared > 0 ? "fg.warning" : "fg.success"}
         truncate
         title={
           shared > 0
@@ -67,7 +67,7 @@ function ProvenanceBadge({ value }: { value: Provenance | undefined }) {
     );
   }
   return (
-    <Text fontSize="10px" color="#e2b93d" truncate title={value.detail}>
+    <Text fontSize="10px" color="fg.warning" truncate title={value.detail}>
       🔒 {value.reason}
     </Text>
   );
@@ -113,7 +113,7 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
   if (!boxKey || !box) {
     return (
       <Box p="3">
-        <Text fontSize="xs" color="#9d9d9d">
+        <Text fontSize="xs" color="fg.muted">
           Select a box to edit it.
         </Text>
       </Box>
@@ -142,7 +142,7 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
             gap="2"
             alignItems="center"
           >
-            <Text fontSize="xs" color="#9d9d9d" truncate title={field}>
+            <Text fontSize="xs" color="fg.muted" truncate title={field}>
               {field}
             </Text>
             <VStack align="stretch" gap="0">
