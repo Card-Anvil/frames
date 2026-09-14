@@ -8,8 +8,10 @@ const STORAGE_KEY = "frame-studio.sampleText";
 export const DEFAULT_SAMPLE: SampleText = {
   title: "Serra Angel",
   type: "Creature — Angel",
-  nicknameTitle: "The Fallen",
+  nicknameTitle: "",
   keyword: "Flying, vigilance",
+  power: "4",
+  toughness: "4",
 };
 
 /** Presets worth checking a box against: typical, long, and worst case. */
@@ -20,12 +22,16 @@ export const PRESETS: Readonly<Record<string, SampleText>> = {
     type: "Legendary Creature — Phyrexian Human Wizard",
     nicknameTitle: "Herald of the Machine Orthodoxy",
     keyword: "Flying, first strike, lifelink",
+    power: "10",
+    toughness: "10",
   },
   worst: {
     title: "Ramirez DePietro, Pillager of the Coast",
     type: "Legendary Artifact Creature — Phyrexian Horror Berserker",
     nicknameTitle: "Ramirez DePietro, Pillager of the Coast",
     keyword: "Flying, vigilance, trample, haste, lifelink",
+    power: "13",
+    toughness: "13",
   },
 };
 

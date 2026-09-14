@@ -24,6 +24,8 @@ export interface CanvasPanelProps {
   showCardFace: boolean;
   /** Sample strings drawn in the single-line boxes, keyed by box name. */
   sampleText: Readonly<Record<string, string>>;
+  /** The PT plate is the vehicle one, whose dark art needs white text. */
+  ptIsVehicle: boolean;
   editable: boolean;
   onSelect: (key: string | undefined) => void;
   onCommit: (key: string, bounds: Bounds) => void;
@@ -76,6 +78,7 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
     hidden,
     showCardFace,
     sampleText,
+    ptIsVehicle,
     editable,
     onSelect,
     onCommit,
@@ -389,11 +392,20 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
       const overflows: Record<string, number> = {};
 
       for (const { key, box } of boxSlot ? boxesIn(payload, boxSlot) : []) {
-        const sample = sampleText[key];
+        const sample =
+          key === "pt"
+            ? [sampleText.power, sampleText.toughness].every(Boolean)
+              ? `${sampleText.power ?? ""}/${sampleText.toughness ?? ""}`
+              : ""
+            : sampleText[key];
         if (!isPreviewable(key) || !sample || hidden.has(key)) {
           continue;
         }
-        const preview = buildPreviewText(sample, box);
+        // The vehicle plate is dark art; the renderer switches to white on it.
+        const preview = buildPreviewText(
+          sample,
+          key === "pt" && ptIsVehicle ? { ...box, color: "white" } : box,
+        );
         layer.add(preview.node);
         if (preview.overflow > 0) {
           overflows[key] = preview.overflow;
@@ -407,7 +419,7 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
     return () => {
       cancelled = true;
     };
-  }, [payload, boxSlot, sampleText, hidden, onOverflow]);
+  }, [payload, boxSlot, sampleText, ptIsVehicle, hidden, onOverflow]);
 
   // Boxes and the transformer.
   useEffect(() => {

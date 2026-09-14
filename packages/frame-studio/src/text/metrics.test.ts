@@ -26,18 +26,20 @@ describe("pt to px", () => {
 describe("previewable boxes", () => {
   // Everything here must be a single line in the real renderer: no wrapping,
   // no symbols, no auto-shrink. Adding a multi-line box (rules, abilities)
-  // would make the preview claim a fidelity the studio does not have.
+  // would make the preview claim a fidelity the studio does not have. `pt`
+  // qualifies because it renders as one "power/toughness" string.
   it("covers only single-line boxes", () => {
     expect([...PREVIEWABLE]).toEqual([
       "title",
       "type",
       "nicknameTitle",
       "keyword",
+      "pt",
     ]);
   });
 
   it("excludes the boxes the renderer lays out itself", () => {
-    for (const key of ["rules", "abilities", "mana", "collectorInfo", "pt"]) {
+    for (const key of ["rules", "abilities", "mana", "collectorInfo"]) {
       expect(isPreviewable(key)).toBe(false);
     }
   });
