@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { createReadStream } from "node:fs";
+import { createReadStream, existsSync } from "node:fs";
 import { readFile, stat } from "node:fs/promises";
 import {
   type IncomingMessage,
@@ -11,6 +11,7 @@ import { parseArgs } from "node:util";
 
 import { devUrlToFile } from "../devUrl.js";
 import { relativePosix } from "../discover.js";
+import { PackagingError } from "../errors.js";
 import { startSourceWatcher } from "../sourceWatcher.js";
 import { type Edit, applyEdits } from "./edit/applyEdits.js";
 import { type BoxSetRef, createImpactCache } from "./edit/impact.js";
@@ -106,6 +107,60 @@ class EventStream {
   }
 }
 
+/**
+ * Where the studio UI's source sits relative to the built CLI.
+ *
+ * `dist/cli/studio/serve.js` → up four is `packages/`, and the UI is a sibling
+ * package there. Only present in the frames workspace; a published frame-kit
+ * ships `dist/studio` and no source at all.
+ */
+function defaultUiSrcDir(): string {
+  return path.resolve(import.meta.dirname, "../../../../frame-studio");
+}
+
+/**
+ * The studio UI served from source, with hot reloading, on this same server.
+ *
+ * Vite runs in middleware mode and its HMR socket attaches to the http server
+ * already listening, so developing the UI needs one command and one port
+ * rather than a second dev server behind a proxy.
+ */
+async function startUiDevServer(
+  srcDir: string,
+  httpServer: import("node:http").Server,
+): Promise<{
+  middlewares: (req: IncomingMessage, res: ServerResponse) => void;
+  close: () => Promise<void>;
+}> {
+  if (!existsSync(path.join(srcDir, "index.html"))) {
+    throw new PackagingError(
+      `--dev needs the studio UI's source, which is not at ${srcDir}.\n\n` +
+        "It ships only inside the frames workspace; an installed frame-kit\n" +
+        "carries the built UI instead. Drop --dev to serve that.\n",
+    );
+  }
+
+  let vite;
+  try {
+    vite = await import("vite");
+  } catch {
+    throw new PackagingError("--dev needs Vite installed.\n");
+  }
+
+  const server = await vite.createServer({
+    root: srcDir,
+    appType: "spa",
+    server: { middlewareMode: true, hmr: { server: httpServer } },
+  });
+
+  return {
+    middlewares: (req, res) => {
+      server.middlewares(req, res);
+    },
+    close: () => server.close(),
+  };
+}
+
 export interface StudioOptions {
   readonly root: string;
   readonly only?: readonly string[];
@@ -114,6 +169,14 @@ export interface StudioOptions {
   readonly writeEnabled?: boolean;
   /** Directory holding the built SPA. Defaults to `dist/studio`. */
   readonly uiDir?: string;
+  /**
+   * Serve the studio UI from source with hot reloading instead of from
+   * `dist/studio`. Only possible inside the frames workspace, where that
+   * source exists — a published frame-kit ships the built SPA alone.
+   */
+  readonly dev?: boolean;
+  /** Where the studio UI's source lives. Defaults to the workspace sibling. */
+  readonly uiSrcDir?: string;
   readonly open?: boolean;
   readonly onReady?: (url: string) => void;
 }
@@ -380,6 +443,14 @@ export async function serveStudio(options: StudioOptions): Promise<void> {
     });
   }
 
+  /**
+   * The UI in development: a Vite server in middleware mode, mounted on this
+   * same http server so one command and one port give you both the API and
+   * hot reloading. Its HMR socket rides the same server, so nothing else has
+   * to be running and no proxy sits in between.
+   */
+  let uiDev: Awaited<ReturnType<typeof startUiDevServer>> | undefined;
+
   const server = createServer((req, res) => {
     void (async () => {
       const url = new URL(req.url ?? "/", `http://${host}:${String(port)}`);
@@ -417,6 +488,10 @@ export async function serveStudio(options: StudioOptions): Promise<void> {
             events.add(res);
             return;
           default:
+            if (uiDev) {
+              uiDev.middlewares(req, res);
+              return;
+            }
             await serveUi(res, url.pathname);
         }
       } catch (cause) {
@@ -453,6 +528,14 @@ export async function serveStudio(options: StudioOptions): Promise<void> {
     },
   });
 
+  if (options.dev === true) {
+    // Created after the http server exists so HMR can attach to it.
+    uiDev = await startUiDevServer(
+      options.uiSrcDir ?? defaultUiSrcDir(),
+      server,
+    );
+  }
+
   await new Promise<void>((resolve, reject) => {
     server.once("error", reject);
     server.listen(port, host, resolve);
@@ -482,6 +565,7 @@ export async function serveStudio(options: StudioOptions): Promise<void> {
     watcher.close();
     events.close();
     server.close();
+    await uiDev?.close();
     await session.close();
   }
 }
@@ -498,6 +582,7 @@ export async function runStudio(argv: string[]): Promise<number> {
         port: { type: "string" },
         host: { type: "string" },
         open: { type: "boolean" },
+        dev: { type: "boolean" },
         // `parseArgs` has no `--no-` negation; the key is the literal name.
         "no-write": { type: "boolean" },
       },
@@ -530,6 +615,7 @@ export async function runStudio(argv: string[]): Promise<number> {
     host,
     writeEnabled,
     open: values.open === true,
+    dev: values.dev === true,
   });
   return 0;
 }
