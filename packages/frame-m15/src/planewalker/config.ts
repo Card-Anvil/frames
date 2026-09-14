@@ -49,8 +49,9 @@ const sharedBoxes = {
     y: 4039,
     width: 2200,
     height: 200,
-    fontSize: 53,
+    fontSize: 50,
     color: "white",
+    letterSpacing: 7.5,
   },
 };
 
