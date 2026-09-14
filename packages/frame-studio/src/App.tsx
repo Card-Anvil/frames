@@ -34,6 +34,7 @@ import { KnobPanel } from "./components/KnobPanel.js";
 import { MaskPanel } from "./components/MaskPanel.js";
 import { SharedEditDialog } from "./components/SharedEditDialog.js";
 import { ToolbarSelect } from "./components/ToolbarSelect.js";
+import { ColorModeButton } from "./components/ui/color-mode.js";
 import { DEFAULT_SHAPE, describeSelection } from "./lib/cardShape.js";
 import { composite } from "./lib/composite.js";
 import { atPath, boxesIn, layoutsOf } from "./lib/frameModel.js";
@@ -342,19 +343,13 @@ export function App(): React.JSX.Element {
   const editable = info?.writeEnabled === true;
 
   return (
-    <Grid
-      templateRows="auto 1fr"
-      h="100vh"
-      bg="#1e1e1e"
-      color="#ccc"
-      fontSize="13px"
-    >
+    <Grid templateRows="auto 1fr" h="100vh" bg="bg" color="fg" fontSize="13px">
       <HStack
         gap="3"
         px="3"
         py="2"
-        bg="#252526"
-        borderBottom="1px solid #3c3c3c"
+        bg="bg.panel"
+        borderBottomWidth="1px"
         flexWrap="wrap"
       >
         <Text fontWeight="700">Frame Studio</Text>
@@ -427,6 +422,8 @@ export function App(): React.JSX.Element {
           }}
         />
 
+        <ColorModeButton size="xs" />
+
         {!editable && <Badge colorPalette="yellow">read-only</Badge>}
         {composed.fallbackNote !== undefined && (
           <Badge colorPalette="yellow" title={composed.fallbackNote}>
@@ -436,7 +433,7 @@ export function App(): React.JSX.Element {
         {payload?.stale === true && (
           <Badge colorPalette="red">source has an error</Badge>
         )}
-        <Text ml="auto" color="#9d9d9d" maxW="40%" truncate title={status}>
+        <Text ml="auto" color="fg.muted" maxW="40%" truncate title={status}>
           {status}
         </Text>
       </HStack>
@@ -445,15 +442,15 @@ export function App(): React.JSX.Element {
         <VStack
           align="stretch"
           gap="0"
-          bg="#252526"
-          borderRight="1px solid #3c3c3c"
+          bg="bg.panel"
+          borderRightWidth="1px"
           overflowY="auto"
           p="2"
         >
           <Text
             fontSize="10px"
             textTransform="uppercase"
-            color="#9d9d9d"
+            color="fg.muted"
             mb="1"
           >
             Boxes
@@ -467,8 +464,8 @@ export function App(): React.JSX.Element {
               cursor="pointer"
               borderRadius="4px"
               opacity={hidden.has(key) ? 0.4 : 1}
-              bg={selected === key ? "#37373d" : "transparent"}
-              _hover={{ bg: "#2f2f2f" }}
+              bg={selected === key ? "bg.emphasized" : "transparent"}
+              _hover={{ bg: "bg.muted" }}
               onClick={() => {
                 setSelected(key);
               }}
@@ -493,14 +490,14 @@ export function App(): React.JSX.Element {
                 <Text fontWeight="600" truncate>
                   {key}
                 </Text>
-                <Text fontSize="10px" color="#9d9d9d" truncate>
+                <Text fontSize="10px" color="fg.muted" truncate>
                   {box.x},{box.y} · {box.width}×{box.height}
                   {box.fontSize === undefined
                     ? ""
                     : ` · ${String(box.fontSize)}pt`}
                 </Text>
                 {overflow[key] !== undefined && (
-                  <Text fontSize="10px" color="#f14c4c">
+                  <Text fontSize="10px" color="fg.error">
                     overflows by {overflow[key]}px
                   </Text>
                 )}
@@ -508,7 +505,7 @@ export function App(): React.JSX.Element {
             </HStack>
           ))}
           {boxes.length === 0 && (
-            <Text fontSize="xs" color="#9d9d9d">
+            <Text fontSize="xs" color="fg.muted">
               No boxes in this set.
             </Text>
           )}
@@ -546,7 +543,7 @@ export function App(): React.JSX.Element {
             onOverflow={setOverflow}
           />
         ) : (
-          <Box display="grid" placeItems="center" color="#9d9d9d">
+          <Box display="grid" placeItems="center" color="fg.muted">
             loading…
           </Box>
         )}
@@ -569,7 +566,7 @@ export function App(): React.JSX.Element {
           />
         )}
 
-        <Box bg="#252526" borderLeft="1px solid #3c3c3c" overflowY="auto">
+        <Box bg="bg.panel" borderLeftWidth="1px" overflowY="auto">
           <CardShapePanel
             shape={shape}
             useNyxBorder={useNyxBorder}
@@ -581,18 +578,13 @@ export function App(): React.JSX.Element {
             onNyxInsertChange={setUseNyxInsert}
             onUBCrownsChange={setUseUBCrowns}
           />
-          <VStack
-            align="stretch"
-            gap="1"
-            p="3"
-            borderBottom="1px solid #3c3c3c"
-          >
-            <Text fontSize="10px" textTransform="uppercase" color="#9d9d9d">
+          <VStack align="stretch" gap="1" p="3" borderBottomWidth="1px">
+            <Text fontSize="10px" textTransform="uppercase" color="fg.muted">
               Sample text
             </Text>
             {["power", "toughness"].map((key) => (
               <HStack key={key} gap="2">
-                <Text fontSize="xs" color="#9d9d9d" w="80px" truncate>
+                <Text fontSize="xs" color="fg.muted" w="80px" truncate>
                   {key}
                 </Text>
                 <Input
@@ -608,7 +600,7 @@ export function App(): React.JSX.Element {
               .filter(({ key }) => isPreviewable(key) && key !== "pt")
               .map(({ key }) => (
                 <HStack key={key} gap="2">
-                  <Text fontSize="xs" color="#9d9d9d" w="80px" truncate>
+                  <Text fontSize="xs" color="fg.muted" w="80px" truncate>
                     {key}
                   </Text>
                   <Input
@@ -620,7 +612,7 @@ export function App(): React.JSX.Element {
                   />
                 </HStack>
               ))}
-            <Text fontSize="10px" color="#9d9d9d" mt="1">
+            <Text fontSize="10px" color="fg.muted" mt="1">
               One line, at the size you authored — no wrapping, no mana symbols
               and no auto-shrink. Card Anvil shrinks the title around the mana
               cost and the type line around the set symbol, so a box flagged

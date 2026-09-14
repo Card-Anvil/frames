@@ -34,6 +34,16 @@ export interface CanvasPanelProps {
   onOverflow: (overflow: Readonly<Record<string, number>>) => void;
 }
 
+/**
+ * Colours for the Konva overlay.
+ *
+ * Konva paints to a canvas, so it cannot read the CSS custom properties
+ * Chakra's tokens compile to — these have to be literal. They are the accent
+ * and surface the theme uses, kept here so the canvas still matches it.
+ */
+const SELECTION_COLOR = "#4ec9b0";
+const ANCHOR_FILL = "#1e1e1e";
+
 /** Konva types a gesture's underlying event loosely; read the modifier safely. */
 const isAltDown = (evt: unknown): boolean =>
   typeof evt === "object" &&
@@ -167,9 +177,9 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
       rotateEnabled: false,
       keepRatio: false,
       ignoreStroke: true,
-      borderStroke: "#4ec9b0",
-      anchorStroke: "#4ec9b0",
-      anchorFill: "#1e1e1e",
+      borderStroke: SELECTION_COLOR,
+      anchorStroke: SELECTION_COLOR,
+      anchorFill: ANCHOR_FILL,
       anchorSize: 12,
       boundBoxFunc: (_old, next) => ({
         ...next,
@@ -462,7 +472,7 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
               guide.axis === "x"
                 ? [guide.at, 0, guide.at, height]
                 : [0, guide.at, width, guide.at],
-            stroke: "#4ec9b0",
+            stroke: SELECTION_COLOR,
             strokeWidth: 2,
             dash: [12, 10],
             listening: false,
@@ -619,7 +629,7 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
       display="grid"
       placeItems="center"
       overflow="hidden"
-      bg="#111"
+      bg="bg.muted"
     />
   );
 }

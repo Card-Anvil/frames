@@ -81,8 +81,8 @@ export function KnobPanel(props: KnobPanelProps): React.JSX.Element | null {
   }
 
   return (
-    <VStack align="stretch" gap="2" p="3" borderTop="1px solid #3c3c3c">
-      <Text fontSize="10px" textTransform="uppercase" color="#9d9d9d">
+    <VStack align="stretch" gap="2" p="3" borderTopWidth="1px">
+      <Text fontSize="10px" textTransform="uppercase" color="fg.muted">
         Layout knobs
       </Text>
       {fields.map((field) => {
@@ -97,7 +97,7 @@ export function KnobPanel(props: KnobPanelProps): React.JSX.Element | null {
           >
             <Text
               fontSize="xs"
-              color="#9d9d9d"
+              color="fg.muted"
               truncate
               title={`${field.slot}.${field.key}`}
             >
@@ -124,7 +124,7 @@ export function KnobPanel(props: KnobPanelProps): React.JSX.Element | null {
               {source && !source.editable && (
                 <Text
                   fontSize="10px"
-                  color="#e2b93d"
+                  color="fg.warning"
                   truncate
                   title={source.detail}
                 >
@@ -132,7 +132,7 @@ export function KnobPanel(props: KnobPanelProps): React.JSX.Element | null {
                 </Text>
               )}
               {source?.editable === true && (
-                <Text fontSize="10px" color="#6a9955" truncate>
+                <Text fontSize="10px" color="fg.success" truncate>
                   {source.file.split("/").pop()}:{source.line}
                 </Text>
               )}

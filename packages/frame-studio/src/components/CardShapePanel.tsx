@@ -117,8 +117,8 @@ export function CardShapePanel(props: CardShapePanelProps): React.JSX.Element {
   };
 
   return (
-    <VStack align="stretch" gap="2" p="3" borderBottom="1px solid #3c3c3c">
-      <Text fontSize="10px" textTransform="uppercase" color="#9d9d9d">
+    <VStack align="stretch" gap="2" p="3" borderBottomWidth="1px">
+      <Text fontSize="10px" textTransform="uppercase" color="fg.muted">
         Card
       </Text>
 
@@ -133,9 +133,9 @@ export function CardShapePanel(props: CardShapePanelProps): React.JSX.Element {
               py="1"
               borderRadius="4px"
               border="1px solid"
-              borderColor={on ? color.swatch : "#3c3c3c"}
+              borderColor={on ? color.swatch : "border"}
               bg={on ? color.swatch : "transparent"}
-              color={on ? "#1e1e1e" : "#9d9d9d"}
+              color={on ? "bg" : "fg.muted"}
               fontSize="11px"
               fontWeight="600"
               title={color.label}
@@ -160,8 +160,8 @@ export function CardShapePanel(props: CardShapePanelProps): React.JSX.Element {
               py="0.5"
               borderRadius="4px"
               border="1px solid"
-              borderColor={on ? "#4ec9b0" : "#3c3c3c"}
-              color={on ? "#4ec9b0" : "#9d9d9d"}
+              borderColor={on ? "teal.fg" : "border"}
+              color={on ? "teal.fg" : "fg.muted"}
               fontSize="10px"
               title={toggle.hint}
               onClick={() => {
@@ -178,8 +178,8 @@ export function CardShapePanel(props: CardShapePanelProps): React.JSX.Element {
           py="0.5"
           borderRadius="4px"
           border="1px solid"
-          borderColor={useNyxBorder ? "#4ec9b0" : "#3c3c3c"}
-          color={useNyxBorder ? "#4ec9b0" : "#9d9d9d"}
+          borderColor={useNyxBorder ? "teal.fg" : "border"}
+          color={useNyxBorder ? "teal.fg" : "fg.muted"}
           fontSize="10px"
           title="The app's nyx-border setting, which decides whether enchantments use nyx art"
           onClick={() => {
@@ -198,8 +198,8 @@ export function CardShapePanel(props: CardShapePanelProps): React.JSX.Element {
               py="0.5"
               borderRadius="4px"
               border="1px solid"
-              borderColor={on ? "#4ec9b0" : "#3c3c3c"}
-              color={on ? "#4ec9b0" : "#9d9d9d"}
+              borderColor={on ? "teal.fg" : "border"}
+              color={on ? "teal.fg" : "fg.muted"}
               fontSize="10px"
               title={setting.hint}
               onClick={() => {
@@ -212,7 +212,7 @@ export function CardShapePanel(props: CardShapePanelProps): React.JSX.Element {
         })}
       </HStack>
 
-      <Text fontSize="10px" color="#9d9d9d">
+      <Text fontSize="10px" color="fg.muted">
         {summary}
       </Text>
     </VStack>

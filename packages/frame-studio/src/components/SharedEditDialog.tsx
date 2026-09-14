@@ -32,15 +32,15 @@ export function SharedEditDialog(
       <VStack
         align="stretch"
         gap="3"
-        bg="#252526"
-        border="1px solid #3c3c3c"
+        bg="bg.panel"
+        borderWidth="1px"
         borderRadius="6px"
         p="4"
         maxW="520px"
         maxH="70vh"
       >
         <Text fontWeight="700">This value is shared</Text>
-        <Text fontSize="xs" color="#ccc">
+        <Text fontSize="xs" color="fg">
           {shared.length} other box{" "}
           {shared.length === 1 ? "set reads" : "sets read"} the same literal.
           Saving moves {shared.length === 1 ? "it" : "them all"}.
@@ -50,7 +50,7 @@ export function SharedEditDialog(
           align="stretch"
           gap="0"
           overflowY="auto"
-          bg="#1e1e1e"
+          bg="bg"
           borderRadius="4px"
           p="2"
           maxH="240px"
@@ -59,7 +59,7 @@ export function SharedEditDialog(
             <Text
               key={`${impact.variant ?? "-"}/${impact.layout}/${impact.boxSet}`}
               fontSize="11px"
-              color="#9d9d9d"
+              color="fg.muted"
               truncate
             >
               {impact.variant === null ? "" : `${impact.variant} · `}
@@ -68,7 +68,7 @@ export function SharedEditDialog(
           ))}
         </VStack>
 
-        <Text fontSize="10px" color="#9d9d9d">
+        <Text fontSize="10px" color="fg.muted">
           To move only one layout, give it its own value in the source first.
         </Text>
 
@@ -76,9 +76,9 @@ export function SharedEditDialog(
           <Button
             size="xs"
             variant="outline"
-            color="#ccc"
-            borderColor="#3c3c3c"
-            _hover={{ bg: "#2f2f2f" }}
+            color="fg"
+            borderColor="border"
+            _hover={{ bg: "bg.muted" }}
             onClick={onCancel}
           >
             Cancel

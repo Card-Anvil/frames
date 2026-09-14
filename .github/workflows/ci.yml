@@ -29,6 +29,8 @@ jobs:
       # everything that is wrong rather than the first thing.
       - run: pnpm run typecheck
         if: success() || failure()
+      - run: pnpm run sync:agents:check
+        if: success() || failure()
       - run: pnpm run lint
         if: success() || failure()
       - run: pnpm run format:ci
