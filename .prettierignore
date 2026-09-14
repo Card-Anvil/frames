@@ -3,3 +3,6 @@
 *.jpeg
 dist
 pnpm-lock.yaml
+*.ttf
+*.otf
+*.woff2

@@ -1,0 +1,27 @@
+{
+  "name": "@cardanvil/frame-studio",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The visual box editor served by `frame-kit studio`. Built into frame-kit/dist/studio; never published on its own.",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@cardanvil/frame-kit": "workspace:^",
+    "@chakra-ui/react": "^3.36.0",
+    "@emotion/react": "^11.14.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "konva": "^10.3.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "typescript": "~6.0.3",
+    "vite": "^7.3.6",
+    "zustand": "^5.0.14"
+  }
+}

@@ -174,6 +174,56 @@ together under one version, and a version here would be a per-frame version by
 the back door. `name`, `description` and `tags` live in the `Frame`, so there is
 one place to change each of them.
 
+## Designing boxes visually
+
+```bash
+pnpm studio
+```
+
+Serves a visual editor at <http://localhost:4620>: every frame in the workspace,
+every layout, every box drawn over the real frame art. Drag or resize a box, or
+type in the inspector, and the literal in the source is rewritten — just that
+number, with comments and formatting untouched.
+
+Each field shows the file and line it comes from. A value the studio cannot
+trace to a plain literal is locked, with the reason and the line that really
+produces it: a layout built by a function (`withTextlessOverrides`), a value
+computed from another, or a member removed by `omit`. Before writing anything it
+checks the literal against the value the frame actually loaded with, so a value
+it cannot account for is refused rather than guessed at.
+
+Nearly every value authored by hand is editable; the `alternateLayouts` variants
+that `frame-borderless` derives from its base layouts largely are not, by
+design — edit the layout they are derived from and the variants follow.
+
+The card name and type line are drawn in Beleren at the authored size, and
+flagged when they overflow their box. That is a single line each: no rules text,
+no mana symbols, and none of the renderer's auto-shrink, which is what makes the
+app the authority on whether a frame really renders.
+
+The frame body is not picked by hand: the Card panel takes a colour identity
+plus the type switches (artifact, vehicle, land, enchantment, hybrid, devoid,
+colourless) and runs the same selection the app runs — `selectFrameLayers` in
+`@cardanvil/frame-kit/layout`, which is the app's `getFrameLayers` with the
+Scryfall parsing lifted out. Crowns, nicknames and PT plates are toggles, placed
+from the layout's own `crownConfig` / `nicknameConfig` / `ptImage` rather than
+centred.
+
+Scroll zooms, dragging the background pans, `0` fits and `1` is 100%. Boxes snap
+to the card edges, the centre lines and each other (`alt` to override), and
+`ctrl+z` undoes. The layer list switches colour, toggles each asset, reorders the
+stack and applies masks as cutouts; the knob panel edits `planeswalkerConfig`,
+`sagaConfig`, `crownConfig` and `nicknameConfig`, which have no box to drag.
+
+Frames share geometry heavily — `frame-borderless` spreads `borderlessNormalBoxes`
+into a dozen layouts — so a field shows `shared ×N` when other box sets read the
+same literal, and an edit to one asks for confirmation, listing every layout it
+moves.
+
+`--no-write` opens it read-only, `--port` moves it, `--frame <slug>` narrows it.
+It needs TypeScript installed, and it writes to your working tree, so run it on
+a clean one.
+
 ## Validate your frame
 
 ```bash

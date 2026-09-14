@@ -11,15 +11,16 @@
   },
   "scripts": {
     "build": "pnpm --filter @cardanvil/frame-kit build",
-    "typecheck": "tsc -b",
+    "typecheck": "tsc -b && pnpm --filter @cardanvil/frame-studio typecheck",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "format": "prettier --write .",
     "format:ci": "prettier --check .",
     "test": "vitest run",
-    "frames:validate": "pnpm --filter @cardanvil/frame-kit build && node packages/frame-kit/dist/cli/main.js validate",
-    "frames:build": "pnpm --filter @cardanvil/frame-kit build && node packages/frame-kit/dist/cli/main.js build --out dist-frames",
-    "frames:watch": "pnpm --filter @cardanvil/frame-kit build && node packages/frame-kit/dist/cli/main.js build --out dist-frames --watch"
+    "frames:validate": "pnpm --filter @cardanvil/frame-kit build:lib && node packages/frame-kit/dist/cli/main.js validate",
+    "frames:build": "pnpm --filter @cardanvil/frame-kit build:lib && node packages/frame-kit/dist/cli/main.js build --out dist-frames",
+    "frames:watch": "pnpm --filter @cardanvil/frame-kit build:lib && node packages/frame-kit/dist/cli/main.js build --out dist-frames --watch",
+    "studio": "pnpm --filter @cardanvil/frame-kit build && node packages/frame-kit/dist/cli/main.js studio"
   },
   "prettier": {
     "plugins": [

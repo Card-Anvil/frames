@@ -23,5 +23,9 @@
     "noUncheckedIndexedAccess": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["packages/*/src"]
+  "include": ["packages/*/src"],
+  // frame-studio is a React app: it needs `jsx` and DOM-only libs, so it
+  // carries its own tsconfig and is type-checked by its own `typecheck`
+  // script (see the root "typecheck").
+  "exclude": ["packages/frame-studio"]
 }
