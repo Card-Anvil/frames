@@ -61,7 +61,7 @@ export function BoxListbox(props: BoxListboxProps): React.JSX.Element {
       }}
     >
       <Listbox.Label
-        fontSize="sm"
+        fontSize="xs"
         textTransform="uppercase"
         color="fg.muted"
         mb="1"

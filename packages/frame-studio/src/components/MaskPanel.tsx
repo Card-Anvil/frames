@@ -20,7 +20,7 @@ export function MaskPanel(props: MaskPanelProps): React.JSX.Element {
 
   return (
     <VStack align="stretch" gap="0" mt="3">
-      <Text fontSize="10px" textTransform="uppercase" color="fg.muted" mb="1">
+      <Text fontSize="xs" textTransform="uppercase" color="fg.muted" mb="1">
         Masks
       </Text>
       {masks.length === 0 && (
@@ -36,13 +36,13 @@ export function MaskPanel(props: MaskPanelProps): React.JSX.Element {
             gap="1"
             px="2"
             py="0.5"
-            borderRadius="4px"
+            borderRadius="sm"
             opacity={on ? 1 : 0.4}
             _hover={{ bg: "bg.muted" }}
           >
             <Box
               as="button"
-              fontSize="11px"
+              fontSize="xs"
               color="fg.muted"
               title={on ? "hide" : "show"}
               onClick={() => {
@@ -51,14 +51,14 @@ export function MaskPanel(props: MaskPanelProps): React.JSX.Element {
             >
               {on ? "👁" : "🚫"}
             </Box>
-            <Text fontSize="11px" flex="1" truncate title={mask.id}>
+            <Text fontSize="xs" flex="1" truncate title={mask.id}>
               {mask.id}
             </Text>
           </HStack>
         );
       })}
       {masks.length > 0 && (
-        <Text fontSize="10px" color="fg.muted" mt="1">
+        <Text fontSize="xs" color="fg.muted" mt="1">
           A mask cuts the art down to its shape, the way the renderer composites
           it.
         </Text>
