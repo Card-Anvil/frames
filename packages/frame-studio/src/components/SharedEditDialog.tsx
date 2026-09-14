@@ -1,6 +1,17 @@
-import { Box, Button, HStack, Text, VStack } from "@chakra-ui/react";
+import { Button, Text, VStack } from "@chakra-ui/react";
 
 import type { Impact } from "../api/types.js";
+import {
+  DialogActionTrigger,
+  DialogBody,
+  DialogCloseTrigger,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogRoot,
+  DialogTitle,
+} from "./ui/dialog.js";
 
 export interface SharedEditDialogProps {
   shared: readonly Impact[];
@@ -14,80 +25,84 @@ export interface SharedEditDialogProps {
  * Frames spread one box set into many layouts, so a single literal often backs
  * a dozen of them. Applying silently would make an author think they had
  * changed one layout when they had changed twelve.
+ *
+ * An `alertdialog` rather than a plain one: it interrupts a save the author
+ * already asked for and needs an answer before anything is written. Escape and
+ * the backdrop both cancel, which is the safe direction — nothing has been
+ * written at this point.
  */
 export function SharedEditDialog(
   props: SharedEditDialogProps,
 ): React.JSX.Element {
   const { shared, onConfirm, onCancel } = props;
+  const many = shared.length !== 1;
 
   return (
-    <Box
-      position="fixed"
-      inset="0"
-      bg="rgba(0,0,0,0.6)"
-      display="grid"
-      placeItems="center"
-      zIndex="10"
+    <DialogRoot
+      open
+      role="alertdialog"
+      placement="center"
+      size="sm"
+      onOpenChange={(event) => {
+        if (!event.open) {
+          onCancel();
+        }
+      }}
     >
-      <VStack
-        align="stretch"
-        gap="3"
-        bg="bg.panel"
-        borderWidth="1px"
-        borderRadius="6px"
-        p="4"
-        maxW="520px"
-        maxH="70vh"
-      >
-        <Text fontWeight="700">This value is shared</Text>
-        <Text fontSize="xs" color="fg">
-          {shared.length} other box{" "}
-          {shared.length === 1 ? "set reads" : "sets read"} the same literal.
-          Saving moves {shared.length === 1 ? "it" : "them all"}.
-        </Text>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>This value is shared</DialogTitle>
+        </DialogHeader>
 
-        <VStack
-          align="stretch"
-          gap="0"
-          overflowY="auto"
-          bg="bg"
-          borderRadius="4px"
-          p="2"
-          maxH="240px"
-        >
-          {shared.map((impact) => (
-            <Text
-              key={`${impact.variant ?? "-"}/${impact.layout}/${impact.boxSet}`}
-              fontSize="11px"
-              color="fg.muted"
-              truncate
+        <DialogBody>
+          <VStack align="stretch" gap="3">
+            <DialogDescription>
+              {shared.length} other box {many ? "sets read" : "set reads"} the
+              same literal. Saving moves {many ? "them all" : "it"}.
+            </DialogDescription>
+
+            <VStack
+              align="stretch"
+              gap="0"
+              overflowY="auto"
+              bg="bg"
+              borderRadius="4px"
+              p="2"
+              maxH="240px"
             >
-              {impact.variant === null ? "" : `${impact.variant} · `}
-              {impact.layout} · {impact.boxSet}
+              {shared.map((impact) => (
+                <Text
+                  key={`${impact.variant ?? "-"}/${impact.layout}/${impact.boxSet}`}
+                  fontSize="11px"
+                  color="fg.muted"
+                  truncate
+                >
+                  {impact.variant === null ? "" : `${impact.variant} · `}
+                  {impact.layout} · {impact.boxSet}
+                </Text>
+              ))}
+            </VStack>
+
+            <Text fontSize="10px" color="fg.muted">
+              To move only one layout, give it its own value in the source
+              first.
             </Text>
-          ))}
-        </VStack>
+          </VStack>
+        </DialogBody>
 
-        <Text fontSize="10px" color="fg.muted">
-          To move only one layout, give it its own value in the source first.
-        </Text>
-
-        <HStack justify="flex-end" gap="2">
-          <Button
-            size="xs"
-            variant="outline"
-            color="fg"
-            borderColor="border"
-            _hover={{ bg: "bg.muted" }}
-            onClick={onCancel}
-          >
-            Cancel
-          </Button>
+        <DialogFooter>
+          <DialogActionTrigger asChild>
+            <Button size="xs" variant="outline">
+              Cancel
+            </Button>
+          </DialogActionTrigger>
           <Button size="xs" onClick={onConfirm}>
             Apply to all {shared.length + 1}
           </Button>
-        </HStack>
-      </VStack>
-    </Box>
+        </DialogFooter>
+
+        <DialogCloseTrigger />
+      </DialogContent>
+    </DialogRoot>
   );
 }
