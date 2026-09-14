@@ -27,6 +27,7 @@ import type {
   Impact,
   StudioInfo,
 } from "./api/types.js";
+import { BoxListbox } from "./components/BoxListbox.js";
 import { CanvasPanel } from "./components/CanvasPanel.js";
 import { CardShapePanel } from "./components/CardShapePanel.js";
 import { Inspector } from "./components/Inspector.js";
@@ -38,7 +39,6 @@ import { ColorModeButton } from "./components/ui/color-mode.js";
 import { DEFAULT_SHAPE, describeSelection } from "./lib/cardShape.js";
 import { composite } from "./lib/composite.js";
 import { atPath, boxesIn, layoutsOf } from "./lib/frameModel.js";
-import { boxColor } from "./lib/hues.js";
 import { maskLayers } from "./lib/layers.js";
 import { type PendingEdits, pathKey, withPending } from "./lib/optimistic.js";
 import { PRESETS, useSampleText } from "./state/useSampleText.js";
@@ -343,16 +343,9 @@ export function App(): React.JSX.Element {
   const editable = info?.writeEnabled === true;
 
   return (
-    <Grid templateRows="auto 1fr" h="100vh" bg="bg" color="fg" fontSize="13px">
-      <HStack
-        gap="3"
-        px="3"
-        py="2"
-        bg="bg.panel"
-        borderBottomWidth="1px"
-        flexWrap="wrap"
-      >
-        <Text fontWeight="700">Frame Studio</Text>
+    <Grid templateRows="auto 1fr" h="100vh">
+      <HStack gap="3" px="3" py="2" borderBottomWidth="1px" flexWrap="wrap">
+        <Text fontWeight="heavy">Frame Studio</Text>
         <ToolbarSelect
           label="Frame"
           width="200px"
@@ -447,68 +440,22 @@ export function App(): React.JSX.Element {
           overflowY="auto"
           p="2"
         >
-          <Text
-            fontSize="10px"
-            textTransform="uppercase"
-            color="fg.muted"
-            mb="1"
-          >
-            Boxes
-          </Text>
-          {boxes.map(({ key, box }, index) => (
-            <HStack
-              key={key}
-              gap="2"
-              px="2"
-              py="1"
-              cursor="pointer"
-              borderRadius="4px"
-              opacity={hidden.has(key) ? 0.4 : 1}
-              bg={selected === key ? "bg.emphasized" : "transparent"}
-              _hover={{ bg: "bg.muted" }}
-              onClick={() => {
-                setSelected(key);
-              }}
-            >
-              <Box
-                w="12px"
-                h="12px"
-                borderRadius="3px"
-                bg={boxColor(index)}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setHidden((current) => {
-                    const next = new Set(current);
-                    if (!next.delete(key)) {
-                      next.add(key);
-                    }
-                    return next;
-                  });
-                }}
-              />
-              <VStack align="stretch" gap="0" flex="1" minW="0">
-                <Text fontWeight="600" truncate>
-                  {key}
-                </Text>
-                <Text fontSize="10px" color="fg.muted" truncate>
-                  {box.x},{box.y} · {box.width}×{box.height}
-                  {box.fontSize === undefined
-                    ? ""
-                    : ` · ${String(box.fontSize)}pt`}
-                </Text>
-                {overflow[key] !== undefined && (
-                  <Text fontSize="10px" color="fg.error">
-                    overflows by {overflow[key]}px
-                  </Text>
-                )}
-              </VStack>
-            </HStack>
-          ))}
-          {boxes.length === 0 && (
-            <Text fontSize="xs" color="fg.muted">
-              No boxes in this set.
-            </Text>
-          )}
+          <BoxListbox
+            boxes={boxes}
+            selected={selected}
+            hidden={hidden}
+            overflow={overflow}
+            onSelect={setSelected}
+            onToggleHidden={(key) => {
+              setHidden((current) => {
+                const next = new Set(current);
+                if (!next.delete(key)) {
+                  next.add(key);
+                }
+                return next;
+              });
+            }}
+          />
 
           <MaskPanel
             masks={masks}
@@ -579,7 +526,7 @@ export function App(): React.JSX.Element {
             onUBCrownsChange={setUseUBCrowns}
           />
           <VStack align="stretch" gap="1" p="3" borderBottomWidth="1px">
-            <Text fontSize="10px" textTransform="uppercase" color="fg.muted">
+            <Text fontSize="sm" textTransform="uppercase" color="fg.muted">
               Sample text
             </Text>
             {["power", "toughness"].map((key) => (
@@ -612,7 +559,7 @@ export function App(): React.JSX.Element {
                   />
                 </HStack>
               ))}
-            <Text fontSize="10px" color="fg.muted" mt="1">
+            <Text fontSize="sm" color="fg.muted" mt="1">
               One line, at the size you authored — no wrapping, no mana symbols
               and no auto-shrink. Card Anvil shrinks the title around the mana
               cost and the type line around the set symbol, so a box flagged
