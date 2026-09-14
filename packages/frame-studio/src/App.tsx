@@ -5,7 +5,6 @@ import {
   Grid,
   HStack,
   Input,
-  NativeSelect,
   Text,
   VStack,
 } from "@chakra-ui/react";
@@ -34,6 +33,7 @@ import { Inspector } from "./components/Inspector.js";
 import { KnobPanel } from "./components/KnobPanel.js";
 import { MaskPanel } from "./components/MaskPanel.js";
 import { SharedEditDialog } from "./components/SharedEditDialog.js";
+import { ToolbarSelect } from "./components/ToolbarSelect.js";
 import { DEFAULT_SHAPE, describeSelection } from "./lib/cardShape.js";
 import { composite } from "./lib/composite.js";
 import { atPath, boxesIn, layoutsOf } from "./lib/frameModel.js";
@@ -44,6 +44,9 @@ import { PRESETS, useSampleText } from "./state/useSampleText.js";
 import { isPreviewable } from "./text/singleLine.js";
 
 const noop = () => undefined;
+
+/** Stands in for `null` — the base `config.layouts` — in the variant picker. */
+const BASE_VARIANT = "__base__";
 
 export function App(): React.JSX.Element {
   const [info, setInfo] = useState<StudioInfo | undefined>();
@@ -71,6 +74,7 @@ export function App(): React.JSX.Element {
   /** Committed but not yet confirmed by a reload. See `withPending`. */
   const [pending, setPending] = useState<PendingEdits>(new Map());
   const awaitingRef = useRef<number | undefined>(undefined);
+  const [preset, setPreset] = useState("typical");
   const [useNyxInsert, setUseNyxInsert] = useState(false);
   const [useUBCrowns, setUseUBCrowns] = useState(false);
   const [maskOverride, setMaskOverride] = useState<ReadonlySet<string>>(
@@ -354,72 +358,50 @@ export function App(): React.JSX.Element {
         flexWrap="wrap"
       >
         <Text fontWeight="700">Frame Studio</Text>
-        <NativeSelect.Root size="xs" width="200px">
-          <NativeSelect.Field
-            value={slug ?? ""}
-            onChange={(event) => {
-              setSlug(event.currentTarget.value);
-              setSelected(undefined);
-            }}
-          >
-            {frames.map((frame) => (
-              <option key={frame.slug} value={frame.slug}>
-                {frame.name} ({frame.slug})
-              </option>
-            ))}
-          </NativeSelect.Field>
-        </NativeSelect.Root>
+        <ToolbarSelect
+          label="Frame"
+          width="200px"
+          value={slug ?? ""}
+          options={frames.map((frame) => ({
+            value: frame.slug,
+            label: `${frame.name} (${frame.slug})`,
+          }))}
+          onChange={(next) => {
+            setSlug(next);
+            setSelected(undefined);
+          }}
+        />
 
-        <NativeSelect.Root size="xs" width="150px">
-          <NativeSelect.Field
-            value={variant ?? ""}
-            onChange={(event) => {
-              setVariant(
-                event.currentTarget.value === ""
-                  ? null
-                  : event.currentTarget.value,
-              );
-            }}
-          >
-            {variants.map((entry) => (
-              <option key={entry.variant ?? ""} value={entry.variant ?? ""}>
-                {entry.variant ?? "— base layouts"}
-              </option>
-            ))}
-          </NativeSelect.Field>
-        </NativeSelect.Root>
+        <ToolbarSelect
+          label="Variant"
+          width="160px"
+          value={variant ?? BASE_VARIANT}
+          options={variants.map((entry) => ({
+            value: entry.variant ?? BASE_VARIANT,
+            label: entry.variant ?? "— base layouts",
+          }))}
+          onChange={(next) => {
+            setVariant(next === BASE_VARIANT ? null : next);
+          }}
+        />
 
-        <NativeSelect.Root size="xs" width="170px">
-          <NativeSelect.Field
-            value={layout}
-            onChange={(event) => {
-              setLayout(event.currentTarget.value);
-            }}
-          >
-            {layouts.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </NativeSelect.Field>
-        </NativeSelect.Root>
+        <ToolbarSelect
+          label="Layout"
+          width="180px"
+          value={layout}
+          options={layouts.map((name) => ({ value: name, label: name }))}
+          onChange={setLayout}
+        />
 
-        <NativeSelect.Root size="xs" width="180px">
-          <NativeSelect.Field
-            value={slotKey}
-            onChange={(event) => {
-              setSlotKey(event.currentTarget.value);
-            }}
-          >
-            {slotsHere
-              .filter((slot) => slot.kind === "boxes")
-              .map((slot) => (
-                <option key={slot.key} value={slot.key}>
-                  {slot.key}
-                </option>
-              ))}
-          </NativeSelect.Field>
-        </NativeSelect.Root>
+        <ToolbarSelect
+          label="Box set"
+          width="190px"
+          value={slotKey}
+          options={slotsHere
+            .filter((slot) => slot.kind === "boxes")
+            .map((slot) => ({ value: slot.key, label: slot.key }))}
+          onChange={setSlotKey}
+        />
 
         <Button
           size="xs"
@@ -431,20 +413,19 @@ export function App(): React.JSX.Element {
           card face
         </Button>
 
-        <NativeSelect.Root size="xs" width="110px">
-          <NativeSelect.Field
-            defaultValue="typical"
-            onChange={(event) => {
-              applyPreset(event.currentTarget.value);
-            }}
-          >
-            {Object.keys(PRESETS).map((name) => (
-              <option key={name} value={name}>
-                {name} text
-              </option>
-            ))}
-          </NativeSelect.Field>
-        </NativeSelect.Root>
+        <ToolbarSelect
+          label="Sample text"
+          width="130px"
+          value={preset}
+          options={Object.keys(PRESETS).map((name) => ({
+            value: name,
+            label: `${name} text`,
+          }))}
+          onChange={(next) => {
+            setPreset(next);
+            applyPreset(next);
+          }}
+        />
 
         {!editable && <Badge colorPalette="yellow">read-only</Badge>}
         {composed.fallbackNote !== undefined && (
