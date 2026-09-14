@@ -529,7 +529,7 @@ export function App(): React.JSX.Element {
             onUBCrownsChange={setUseUBCrowns}
           />
           <VStack align="stretch" gap="1" p="3" borderBottomWidth="1px">
-            <Text fontSize="sm" textTransform="uppercase" color="fg.muted">
+            <Text fontSize="xs" textTransform="uppercase" color="fg.muted">
               Sample text
             </Text>
             {["power", "toughness"].map((key) => (

@@ -65,15 +65,13 @@ export function SharedEditDialog(
               align="stretch"
               gap="0"
               overflowY="auto"
-              bg="bg"
-              borderRadius="4px"
               p="2"
               maxH="240px"
             >
               {shared.map((impact) => (
                 <Text
                   key={`${impact.variant ?? "-"}/${impact.layout}/${impact.boxSet}`}
-                  fontSize="11px"
+                  fontSize="xs"
                   color="fg.muted"
                   truncate
                 >
@@ -83,7 +81,7 @@ export function SharedEditDialog(
               ))}
             </VStack>
 
-            <Text fontSize="10px" color="fg.muted">
+            <Text fontSize="xs" color="fg.muted">
               To move only one layout, give it its own value in the source
               first.
             </Text>

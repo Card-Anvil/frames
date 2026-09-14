@@ -118,7 +118,7 @@ export function CardShapePanel(props: CardShapePanelProps): React.JSX.Element {
 
   return (
     <VStack align="stretch" gap="2" p="3" borderBottomWidth="1px">
-      <Text fontSize="10px" textTransform="uppercase" color="fg.muted">
+      <Text fontSize="xs" textTransform="uppercase" color="fg.muted">
         Card
       </Text>
 
@@ -131,13 +131,13 @@ export function CardShapePanel(props: CardShapePanelProps): React.JSX.Element {
               key={color.code}
               flex="1"
               py="1"
-              borderRadius="4px"
+              borderRadius="sm"
               border="1px solid"
               borderColor={on ? color.swatch : "border"}
               bg={on ? color.swatch : "transparent"}
               color={on ? "bg" : "fg.muted"}
-              fontSize="11px"
-              fontWeight="600"
+              fontSize="xs"
+              fontWeight="bold"
               title={color.label}
               onClick={() => {
                 toggleColor(color.code);
@@ -158,11 +158,11 @@ export function CardShapePanel(props: CardShapePanelProps): React.JSX.Element {
               key={toggle.key}
               px="2"
               py="0.5"
-              borderRadius="4px"
+              borderRadius="sm"
               border="1px solid"
               borderColor={on ? "teal.fg" : "border"}
               color={on ? "teal.fg" : "fg.muted"}
-              fontSize="10px"
+              fontSize="xs"
               title={toggle.hint}
               onClick={() => {
                 onChange({ ...shape, [toggle.key]: !on });
@@ -176,11 +176,11 @@ export function CardShapePanel(props: CardShapePanelProps): React.JSX.Element {
           as="button"
           px="2"
           py="0.5"
-          borderRadius="4px"
+          borderRadius="sm"
           border="1px solid"
           borderColor={useNyxBorder ? "teal.fg" : "border"}
           color={useNyxBorder ? "teal.fg" : "fg.muted"}
-          fontSize="10px"
+          fontSize="xs"
           title="The app's nyx-border setting, which decides whether enchantments use nyx art"
           onClick={() => {
             onNyxBorderChange(!useNyxBorder);
@@ -196,11 +196,11 @@ export function CardShapePanel(props: CardShapePanelProps): React.JSX.Element {
               key={setting.key}
               px="2"
               py="0.5"
-              borderRadius="4px"
+              borderRadius="sm"
               border="1px solid"
               borderColor={on ? "teal.fg" : "border"}
               color={on ? "teal.fg" : "fg.muted"}
-              fontSize="10px"
+              fontSize="xs"
               title={setting.hint}
               onClick={() => {
                 set(!on);
@@ -212,7 +212,7 @@ export function CardShapePanel(props: CardShapePanelProps): React.JSX.Element {
         })}
       </HStack>
 
-      <Text fontSize="10px" color="fg.muted">
+      <Text fontSize="xs" color="fg.muted">
         {summary}
       </Text>
     </VStack>
