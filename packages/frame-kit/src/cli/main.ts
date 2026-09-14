@@ -10,6 +10,7 @@ import { PackagingError } from "./errors.js";
 import { Reporter, inGitHubActions } from "./report.js";
 import { SCHEMA_NAMES, type SchemaName, toJsonSchema } from "./schema.js";
 import { stableStringify } from "./stableJson.js";
+import { runStudio } from "./studio/serve.js";
 import { watchFrames } from "./watch.js";
 
 const USAGE = `frame-kit — package Card Anvil frames
@@ -19,6 +20,7 @@ Usage:
   frame-kit build --out <dir> [options]  check every frame, then pack each one
   frame-kit schema <name> [--out <file>] print a format as JSON Schema
                                          (${SCHEMA_NAMES.join(" | ")})
+  frame-kit studio [options]             open the visual box editor
   frame-kit --help
   frame-kit --version
 
@@ -36,6 +38,15 @@ build only:
   --tag <vX.Y.Z>        the release tag; with --repository, puts download URLs
                         in the index
   --watch               rebuild a frame whenever its source changes
+
+studio only:
+  --port <n>            port to serve on (default: 4620)
+  --host <h>            interface to bind (default: 127.0.0.1)
+  --open                open the studio in your browser
+  --no-write            serve read-only; refuse every edit
+
+The studio edits the literals in your source when you drag a box, so run it on
+a clean working tree. It needs TypeScript installed to find them.
 
 A frame is any directory containing a frame.meta.json. One with "private": true
 is checked by validate but never built.
@@ -274,6 +285,9 @@ async function main(argv: string[]): Promise<number> {
   }
   if (command === "schema") {
     return await runSchema(argv.slice(1));
+  }
+  if (command === "studio") {
+    return await runStudio(argv.slice(1));
   }
   if (command !== "validate" && command !== "build") {
     console.error(`Unknown command "${command}".\n\n${USAGE}`);

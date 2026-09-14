@@ -20,6 +20,10 @@
       "types": "./src/index.ts",
       "default": "./src/index.ts"
     },
+    "./layout": {
+      "types": "./src/layout/index.ts",
+      "default": "./src/layout/index.ts"
+    },
     "./manifest": {
       "types": "./src/manifest/index.ts",
       "default": "./src/manifest/index.ts"
@@ -32,10 +36,12 @@
   },
   "peerDependencies": {
     "vite": "^6 || ^7",
-    "zod": "^4"
+    "zod": "^4",
+    "typescript": "^6"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && node dist/cli/emitSchemas.js",
+    "build:lib": "tsc -p tsconfig.build.json && node dist/cli/emitSchemas.js",
+    "build": "pnpm run build:lib && pnpm --filter @cardanvil/frame-studio build",
     "prepublishOnly": "pnpm run build"
   },
   "publishConfig": {
@@ -44,6 +50,10 @@
       ".": {
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
+      },
+      "./layout": {
+        "types": "./dist/layout/index.d.ts",
+        "default": "./dist/layout/index.js"
       },
       "./manifest": {
         "types": "./dist/manifest/index.d.ts",
@@ -61,6 +71,9 @@
   },
   "peerDependenciesMeta": {
     "vite": {
+      "optional": true
+    },
+    "typescript": {
       "optional": true
     }
   },

@@ -129,6 +129,47 @@ Packaging needs Vite — it is what turns `import w from "./w.png"` into a file 
 so it is an **optional** peer dependency, loaded only when packaging runs. The
 schemas above work under plain Node and in a browser without it.
 
+### `frame-kit studio`
+
+```bash
+frame-kit studio [--root <dir>] [--port <n>] [--frame <slug>] [--no-write]
+```
+
+A visual box editor, served from `dist/studio` and opened at
+<http://localhost:4620>. It loads frames through the same Vite SSR loader
+`validate` uses, so what it draws is the validated frame, and it reloads when a
+source file changes.
+
+The card name and type line are previewed in Beleren at the authored size and
+flagged when they overflow — one line each, with no wrapping, symbols or
+auto-shrink, so the app remains the authority on a full render.
+
+Dragging a box rewrites the literal it came from, in place — nothing is
+reprinted, so comments and formatting survive. Editing needs `typescript`
+installed (an optional peer); without it the studio still runs read-only. Values
+that are not written as literals are reported as such rather than edited.
+
+### `@cardanvil/frame-kit/layout`
+
+How a frame's art is chosen and placed, as pure functions:
+
+- `selectFrameLayers(details, options)` — the base frame and section overlays a
+  set of `FrameDetails` selects. Split out of Card Anvil's `getFrameLayers`, so
+  the studio and the renderer cannot drift on two-colour splits, hybrid halves
+  or the coloured-artifact fallback.
+- `frameDetailsFor(shape)` — those details from a plain description of a card
+  (colours plus artifact / vehicle / land / enchantment / hybrid / devoid),
+  for callers with no Scryfall card to parse.
+- `placeAsset(path, config)` — where a piece of art is drawn. Most frame art is
+  full-sheet and centres, but crowns, nicknames and PT plates come from the
+  layout's own render config; centring those puts a legendary crown in the
+  middle of the card.
+- `resolveFrameAsset` / `resolveBaseFrame` — exact per-family lookup, and the
+  base-frame fallback chain.
+
+Card Anvil still owns the other half — reading a Scryfall card into
+`FrameDetails` — because that is where the Scryfall types live.
+
 ## Type it, then validate it
 
 Typing a config as `Frame` is weaker than the schema a loading app enforces. The clearest example:

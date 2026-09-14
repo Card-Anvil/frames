@@ -1,44 +1,14 @@
-import { watch } from "node:fs";
 import path from "node:path";
 
 import { type BuildOptions, buildFrames } from "./build.js";
-import { discoverFrames, relativePosix } from "./discover.js";
+import { discoverFrames } from "./discover.js";
 import { invalidateFrameModules, startFrameServer } from "./loadFrame.js";
 import { Reporter, formatProblem } from "./report.js";
-
-/** Directories never worth watching. Mirrors discovery's own skip list. */
-const SKIP_DIRS = new Set([
-  "node_modules",
-  "dist",
-  ".git",
-  ".pnpm-store",
-  "__fixtures__",
-]);
-
-/** Files a rebuild produces, or an editor leaves lying around. */
-const IGNORED_FILE =
-  /(\.cardframe|frame-index\.json|\.preview\.[a-z]+|~|\.swp|\.tmp)$/i;
-
-/**
- * How long to wait for changes to stop before rebuilding.
- *
- * One save can produce several events — a write, a rename, an attribute
- * change — and a tool upstream may rewrite a whole directory.
- */
-const DEBOUNCE_MS = 200;
+import { type SourceWatcher, startSourceWatcher } from "./sourceWatcher.js";
 
 export interface WatchOptions extends BuildOptions {
   /** Called after every rebuild so the CLI can report it. */
   onBuild?: (summary: string) => void;
-}
-
-function isIgnored(file: string): boolean {
-  const segments = file.split(path.sep);
-  return (
-    segments.some(
-      (segment) => SKIP_DIRS.has(segment) || segment.startsWith("."),
-    ) || IGNORED_FILE.test(file)
-  );
 }
 
 const plural = (n: number) => `${String(n)} frame${n === 1 ? "" : "s"}`;
@@ -49,6 +19,9 @@ const plural = (n: number) => `${String(n)} frame${n === 1 ? "" : "s"}`;
  * One Vite server stays alive for the whole session — starting one costs a
  * second or two — and its module graph is dropped before each rebuild so an
  * edit is actually seen. See `invalidateFrameModules`.
+ *
+ * Debouncing, ignore rules and the non-overlapping drain live in
+ * `startSourceWatcher`, shared with `frame-kit studio`.
  */
 export async function watchFrames(options: WatchOptions): Promise<void> {
   const root = path.resolve(options.root);
@@ -60,10 +33,7 @@ export async function watchFrames(options: WatchOptions): Promise<void> {
     });
 
   const frameServer = await startFrameServer(root);
-  const watchers: { close: () => void }[] = [];
-  const pending = new Set<string>();
-  let timer: NodeJS.Timeout | undefined;
-  let building = false;
+  let watcher: SourceWatcher | undefined;
 
   function runBuild(only: string[] | undefined): Promise<void> {
     invalidateFrameModules(frameServer);
@@ -83,71 +53,24 @@ export async function watchFrames(options: WatchOptions): Promise<void> {
     });
   }
 
-  async function drain(): Promise<void> {
-    if (building) {
-      // Two builds would race on the same output file. Whatever arrived is
-      // already in `pending`, and the loop below will pick it up.
-      return;
-    }
-    building = true;
-    try {
-      // Keyed off `pending` rather than a flag: anything that arrived during a
-      // build is still queued when it finishes.
-      while (pending.size > 0) {
-        const changed = [...pending];
-        pending.clear();
-        const slugs = await slugsFor(root, changed, options.only);
-        if (slugs?.length === 0) {
-          continue; // nothing we build was touched
-        }
-        await runBuild(slugs);
-      }
-    } catch (cause) {
-      // A failed rebuild must not end the session: the author is mid-edit and
-      // the next save is probably the fix.
-      console.error(cause instanceof Error ? cause.message : String(cause));
-    } finally {
-      building = false;
-    }
-  }
-
-  function onChange(file: string): void {
-    if (isIgnored(file) || file.startsWith(outDir)) {
-      return;
-    }
-    pending.add(file);
-    if (timer) {
-      clearTimeout(timer);
-    }
-    timer = setTimeout(() => void drain(), DEBOUNCE_MS);
-  }
-
-  function watchDir(dir: string): void {
-    try {
-      watchers.push(
-        watch(dir, { recursive: true }, (_event, name) => {
-          if (name !== null) {
-            onChange(path.join(dir, name));
-          }
-        }),
-      );
-    } catch {
-      console.error(
-        `Could not watch ${relativePosix(root, dir)}. Recursive watching is ` +
-          `not supported on this filesystem; rebuild with \`frame-kit build\`.`,
-      );
-    }
-  }
-
   try {
     await runBuild(undefined);
 
     // Each frame's own directory, plus the root, so a frame added or removed
     // while watching is noticed.
-    for (const frame of await discoverFrames(root, new Reporter())) {
-      watchDir(frame.dir);
-    }
-    watchDir(root);
+    const frames = await discoverFrames(root, new Reporter());
+    watcher = startSourceWatcher({
+      root,
+      dirs: [...frames.map((frame) => frame.dir), root],
+      ignore: (file) => file.startsWith(outDir),
+      onChange: async (changed) => {
+        const slugs = await slugsFor(root, changed, options.only);
+        if (slugs?.length === 0) {
+          return; // nothing we build was touched
+        }
+        await runBuild(slugs);
+      },
+    });
 
     report("Watching for changes. Press Ctrl+C to stop.");
     await new Promise<void>((resolve) => {
@@ -158,12 +81,7 @@ export async function watchFrames(options: WatchOptions): Promise<void> {
       process.once("SIGTERM", stop);
     });
   } finally {
-    if (timer) {
-      clearTimeout(timer);
-    }
-    for (const watcher of watchers) {
-      watcher.close();
-    }
+    watcher?.close();
     await frameServer.close();
   }
 }

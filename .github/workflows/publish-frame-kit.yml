@@ -124,6 +124,17 @@ jobs:
       - run: pnpm run build
         if: steps.version.outputs.release == 'true'
 
+      # `frame-kit studio` serves this; without it the command ships with no
+      # UI and only fails for whoever runs it. The build is what produces it,
+      # so a missing file here means the studio build silently did not run.
+      - name: Check the studio UI was built
+        run: |
+          if [ ! -f packages/frame-kit/dist/studio/index.html ]; then
+            echo "dist/studio/index.html is missing - the studio UI did not build." >&2
+            exit 1
+          fi
+        if: steps.version.outputs.release == 'true'
+
       # Packed by pnpm, published by npm, deliberately.
       #
       # publishConfig.exports is a pnpm feature: locally the package resolves to
