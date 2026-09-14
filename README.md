@@ -220,7 +220,9 @@ into a dozen layouts — so a field shows `shared ×N` when other box sets read 
 same literal, and an edit to one asks for confirmation, listing every layout it
 moves.
 
-`--no-write` opens it read-only, `--port` moves it, `--frame <slug>` narrows it.
+`--no-write` opens it read-only, `--port` moves it, `--frame <slug>` narrows it. To
+work on the studio's own UI, `pnpm studio:dev` serves it from source with hot
+reloading on the same port as the API.
 It needs TypeScript installed, and it writes to your working tree, so run it on
 a clean one.
 

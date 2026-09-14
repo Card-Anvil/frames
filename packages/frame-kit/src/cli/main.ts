@@ -43,6 +43,8 @@ studio only:
   --port <n>            port to serve on (default: 4620)
   --host <h>            interface to bind (default: 127.0.0.1)
   --open                open the studio in your browser
+  --dev                 serve the studio's own UI from source, with hot
+                        reloading (only inside the frames workspace)
   --no-write            serve read-only; refuse every edit
 
 The studio edits the literals in your source when you drag a box, so run it on

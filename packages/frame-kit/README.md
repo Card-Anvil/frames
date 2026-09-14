@@ -144,6 +144,10 @@ The card name and type line are previewed in Beleren at the authored size and
 flagged when they overflow — one line each, with no wrapping, symbols or
 auto-shrink, so the app remains the authority on a full render.
 
+Working on the studio's own UI: `--dev` serves it from source with hot
+reloading, on the same port as the API, so one command covers both. It needs
+the UI's source, which only exists inside the frames workspace.
+
 Dragging a box rewrites the literal it came from, in place — nothing is
 reprinted, so comments and formatting survive. Editing needs `typescript`
 installed (an optional peer); without it the studio still runs read-only. Values

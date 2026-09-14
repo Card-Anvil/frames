@@ -20,7 +20,8 @@
     "frames:validate": "pnpm --filter @cardanvil/frame-kit build:lib && node packages/frame-kit/dist/cli/main.js validate",
     "frames:build": "pnpm --filter @cardanvil/frame-kit build:lib && node packages/frame-kit/dist/cli/main.js build --out dist-frames",
     "frames:watch": "pnpm --filter @cardanvil/frame-kit build:lib && node packages/frame-kit/dist/cli/main.js build --out dist-frames --watch",
-    "studio": "pnpm --filter @cardanvil/frame-kit build && node packages/frame-kit/dist/cli/main.js studio"
+    "studio": "pnpm --filter @cardanvil/frame-kit build && node packages/frame-kit/dist/cli/main.js studio",
+    "studio:dev": "pnpm --filter @cardanvil/frame-kit build:lib && node packages/frame-kit/dist/cli/main.js studio --dev"
   },
   "prettier": {
     "plugins": [
