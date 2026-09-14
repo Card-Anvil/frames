@@ -34,8 +34,9 @@ export const defaultCollectorInfoBounds: TextBox = {
   y: 4019,
   width: 2200,
   height: 200,
-  fontSize: 53,
+  fontSize: 50,
   color: "white",
+  letterSpacing: 5,
 };
 
 export const borderlessSettings = {

@@ -11,12 +11,12 @@ import { sagaLayoutConfig } from "./saga/config";
 
 export const defaultCollectorInfoBounds = {
   x: 333,
-  y: 4019,
+  y: 4015,
   width: 2200,
   height: 200,
-  fontSize: 53,
+  fontSize: 50,
   color: "white",
-} as const satisfies TextBox;
+  letterSpacing: 7.5,} as const satisfies TextBox;
 
 export const defaultSettings = {
   useNyxBorder: {
