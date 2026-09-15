@@ -21,6 +21,28 @@ describe("M15 frame", () => {
   it("declares at least one layout", () => {
     expect(Object.keys(m15Frame.config.layouts).length).toBeGreaterThan(0);
   });
+
+  // `LayoutMasksSchema` is a plain object schema, so a mask key it doesn't
+  // know is dropped on parse rather than rejected — the frame would keep
+  // type-checking and the toggle below would silently do nothing.
+  it("keeps both border masks on the normal layout through a parse", () => {
+    const parsed = FrameSchema.parse(m15Frame);
+    const masks = parsed.config.layouts.normal?.masks;
+    expect(masks?.border).toBeDefined();
+    expect(masks?.borderFull).toBeDefined();
+    expect(masks?.borderFull).not.toBe(masks?.border);
+  });
+
+  // The toggle is what selects `borderFull`; without it the mask is unreachable.
+  it("offers the full-border toggle, defaulting to the partial mask", () => {
+    // toMatchObject, not toEqual: the assertion is about the toggle's type,
+    // label and default — not a ban on further optional fields like helperText.
+    expect(m15Frame.templateSettings.useFullBorder).toMatchObject({
+      type: "boolean",
+      label: "Color Entire Border",
+      defaultValue: false,
+    });
+  });
 });
 
 describe("frame.meta.json", () => {

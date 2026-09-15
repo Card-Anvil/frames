@@ -25,6 +25,20 @@ export const defaultSettings = {
     label: "Use Nyx Border For Enchantments",
     defaultValue: true,
   },
+  /**
+   * Off by default: `masks.border` colors only the region outside the
+   * collector strip, and turning this on swaps in `masks.borderFull` to color
+   * the whole ring. Lives in the shared defaults so frames deriving from M15
+   * inherit it — they inherit `regularLayoutConfig.masks`, and with it both
+   * border masks, so the toggle is wired up for them too.
+   */
+  useFullBorder: {
+    type: "boolean",
+    label: "Color Entire Border",
+    helperText:
+      "Extends the border color across the collector strip, which is left uncolored by default.",
+    defaultValue: false,
+  },
 } as const satisfies TemplateSettingsConfig;
 
 export const sagaSettings = {

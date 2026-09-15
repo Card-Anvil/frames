@@ -21,6 +21,19 @@ describe("Extended Art frame", () => {
   it("declares at least one layout", () => {
     expect(Object.keys(extendedFrame.config.layouts).length).toBeGreaterThan(0);
   });
+
+  // Inherited, not copied: the layout spreads `regularLayoutConfig.masks`, and
+  // the toggle rides along in M15's `defaultSettings`. Both halves have to be
+  // present or the control renders and does nothing — so assert them together.
+  it("inherits both border masks and the toggle that selects them", () => {
+    const masks = FrameSchema.parse(extendedFrame).config.layouts.normal?.masks;
+    expect(masks?.border).toBeDefined();
+    expect(masks?.borderFull).toBeDefined();
+    expect(masks?.borderFull).not.toBe(masks?.border);
+    expect(extendedFrame.templateSettings.useFullBorder?.defaultValue).toBe(
+      false,
+    );
+  });
 });
 
 describe("frame.meta.json", () => {
