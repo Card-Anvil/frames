@@ -30,7 +30,7 @@ describe("Extended Art frame", () => {
     expect(masks?.border).toBeDefined();
     expect(masks?.borderFull).toBeDefined();
     expect(masks?.borderFull).not.toBe(masks?.border);
-    expect(extendedFrame.templateSettings.useFullBorder?.defaultValue).toBe(
+    expect(extendedFrame.templateSettings.useFullBorder.defaultValue).toBe(
       false,
     );
   });
