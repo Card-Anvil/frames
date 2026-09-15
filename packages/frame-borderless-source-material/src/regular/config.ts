@@ -2,6 +2,7 @@ import { CardBoxes, LayoutConfig } from "@cardanvil/frame-kit";
 
 // Import frame assets
 import borderFrame from "./border.png";
+import noBorderMask from "./noBorder.png";
 
 // Text box boundaries for borderless source material frame (3264x4440 canvas)
 const boxes: CardBoxes = {
@@ -96,5 +97,12 @@ export const borderlessSourceMaterialLayoutConfig: LayoutConfig = {
       g: borderFrame,
       a: borderFrame,
     },
+  },
+  masks: {
+    border: borderFrame,
+    // The band is this frame's only chrome, so the "No Border" cutout is the
+    // band's own alpha inverse: `destination-in` keeps what the band does not
+    // cover, which leaves nothing and the art runs to the card edge.
+    noBorder: noBorderMask,
   },
 };
