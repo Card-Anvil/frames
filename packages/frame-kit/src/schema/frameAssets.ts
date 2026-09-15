@@ -196,6 +196,19 @@ export const LayoutMasksSchema = z.object({
    * extended-art trim — the two are not interchangeable.
    */
   border: AssetUrlSchema.optional(),
+  /**
+   * Full-coverage variant of `border`, opaque over the whole outer ring
+   * including the strip the collector line sits on.
+   *
+   * A frame ships this only when its plain `border` mask deliberately covers
+   * *less* than the whole ring — m15's stops short of the collector strip, so
+   * that the default border recolor leaves the collector line on its original
+   * black. Declaring `borderFull` is therefore also what tells the renderer
+   * that `border` is a partial mask: see `useFullBorder` in `drawCardToStage`,
+   * which picks between the two and decides whether the collector text has to
+   * adapt to the border color.
+   */
+  borderFull: AssetUrlSchema.optional(),
   legendary: AssetUrlSchema.optional(),
   /** Legendary crown mask variant for transforming MDFC front faces — the
    * composited top-half frame uses a different legendary crown cutout than
