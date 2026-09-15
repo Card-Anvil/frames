@@ -23,6 +23,26 @@ describe("Borderless Source Material frame", () => {
       Object.keys(borderlessSourceMaterialFrame.config.layouts).length,
     ).toBeGreaterThan(0);
   });
+
+  // "No Border" cuts the bottom band away, and the band is this frame's only
+  // chrome — so the cutout mask and the toggle that applies it have to ship
+  // together, or the setting renders and changes nothing.
+  it("pairs the No Border toggle with the cutout mask it needs", () => {
+    const masks = FrameSchema.parse(borderlessSourceMaterialFrame).config
+      .layouts.normal?.masks;
+    expect(masks?.border).toBeDefined();
+    expect(masks?.noBorder).toBeDefined();
+    expect(masks?.noBorder).not.toBe(masks?.border);
+    // toMatchObject, not toEqual: the assertion is about the toggle's type,
+    // label and default — not a ban on further optional fields like helperText.
+    expect(
+      borderlessSourceMaterialFrame.templateSettings.useNoBorder,
+    ).toMatchObject({
+      type: "boolean",
+      label: "No Border",
+      defaultValue: false,
+    });
+  });
 });
 
 describe("frame.meta.json", () => {
