@@ -1,4 +1,5 @@
 export { default as border } from "./border.png";
+export { default as borderFull } from "./borderFull.png";
 export { default as frame } from "./frame.png";
 export { default as pinlines } from "./pinline.png";
 export { default as rules } from "./rules.png";
