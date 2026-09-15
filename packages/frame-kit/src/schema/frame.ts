@@ -199,25 +199,36 @@ export const defaultNicknameConfig: NicknameRenderConfig = {
   y: 577,
 };
 
+/**
+ * A hint rendered under a template setting's control, for anything the label
+ * alone can't carry — what the setting changes, or when to reach for it.
+ * Optional everywhere; a setting without one renders exactly as before.
+ */
+const helperText = z.string().optional();
+
 export const TemplateSettingConfigSchema = z.union([
   z.object({
     type: z.literal("boolean"),
     label: z.string(),
+    helperText,
     defaultValue: z.boolean(),
   }),
   z.object({
     type: z.literal("string"),
     label: z.string(),
+    helperText,
     defaultValue: z.string(),
   }),
   z.object({
     type: z.literal("number"),
     label: z.string(),
+    helperText,
     defaultValue: z.string(),
   }),
   z.object({
     type: z.literal("select"),
     label: z.string(),
+    helperText,
     defaultValue: z.string(),
     options: z.array(z.string()),
   }),
