@@ -174,6 +174,28 @@ export const FrameAssetsSchema = z.object({
    * see `getCardLayout`) in place of the usual `dfcIconSet`/`dfcIcon` mark.
    */
   lessonIcon: AssetUrlSchema.optional(),
+  /**
+   * Selects a built-in rules-text divider bar (between oracle and flavor
+   * text) instead of the app's default. Not an `AssetUrlSchema` — these are
+   * shared app assets any layout can opt into, not something a frame package
+   * bundles itself.
+   */
+  dividerBar: z.enum(["old"]).optional(),
+  /**
+   * Scales the divider bar's width (and, following its aspect ratio,
+   * height) relative to the app default. 1 = default size.
+   */
+  dividerBarScale: z.number().optional(),
+  /**
+   * Scales the gap between the oracle text and the divider bar. 1 =
+   * default gap.
+   */
+  dividerBarGapBefore: z.number().optional(),
+  /**
+   * Scales the gap between the divider bar and the flavor text. 1 =
+   * default gap.
+   */
+  dividerBarGapAfter: z.number().optional(),
 });
 export type FrameAssets = z.infer<typeof FrameAssetsSchema>;
 

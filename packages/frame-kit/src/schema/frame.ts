@@ -39,10 +39,26 @@ export const TextBoxSchema = BoundsSchema.extend({
    * of the language-resolved default (e.g. title font). */
   fontFamily: z.string().optional(),
   opacity: z.number().min(0).max(1).optional(),
-  /** Whether mana-cost symbols in this box get a drop-shadow. Defaults to
-   * true when omitted (matches the original behavior). Set to false to
-   * disable the shadow (e.g. flipside mana-cost badges on light backgrounds). */
+  /**
+   * Whether this box's content gets a drop-shadow.
+   *
+   * For symbol boxes (mana cost, and symbols embedded in rules/abilities
+   * text) this defaults to true when omitted, matching the original
+   * behavior — set to false to disable it (e.g. flipside mana-cost badges on
+   * light backgrounds).
+   *
+   * For plain-text boxes (title, type, P/T, etc., rendered via
+   * `buildOutlinedText`) there is no legacy default: omitting this leaves
+   * them exactly as before, and it only takes effect once set to true. It
+   * has no effect together with `outlineColor`/`outlineWidth` — an outline
+   * always wins.
+   */
   shadow: z.boolean().optional(),
+  /** Overrides the drop-shadow's default offset (in the box's own `fontSize`
+   * units, same convention as the default formula). Only meaningful when
+   * `shadow` is true. */
+  shadowOffsetX: z.number().optional(),
+  shadowOffsetY: z.number().optional(),
   /** Shaped-text mask: a full-canvas-sized PNG whose opaque pixels define the
    * region text in this box may occupy. Alpha is what matters (any pixel with
    * alpha > ~12% counts as inside), so color is irrelevant. Each wrapped line
@@ -265,6 +281,21 @@ export const LayoutConfigSchema = z.object({
    * the colorless hybrid wash.
    */
   hybridTitleMask: z.enum(["title", "titleAndType"]).optional(),
+  /**
+   * Which built-in collector info layout `collectorInfo` uses. Defaults to
+   * "default" (rarity/number/creator name on one line, set/language/artist
+   * on another, all left-aligned). "retro" is just artist and creator name,
+   * each on its own line and centered in the box.
+   */
+  collectorInfoPreset: z.enum(["default", "retro"]).optional(),
+  /**
+   * When true, the collector info never recolors to stay readable against a
+   * user-chosen border color (see `useFullBorder`/`borderColor` handling in
+   * `drawCardToStage.ts`). Set this for frames whose collector info doesn't
+   * actually sit on the recolorable border ring, so the box's own configured
+   * color is never overridden.
+   */
+  collectorInfoIgnoresBorderColor: z.boolean().optional(),
   /**
    * Frame assets for the back face of double-faced cards (transform, modal
    * DFC). When present, the renderer swaps to these for `faceIndex === 1`.
