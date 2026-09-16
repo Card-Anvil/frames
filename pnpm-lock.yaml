@@ -199,6 +199,12 @@ importers:
         specifier: workspace:^
         version: link:../frame-kit
 
+  packages/frame-retro:
+    devDependencies:
+      '@cardanvil/frame-kit':
+        specifier: workspace:^
+        version: link:../frame-kit
+
   packages/frame-studio:
     devDependencies:
       '@cardanvil/frame-kit':
