@@ -108,22 +108,30 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
   /** Stage scale at which the whole sheet fits; the zoom baseline. */
   const fitScaleRef = useRef(1);
 
-  /** Scales the stage so the whole sheet fits the panel. */
+  /**
+   * Sizes the stage to the panel and scales it so the whole sheet fits,
+   * centred. The stage box is the viewport: it tracks the panel, never the
+   * content, so zooming out can never crop what is drawn.
+   */
   const fit = useCallback(() => {
     const host = hostRef.current;
     const stage = stageRef.current;
     if (!host || !stage) {
       return;
     }
+    const view = { width: host.clientWidth, height: host.clientHeight };
     const scale = Math.min(
-      (host.clientWidth - 32) / width,
-      (host.clientHeight - 32) / height,
+      (view.width - 32) / width,
+      (view.height - 32) / height,
     );
     if (scale > 0 && Number.isFinite(scale)) {
       fitScaleRef.current = scale;
+      stage.size(view);
       stage.scale({ x: scale, y: scale });
-      stage.position({ x: 0, y: 0 });
-      stage.size({ width: width * scale, height: height * scale });
+      stage.position({
+        x: (view.width - width * scale) / 2,
+        y: (view.height - height * scale) / 2,
+      });
       stage.batchDraw();
     }
   }, [width, height]);
@@ -132,8 +140,7 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
   const zoomAbout = useCallback(
     (factor: number, pointer: { x: number; y: number } | null) => {
       const stage = stageRef.current;
-      const host = hostRef.current;
-      if (!stage || !host) {
+      if (!stage) {
         return;
       }
       const from = stage.scaleX();
@@ -153,13 +160,12 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
         y: (focus.y - stage.y()) / from,
       };
       stage.scale({ x: to, y: to });
-      // Growing the stage box as we zoom keeps the sheet reachable by scroll
-      // once it is larger than the panel.
-      stage.size({ width: width * to, height: height * to });
+      // Only the scale and the pan offset change: the stage box stays the
+      // size of the panel, so the sheet is never clipped by its own canvas.
       stage.position({ x: focus.x - world.x * to, y: focus.y - world.y * to });
       stage.batchDraw();
     },
-    [width, height],
+    [],
   );
 
   // Stage lifetime: created once per canvas size.
@@ -168,7 +174,11 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
     if (!host) {
       return;
     }
-    const stage = new Konva.Stage({ container: host, width, height });
+    const stage = new Konva.Stage({
+      container: host,
+      width: host.clientWidth,
+      height: host.clientHeight,
+    });
     const art = new Konva.Layer({ listening: false });
     const text = new Konva.Layer({ listening: false });
     const overlay = new Konva.Layer();
