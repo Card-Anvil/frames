@@ -1,5 +1,5 @@
 /** Payload shapes served by `frame-kit studio`. Mirrors src/cli/studio. */
-import type { TextBoxOverride } from "@cardanvil/frame-kit";
+import type { CollectorInfoLine, TextBoxOverride } from "@cardanvil/frame-kit";
 
 export interface Bounds {
   x: number;
@@ -27,6 +27,8 @@ export interface TextBox extends Bounds {
   shadowOffsetY?: number;
   /** Conditional restyles; see `TextBoxSchema` in frame-kit. */
   overrides?: readonly TextBoxOverride[];
+  /** Collector info only; see `CollectorInfoBoxSchema` in frame-kit. */
+  lines?: readonly CollectorInfoLine[];
 }
 
 export interface FrameSlot {

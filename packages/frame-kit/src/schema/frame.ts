@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { AssetUrlSchema } from "./assetUrl.js";
+import { CollectorInfoLineSchema } from "./collectorInfo.js";
 import {
   FrameAssetsSchema,
   FrameColorEnum,
@@ -144,6 +145,19 @@ export const TextBoxSchema = TextBoxFieldsSchema.extend({
 
 export type TextBox = z.infer<typeof TextBoxSchema>;
 
+export const CollectorInfoBoxSchema = TextBoxSchema.extend({
+  /**
+   * What the collector box prints, top line first. The renderer draws the
+   * default two-line layout (`defaultCollectorInfoLines`) when this is left
+   * out; `withCollectorInfoDefaults` fills that same default in. Build one from
+   * scratch for a frame with its own collector line, or start from
+   * `retroCollectorInfoLines`.
+   */
+  lines: z.array(CollectorInfoLineSchema).readonly().optional(),
+});
+
+export type CollectorInfoBox = z.infer<typeof CollectorInfoBoxSchema>;
+
 export const CardBoxesSchema = z.object({
   art: BoundsSchema,
   mana: TextBoxSchema,
@@ -154,7 +168,7 @@ export const CardBoxesSchema = z.object({
   abilities: TextBoxSchema.optional(),
   pt: TextBoxSchema.optional(),
   ptImage: z.object({ x: z.number(), y: z.number() }).optional(),
-  collectorInfo: TextBoxSchema.optional(),
+  collectorInfo: CollectorInfoBoxSchema.optional(),
   startingLoyalty: TextBoxSchema.optional(),
   nicknameTitle: TextBoxSchema.optional(),
   keyword: TextBoxSchema.optional(),
@@ -351,13 +365,6 @@ export const LayoutConfigSchema = z.object({
    * the colorless hybrid wash.
    */
   hybridTitleMask: z.enum(["title", "titleAndType"]).optional(),
-  /**
-   * Which built-in collector info layout `collectorInfo` uses. Defaults to
-   * "default" (rarity/number/creator name on one line, set/language/artist
-   * on another, all left-aligned). "retro" is just artist and creator name,
-   * each on its own line and centered in the box.
-   */
-  collectorInfoPreset: z.enum(["default", "retro"]).optional(),
   /**
    * Frame assets for the back face of double-faced cards (transform, modal
    * DFC). When present, the renderer swaps to these for `faceIndex === 1`.

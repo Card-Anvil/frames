@@ -1,7 +1,8 @@
 import {
+  CollectorInfoBox,
   Frame,
+  retroCollectorInfoLines,
   TemplateSettingsConfig,
-  TextBox,
   withCollectorInfoDefaults,
 } from "@cardanvil/frame-kit";
 
@@ -23,7 +24,9 @@ export const defaultCollectorInfoBounds = {
   // Printed on the frame body under the text box, not on the border ring, so
   // neither a border color nor "No Border" ever reaches it.
   overrides: [],
-} as const satisfies TextBox;
+  // Artist and creator name, each centered on its own line.
+  lines: retroCollectorInfoLines,
+} as const satisfies CollectorInfoBox;
 
 export const retroSettings = {
   useNoBorder: {

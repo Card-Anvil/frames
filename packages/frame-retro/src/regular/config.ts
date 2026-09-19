@@ -88,5 +88,4 @@ export const regularLayoutConfig: LayoutConfig = {
     land,
   },
   masks,
-  collectorInfoPreset: "retro",
 };

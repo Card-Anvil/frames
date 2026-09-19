@@ -6,7 +6,7 @@ import { placementOrigin } from "@cardanvil/frame-kit/layout";
 
 import type { Bounds, FramePayload, FrameSlot, TextBox } from "../api/types.js";
 import type { ArtLayer, CompositeResult } from "../lib/composite.js";
-import { atPath, boxesIn } from "../lib/frameModel.js";
+import { boxesIn } from "../lib/frameModel.js";
 import { boxColor } from "../lib/hues.js";
 import { CARD_INSET, type Guide, snapBounds } from "../lib/snapping.js";
 import { buildCollectorPreview } from "../text/collector.js";
@@ -453,16 +453,6 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
     };
   }, [art, frameCutoutUrls, ring, cutoutUrls, width, height]);
 
-  // The renderer's Retro collector preset centres its lines; the default runs
-  // them from the box's left edge.
-  const collectorAlign =
-    atPath(payload.frame, [
-      ...(boxSlot?.path.slice(0, -1) ?? []),
-      "collectorInfoPreset",
-    ]) === "retro"
-      ? "center"
-      : "left";
-
   // Single-line text preview, at the authored size, in the style the current
   // settings resolve each box to.
   useEffect(() => {
@@ -486,7 +476,7 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
         if (key === "collectorInfo") {
           const sample = sampleText.collectorInfo;
           if (sample) {
-            layer.add(buildCollectorPreview(sample, box, collectorAlign));
+            layer.add(buildCollectorPreview(sample, box));
           }
           continue;
         }
@@ -518,14 +508,7 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
     return () => {
       cancelled = true;
     };
-  }, [
-    previewBoxes,
-    sampleText,
-    ptIsVehicle,
-    hidden,
-    onOverflow,
-    collectorAlign,
-  ]);
+  }, [previewBoxes, sampleText, ptIsVehicle, hidden, onOverflow]);
 
   // Boxes and the transformer.
   useEffect(() => {

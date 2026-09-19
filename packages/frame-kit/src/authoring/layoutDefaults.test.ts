@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import type { CardBoxes, LayoutConfig, TextBox } from "../schema/frame.js";
 import {
+  defaultCollectorInfoLines,
+  retroCollectorInfoLines,
+} from "./collectorInfo.js";
+import {
   onBorderTextOverrides,
   withCollectorInfoDefaults,
 } from "./layoutDefaults.js";
@@ -25,7 +29,11 @@ const collectorBounds = { ...bounds, fontSize: 50, color: "white" };
 describe("withCollectorInfoDefaults", () => {
   it("fills in collector info that sits on the border ring", () => {
     const config = withCollectorInfoDefaults(layout, collectorBounds);
-    const expected = { ...collectorBounds, overrides: onBorderTextOverrides };
+    const expected = {
+      ...collectorBounds,
+      overrides: onBorderTextOverrides,
+      lines: defaultCollectorInfoLines,
+    };
     expect(config.boxes.collectorInfo).toEqual(expected);
     expect(config.backBoxes?.collectorInfo).toEqual(expected);
   });
@@ -42,6 +50,15 @@ describe("withCollectorInfoDefaults", () => {
       withCollectorInfoDefaults(layout, { ...collectorBounds, overrides: [] })
         .boxes.collectorInfo?.overrides,
     ).toEqual([]);
+  });
+
+  it("keeps the lines the bounds bring", () => {
+    expect(
+      withCollectorInfoDefaults(layout, {
+        ...collectorBounds,
+        lines: retroCollectorInfoLines,
+      }).boxes.collectorInfo?.lines,
+    ).toBe(retroCollectorInfoLines);
   });
 
   it("leaves a collector box the layout defines as written", () => {

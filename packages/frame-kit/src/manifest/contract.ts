@@ -18,7 +18,7 @@ import { FrameSchema } from "../schema/frame.js";
  * - 1.4: added the optional `overrides` on text boxes, conditional restyles
  *   matched against the border settings and template settings. Also the
  *   optional `shadowOffsetX`/`shadowOffsetY` on text boxes,
- *   `collectorInfoPreset` on layouts, and the `dividerBar*` frame assets.
+ *   `lines` on the collector info box, and the `dividerBar*` frame assets.
  * - 1.3: added the optional `border` layout mask, isolating the outer
  *   border ring's own shape so it can be recolored.
  * - 1.2: added the optional `mask` asset URL on text boxes (shaped text).

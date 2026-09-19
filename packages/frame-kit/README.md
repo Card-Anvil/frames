@@ -43,6 +43,30 @@ export const myFrame = {
 `as const satisfies Frame` is the idiom: `satisfies` checks the object against the contract, `as const`
 keeps the literal types.
 
+### The collector line
+
+What the collector box prints is data too: its `lines`, each a row of elements (`rarity`, `cardNumber`,
+`setCode`, `artist`, …) with their own spacing, sizing, fonts and alignment. `withCollectorInfoDefaults`
+fills in `defaultCollectorInfoLines` unless the bounds bring their own. Pass `retroCollectorInfoLines`
+for the Retro frame's centered artist and creator lines, or write your own:
+
+```ts
+const collectorBounds = {
+  x: 460,
+  y: 3880,
+  width: 2330,
+  height: 200,
+  fontSize: 58,
+  lines: [
+    { elements: [{ type: "artist", prefix: "Illus. " }], align: "center" },
+    {
+      elements: [{ type: "setCode", spacingAfter: 24 }, { type: "cardNumber" }],
+      align: "center",
+    },
+  ],
+} as const satisfies CollectorInfoBox;
+```
+
 ## Entry points
 
 | Import                           | What it gives you                                                                                                                                                                    |

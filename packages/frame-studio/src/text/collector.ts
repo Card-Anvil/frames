@@ -12,13 +12,11 @@ import { outlineAndShadow } from "./singleLine.js";
  * The studio draws one sample line instead, in the box's resolved style: what
  * matters here is what a border setting does to it, the colour, outline or
  * shadow its `overrides` give it. Gotham is not vendored, so the face is only
- * close, and no overflow is reported for it.
+ * close, and no overflow is reported for it. The line sits where the box's
+ * first line of `lines` would: left unless that line is centered.
  */
-export function buildCollectorPreview(
-  text: string,
-  box: TextBox,
-  align: "left" | "center",
-): Konva.Text {
+export function buildCollectorPreview(text: string, box: TextBox): Konva.Text {
+  const align = box.lines?.[0]?.align ?? "left";
   return new Konva.Text({
     text,
     x: box.x,

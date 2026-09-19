@@ -1,9 +1,10 @@
 import {
+  CollectorInfoBox,
   LayoutConfig,
   TemplateSettingsConfig,
-  TextBox,
   TextBoxOverride,
 } from "../schema/frame.js";
+import { defaultCollectorInfoLines } from "./collectorInfo.js";
 
 /**
  * `overrides` for text printed on the frame's outer border ring — on most
@@ -28,16 +29,19 @@ export const onBorderTextOverrides: readonly TextBoxOverride[] = [
  * The collector info this fills in is taken to sit on the border ring, so it
  * gets `onBorderTextOverrides` — unless `defaultCollectorInfoBounds` brings its
  * own `overrides`, with `[]` for a collector line printed where the border
- * settings never reach. A collector box the layout defines itself is left
- * exactly as written.
+ * settings never reach. It prints `defaultCollectorInfoLines` unless the bounds
+ * bring their own `lines` — `retroCollectorInfoLines`, or a layout of the
+ * frame's own. A collector box the layout defines itself is left exactly as
+ * written.
  */
 export function withCollectorInfoDefaults<T extends LayoutConfig>(
   config: T,
-  defaultCollectorInfoBounds: TextBox,
+  defaultCollectorInfoBounds: CollectorInfoBox,
 ): T {
-  const collectorInfo: TextBox = {
+  const collectorInfo: CollectorInfoBox = {
     ...defaultCollectorInfoBounds,
     overrides: defaultCollectorInfoBounds.overrides ?? onBorderTextOverrides,
+    lines: defaultCollectorInfoBounds.lines ?? defaultCollectorInfoLines,
   };
   return {
     ...config,
