@@ -1,10 +1,11 @@
 /**
- * How a frame's art is chosen and placed, and how its text boxes resolve.
+ * How a frame is drawn for one card: which art a card selects and where each
+ * piece goes, which cutouts and border recolor apply, which template settings
+ * are in effect, and how text boxes resolve and are styled.
  *
  * Card Anvil owns the card parsing — reading a Scryfall card into
- * `FrameDetails` — and this owns everything downstream of it: which art a set
- * of details selects, and where each piece is drawn. Both halves used to live
- * in the app; this one moved here so the studio and the renderer cannot drift
+ * `FrameDetails` — and this owns everything downstream of it. It all used to
+ * live in the app; it moved here so the studio and the renderer cannot drift
  * on it.
  *
  * A separate entry point from the main one: nothing on the packaging path
@@ -20,7 +21,23 @@ export {
   placeAsset,
   placementOrigin,
 } from "./assetPlacement.js";
-export { type OverrideState, resolveBoxOverrides } from "./boxOverrides.js";
+export {
+  type BorderStateInput,
+  borderStateFor,
+  ringMaskFor,
+} from "./border.js";
+export {
+  type OverrideState,
+  overrideMatches,
+  resolveBoxOverrides,
+} from "./boxOverrides.js";
+export {
+  type RgbColor,
+  getReadableTextColor,
+  parseNormalizedCssColor,
+  relativeLuminance,
+} from "./color.js";
+export { type FrameCutoutInput, frameCutoutMasks } from "./cutouts.js";
 export {
   type BannerColors,
   type DecorationCard,
@@ -61,3 +78,17 @@ export {
   resolveBaseFrame,
   resolveFrameAsset,
 } from "./resolveFrameAsset.js";
+export {
+  type SettingValue,
+  type TemplateSettingValues,
+  layoutTemplateSettings,
+  mergeTemplateSettings,
+  templateSettingDefaults,
+} from "./settings.js";
+export {
+  TEXT_SHADOW_COLOR,
+  type TextOutline,
+  type TextShadow,
+  textOutlineFor,
+  textShadowFor,
+} from "./textStyle.js";

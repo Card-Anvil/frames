@@ -34,7 +34,11 @@ const TEXT_BOX_KEYS = [
   "flipsideRules",
 ] as const satisfies readonly (keyof CardBoxes)[];
 
-function matches(when: TextBoxOverride["when"], state: OverrideState): boolean {
+/** Whether every condition an override names holds for one render. */
+export function overrideMatches(
+  when: TextBoxOverride["when"],
+  state: OverrideState,
+): boolean {
   if (when.border !== undefined) {
     const borders =
       typeof when.border === "string" ? [when.border] : when.border;
@@ -50,7 +54,7 @@ function matches(when: TextBoxOverride["when"], state: OverrideState): boolean {
 function resolveTextBox(box: TextBox, state: OverrideState): TextBox {
   const { overrides = [], ...resolved } = box;
   for (const override of overrides) {
-    if (matches(override.when, state)) {
+    if (overrideMatches(override.when, state)) {
       Object.assign(resolved, override.style);
     }
   }

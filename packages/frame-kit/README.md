@@ -155,7 +155,7 @@ that are not written as literals are reported as such rather than edited.
 
 ### `@cardanvil/frame-kit/layout`
 
-How a frame's art is chosen and placed, as pure functions:
+How a frame is drawn for one card, as pure functions:
 
 - `selectFrameLayers(details, options)` — the base frame and section overlays a
   set of `FrameDetails` selects. Split out of Card Anvil's `getFrameLayers`, so
@@ -170,9 +170,23 @@ How a frame's art is chosen and placed, as pure functions:
   middle of the card.
 - `resolveFrameAsset` / `resolveBaseFrame` — exact per-family lookup, and the
   base-frame fallback chain.
+- `frameCutoutMasks(input)` — the masks cut out of a face's frame body, in the
+  renderer's order: "No Border", the legendary crown's space, the extended-art
+  silhouette, the colorless nickname banner.
+- `ringMaskFor(masks, useFullBorder)` and `borderStateFor(input)` — the mask a
+  border color recolors through, and the border state that results:
+  `default`, `light`, `dark` or `none`.
 - `resolveBoxOverrides(boxes, state)` — a box set with each text box's
   `overrides` merged in for one render's border state and template settings,
   so everything that draws a frame agrees on what a condition matches.
+  `overrideMatches` tests a single rule.
+- `templateSettingDefaults(frame)`, `mergeTemplateSettings` and
+  `layoutTemplateSettings(settings, layout)` — a frame's settings the way Card
+  Anvil stores them, and the values in effect for one layout.
+- `textOutlineFor(box)` / `textShadowFor(box)` — how a plain-text box is
+  outlined or shadowed.
+- `getReadableTextColor` and friends — the contrast rule that decides whether
+  a border color reads as light or dark.
 
 Card Anvil still owns the other half — reading a Scryfall card into
 `FrameDetails` — because that is where the Scryfall types live.
