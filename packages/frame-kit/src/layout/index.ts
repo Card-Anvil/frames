@@ -1,5 +1,5 @@
 /**
- * How a frame's art is chosen and placed.
+ * How a frame's art is chosen and placed, and how its text boxes resolve.
  *
  * Card Anvil owns the card parsing — reading a Scryfall card into
  * `FrameDetails` — and this owns everything downstream of it: which art a set
@@ -20,6 +20,7 @@ export {
   placeAsset,
   placementOrigin,
 } from "./assetPlacement.js";
+export { type OverrideState, resolveBoxOverrides } from "./boxOverrides.js";
 export {
   type BannerColors,
   type DecorationCard,

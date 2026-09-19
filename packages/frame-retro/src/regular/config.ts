@@ -89,5 +89,4 @@ export const regularLayoutConfig: LayoutConfig = {
   },
   masks,
   collectorInfoPreset: "retro",
-  collectorInfoIgnoresBorderColor: true,
 };

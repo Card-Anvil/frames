@@ -170,6 +170,9 @@ How a frame's art is chosen and placed, as pure functions:
   middle of the card.
 - `resolveFrameAsset` / `resolveBaseFrame` — exact per-family lookup, and the
   base-frame fallback chain.
+- `resolveBoxOverrides(boxes, state)` — a box set with each text box's
+  `overrides` merged in for one render's border state and template settings,
+  so everything that draws a frame agrees on what a condition matches.
 
 Card Anvil still owns the other half — reading a Scryfall card into
 `FrameDetails` — because that is where the Scryfall types live.

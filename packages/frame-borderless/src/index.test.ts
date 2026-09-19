@@ -1,10 +1,41 @@
 import { describe, expect, it } from "vitest";
 
-import { FrameMetaSchema, FrameSchema } from "@cardanvil/frame-kit";
+import {
+  FrameMetaSchema,
+  FrameSchema,
+  type LayoutConfig,
+  onBorderTextOverrides,
+} from "@cardanvil/frame-kit";
 
 import frameMeta from "../frame.meta.json";
 import * as exported from "./index";
 import { borderlessFrame } from "./index";
+
+/** Every layout config the frame ships, alternate variants included. */
+const everyLayout: [string, LayoutConfig][] = [
+  ...Object.entries(borderlessFrame.config.layouts),
+  ...Object.entries(borderlessFrame.config.alternateLayouts).flatMap(
+    ([variant, layouts]) =>
+      Object.entries(layouts).map(
+        ([layout, config]): [string, LayoutConfig] => [
+          `${variant}.${layout}`,
+          config,
+        ],
+      ),
+  ),
+];
+
+/** The mask sets a render can pick as the active one (see renderCardToCanvas). */
+const ACTIVE_MASK_SETS = [
+  "masks",
+  "backMasks",
+  "creatureMasks",
+  "backCreatureMasks",
+  "sagaFrontMasks",
+  "sagaBackMasks",
+  "sagaFrontCreatureMasks",
+  "sagaBackCreatureMasks",
+] as const;
 
 describe("Borderless frame", () => {
   // The schemas are the contract every frame — built-in or third-party — is
@@ -22,6 +53,31 @@ describe("Borderless frame", () => {
     expect(Object.keys(borderlessFrame.config.layouts).length).toBeGreaterThan(
       0,
     );
+  });
+
+  // Collector info sits on the border ring on every layout, and takes the
+  // helper's on-border default: black on a light border, outlined once "No
+  // Border" cuts the ring away.
+  it("gives every layout's collector info the on-border overrides", () => {
+    for (const [name, config] of everyLayout) {
+      expect(config.boxes.collectorInfo?.overrides, name).toBe(
+        onBorderTextOverrides,
+      );
+    }
+  });
+
+  // The renderer only counts the border as gone — and outlines the collector
+  // info — where a `noBorder` mask actually cuts it away. So every mask set a
+  // render can pick has to ship one, or "No Border" leaves the text bare.
+  it("ships a noBorder mask with every mask set", () => {
+    for (const [name, config] of everyLayout) {
+      for (const key of ACTIVE_MASK_SETS) {
+        const masks = config[key];
+        if (masks) {
+          expect(masks.noBorder, `${name}.${key}`).toBeDefined();
+        }
+      }
+    }
   });
 });
 

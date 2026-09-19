@@ -22,7 +22,7 @@ export const BoundsSchema = z.object({
   height: z.number(),
 });
 
-export const TextBoxSchema = BoundsSchema.extend({
+const TextBoxFieldsSchema = BoundsSchema.extend({
   fontSize: z.number(),
   color: z.string().optional(),
   outlineColor: z.string().optional(),
@@ -70,6 +70,76 @@ export const TextBoxSchema = BoundsSchema.extend({
    * position (the shape is absent there), the line falls back to the full box
    * width. */
   mask: AssetUrlSchema.optional(),
+});
+
+/**
+ * The frame's outer border as the renderer is about to draw it — what a text
+ * box's `overrides` match on through `when.border`:
+ *
+ * - `"default"`: the frame's own border art, untouched by any border setting.
+ * - `"light"` / `"dark"`: a user border color recolors the ring, because the
+ *   layout ships a `border` mask (or `borderFull`, under `useFullBorder`).
+ *   `"light"` when black text reads better on the chosen color (WCAG
+ *   contrast), `"dark"` when white does.
+ * - `"none"`: "No Border" is on and the layout ships a `noBorder` mask, so the
+ *   ring is cut away and whatever sat on it now sits over the art.
+ *
+ * Only a layout with those masks ever leaves `"default"`, so a condition on
+ * any other state never fires for a frame whose border cannot be recolored or
+ * removed.
+ */
+export const BorderStateSchema = z.enum(["default", "light", "dark", "none"]);
+
+export type BorderState = z.infer<typeof BorderStateSchema>;
+
+/**
+ * One conditional restyle of a text box: when every condition in `when` holds
+ * for a render, `style` is merged over the box. A condition left out matches
+ * anything.
+ */
+export const TextBoxOverrideSchema = z.object({
+  when: z.object({
+    /** The border state to match; an array matches any of its states. */
+    border: z
+      .union([BorderStateSchema, z.array(BorderStateSchema).readonly()])
+      .optional(),
+    /**
+     * Template settings that must hold, each compared with `===` against the
+     * value in effect for the layout — frame- and layout-level settings
+     * merged, defaults included. E.g. `{ useFullBorder: true }`.
+     */
+    settings: z
+      .record(z.string(), z.union([z.boolean(), z.string(), z.number()]))
+      .optional(),
+  }),
+  /**
+   * The fields to replace. Style only: parts of the app read box geometry
+   * without resolving overrides, so a conditional size or position would put
+   * them out of step with the render.
+   */
+  style: TextBoxFieldsSchema.pick({
+    color: true,
+    outlineColor: true,
+    outlineWidth: true,
+    shadow: true,
+    shadowOffsetX: true,
+    shadowOffsetY: true,
+    opacity: true,
+  }),
+});
+
+export type TextBoxOverride = z.infer<typeof TextBoxOverrideSchema>;
+
+export const TextBoxSchema = TextBoxFieldsSchema.extend({
+  /**
+   * Conditional restyles, applied in order at render time — where two matches
+   * set the same field, the later one wins. This is how a box adapts to the
+   * border settings: the renderer never restyles text on its own. Text printed
+   * on the border ring wants `onBorderTextOverrides`, which
+   * `withCollectorInfoDefaults` gives collector info unless its bounds bring
+   * their own — `[]` for none.
+   */
+  overrides: z.array(TextBoxOverrideSchema).readonly().optional(),
 });
 
 export type TextBox = z.infer<typeof TextBoxSchema>;
@@ -288,14 +358,6 @@ export const LayoutConfigSchema = z.object({
    * each on its own line and centered in the box.
    */
   collectorInfoPreset: z.enum(["default", "retro"]).optional(),
-  /**
-   * When true, the collector info never recolors to stay readable against a
-   * user-chosen border color (see `useFullBorder`/`borderColor` handling in
-   * `drawCardToStage.ts`). Set this for frames whose collector info doesn't
-   * actually sit on the recolorable border ring, so the box's own configured
-   * color is never overridden.
-   */
-  collectorInfoIgnoresBorderColor: z.boolean().optional(),
   /**
    * Frame assets for the back face of double-faced cards (transform, modal
    * DFC). When present, the renderer swaps to these for `faceIndex === 1`.

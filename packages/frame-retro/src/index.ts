@@ -20,6 +20,9 @@ export const defaultCollectorInfoBounds = {
   shadow: true,
   shadowOffsetX: 4,
   shadowOffsetY: 6,
+  // Printed on the frame body under the text box, not on the border ring, so
+  // neither a border color nor "No Border" ever reaches it.
+  overrides: [],
 } as const satisfies TextBox;
 
 export const retroSettings = {
