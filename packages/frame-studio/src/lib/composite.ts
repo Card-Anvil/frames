@@ -11,6 +11,7 @@ import {
   crownColors,
   decorationsFor,
   familyFor,
+  frameCutoutMasks,
   frameDetailsFor,
   nicknameColors,
   placeAsset,
@@ -21,22 +22,30 @@ import {
   resolveNicknameAsset,
   resolveNyxInsertAsset,
   resolvePtBoxAsset,
+  ringMaskFor,
   selectFrameLayers,
 } from "@cardanvil/frame-kit/layout";
 
 import type { FramePayload, FrameSlot } from "../api/types.js";
-import { atPath } from "./frameModel.js";
+import { atPath, masksIn } from "./frameModel.js";
 
 /** One image to draw, with whatever masks clip it. */
 export interface ArtLayer {
   readonly id: string;
   readonly url: string;
   readonly placement: Placement;
+  /**
+   * The frame body — base art and section overlays — or something drawn over
+   * it. The frame cutouts and the border recolor apply to the body alone.
+   */
+  readonly part: "frame" | "decoration";
   /** Clips this layer to a section of the frame. */
   readonly maskUrl?: string;
   readonly secondaryMaskUrl?: string;
   /** Blend colour only, keeping the alpha underneath. */
   readonly preserveAlpha?: boolean;
+  /** Paints the art this colour, keeping its alpha. */
+  readonly recolor?: string;
 }
 
 export interface CompositeInput {
@@ -51,12 +60,21 @@ export interface CompositeInput {
   /** Template settings that swap in alternate crown art. */
   readonly useNyxInsert: boolean;
   readonly useUBCrowns: boolean;
+  /** Card Anvil's border color setting; null when none is picked. */
+  readonly borderColor: string | null;
+  /** The "No Border" and "Color Entire Border" template settings. */
+  readonly useNoBorder: boolean;
+  readonly useFullBorder: boolean;
   /** Section masks switched on for inspection, applied over everything. */
   readonly inspectMasks: ReadonlySet<string>;
 }
 
 export interface CompositeResult {
   readonly layers: readonly ArtLayer[];
+  /** Cut out of the frame body, in the renderer's order. */
+  readonly frameCutoutUrls: readonly string[];
+  /** The border ring to recolor, over the frame body once it is cut. */
+  readonly ring?: { readonly maskUrl: string; readonly color: string };
   /** Masks applied as cutouts over the finished stack. */
   readonly cutoutUrls: readonly string[];
   /** Set when the requested base art was missing and another colour stood in. */
@@ -85,6 +103,11 @@ const asFrameAssets = (value: unknown): FrameAssets | undefined =>
  * without the studio guessing. Decorations (crowns, nicknames, PT plates) stay
  * manual toggles, because whether a card is legendary or nicknamed is a
  * property of the card, not of the frame.
+ *
+ * The border settings are the renderer's too: the frame body loses whatever
+ * `frameCutoutMasks` cuts ("No Border", the legendary crown's space, the
+ * extended-art silhouette), and a border color recolors the ring
+ * `ringMaskFor` picks.
  */
 export function composite(input: CompositeInput): CompositeResult {
   const {
@@ -97,21 +120,22 @@ export function composite(input: CompositeInput): CompositeResult {
     useNyxBorder,
     useNyxInsert,
     useUBCrowns,
+    borderColor,
+    useNoBorder,
+    useFullBorder,
     inspectMasks,
   } = input;
 
   const assets = assetSlot
     ? asFrameAssets(atPath(payload.frame, assetSlot.path))
     : undefined;
-  const masks = maskSlot
-    ? asRecord(atPath(payload.frame, maskSlot.path))
-    : undefined;
+  const masks = masksIn(payload, maskSlot);
   if (!assets) {
-    return { layers: [], cutoutUrls: [] };
+    return { layers: [], frameCutoutUrls: [], cutoutUrls: [] };
   }
 
   const maskUrl = (name: string): string | undefined => {
-    const url = masks?.[name];
+    const url = asRecord(masks)?.[name];
     return typeof url === "string" ? url : undefined;
   };
 
@@ -139,6 +163,7 @@ export function composite(input: CompositeInput): CompositeResult {
       placement: placeAsset(
         `${resolvedBase.ref.family}.${resolvedBase.ref.color}`,
       ),
+      part: "frame",
     });
   }
 
@@ -156,6 +181,7 @@ export function composite(input: CompositeInput): CompositeResult {
         id: `${overlay.frame.family}.${overlay.frame.color}/${overlay.mask}`,
         url,
         placement: placeAsset(`${overlay.frame.family}.${overlay.frame.color}`),
+        part: "frame",
         maskUrl: primary,
         ...(overlay.secondaryMask
           ? { secondaryMaskUrl: maskUrl(overlay.secondaryMask) }
@@ -196,14 +222,26 @@ export function composite(input: CompositeInput): CompositeResult {
   const halves = (colors: BannerColors): FrameColorToken[] =>
     Array.isArray(colors) ? colors : [colors];
 
-  const addDecoration = (id: string, url: string | undefined) => {
+  const addDecoration = (
+    id: string,
+    url: string | undefined,
+    recolor?: string,
+  ) => {
     if (url !== undefined) {
-      layers.push({ id, url, placement: placeAsset(id, placement) });
+      layers.push({
+        id,
+        url,
+        placement: placeAsset(id, placement),
+        part: "decoration",
+        ...(recolor === undefined ? {} : { recolor }),
+      });
     }
   };
 
+  // The strip reads as the border showing through behind the crown, so it
+  // takes the border color too — whether or not the ring itself can.
   if (wanted.crownBlackBar && typeof assets.black === "string") {
-    addDecoration("black", assets.black);
+    addDecoration("black", assets.black, borderColor ?? undefined);
   }
 
   if (wanted.crown) {
@@ -247,12 +285,29 @@ export function composite(input: CompositeInput): CompositeResult {
     addDecoration(`pt.${color}`, resolvePtBoxAsset(assets, color));
   }
 
+  // What the renderer does to the frame body for these settings: the same
+  // cutouts in the same order, then the ring recolor over what is left.
+  const frameCutoutUrls = frameCutoutMasks({
+    masks,
+    frameAssets: assets,
+    useNoBorder,
+    isLegendary: shape.isLegendary === true,
+    hasNickname,
+    frameColor: resolvedBase?.ref.color ?? selected.baseFrame.color,
+    isTallFrame: selected.baseFrame.family === "tall",
+  });
+  const ringMask = ringMaskFor(masks, useFullBorder);
+
   const cutoutUrls = [...inspectMasks]
     .map((name) => maskUrl(name))
     .filter((url): url is string => url !== undefined);
 
   return {
     layers,
+    frameCutoutUrls,
+    ...(borderColor && ringMask
+      ? { ring: { maskUrl: ringMask, color: borderColor } }
+      : {}),
     cutoutUrls,
     ...(usedFallback
       ? {

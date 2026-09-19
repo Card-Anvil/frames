@@ -240,6 +240,16 @@ Scryfall parsing lifted out. Crowns, nicknames and PT plates are toggles, placed
 from the layout's own `crownConfig` / `nicknameConfig` / `ptImage` rather than
 centred.
 
+The Settings panel offers every template setting the frame and the current
+layout declare, next to Card Anvil's border color; the frame variant, nyx
+borders and UB crowns keep their own controls. They apply the way the app
+applies them, through the same frame-kit functions: the frame body loses the
+same cutouts ("No Border", the legendary crown's space, the extended-art
+silhouette), a border color repaints the same ring, and each text box is drawn
+with its `overrides` resolved for the border state that results. The inspector
+lists a box's overrides and marks the ones in effect, and a sample collector
+line shows what they do to it.
+
 Scroll zooms, dragging the background pans, `0` fits and `1` is 100%. Boxes snap
 to the card edges, the centre lines and each other (`alt` to override), and
 `ctrl+z` undoes. The layer list switches colour, toggles each asset, reorders the

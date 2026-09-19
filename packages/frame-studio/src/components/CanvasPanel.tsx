@@ -5,10 +5,11 @@ import { useCallback, useEffect, useRef } from "react";
 import { placementOrigin } from "@cardanvil/frame-kit/layout";
 
 import type { Bounds, FramePayload, FrameSlot, TextBox } from "../api/types.js";
-import type { ArtLayer } from "../lib/composite.js";
-import { boxesIn } from "../lib/frameModel.js";
+import type { ArtLayer, CompositeResult } from "../lib/composite.js";
+import { atPath, boxesIn } from "../lib/frameModel.js";
 import { boxColor } from "../lib/hues.js";
 import { CARD_INSET, type Guide, snapBounds } from "../lib/snapping.js";
+import { buildCollectorPreview } from "../text/collector.js";
 import { loadFonts } from "../text/fonts.js";
 import { buildPreviewText, isPreviewable } from "../text/singleLine.js";
 
@@ -17,8 +18,14 @@ export interface CanvasPanelProps {
   boxSlot: FrameSlot | undefined;
   /** Art to composite, bottom first, each with its own placement and masks. */
   art: readonly ArtLayer[];
+  /** Cut out of the frame body, before anything is drawn over it. */
+  frameCutoutUrls: readonly string[];
+  /** The border ring to paint, over what the cutouts leave of the body. */
+  ring: CompositeResult["ring"];
   /** Masks applied as cutouts over the finished stack. */
   cutoutUrls: readonly string[];
+  /** The box set as the current settings resolve it, for the text previews. */
+  previewBoxes: readonly { key: string; box: TextBox }[];
   selected: string | undefined;
   hidden: ReadonlySet<string>;
   showCardFace: boolean;
@@ -83,7 +90,10 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
     payload,
     boxSlot,
     art,
+    frameCutoutUrls,
+    ring,
     cutoutUrls,
+    previewBoxes,
     selected,
     hidden,
     showCardFace,
@@ -286,8 +296,9 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
   }, [fit, zoomAbout]);
 
   // Frame art, composited the way the renderer does it: each overlay is
-  // clipped to its section by a mask inside its own cached group, then the
-  // whole stack is cut down by any masks switched on for inspection.
+  // clipped to its section by a mask inside its own cached group; the frame
+  // body is cut and its ring recolored before the decorations go over it; and
+  // then the whole stack is cut down by any masks switched on for inspection.
   useEffect(() => {
     const layer = artRef.current;
     if (!layer) {
@@ -311,17 +322,35 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
               : await loadImage(item.secondaryMaskUrl),
         })),
       );
+      const frameCutouts = await Promise.all(frameCutoutUrls.map(loadImage));
+      const ringMask =
+        ring === undefined ? undefined : await loadImage(ring.maskUrl);
       const cutouts = await Promise.all(cutoutUrls.map(loadImage));
-      return { images, cutouts };
+      return { images, frameCutouts, ringMask, cutouts };
     };
 
+    /** A sheet-sized mask, centred the way the renderer centres them. */
+    const sheetMask = (
+      image: HTMLImageElement,
+      globalCompositeOperation: GlobalCompositeOperation,
+    ) =>
+      new Konva.Image({
+        image,
+        x: (width - image.naturalWidth) / 2,
+        y: (height - image.naturalHeight) / 2,
+        globalCompositeOperation,
+        listening: false,
+      });
+
     void loadAll()
-      .then(({ images, cutouts }) => {
+      .then(({ images, frameCutouts, ringMask, cutouts }) => {
         if (cancelled) {
           return;
         }
         layer.destroyChildren();
         const stack = new Konva.Group({ listening: false });
+        const body = new Konva.Group({ listening: false });
+        stack.add(body);
 
         for (const { item, image, mask, secondary } of images) {
           const size = {
@@ -332,6 +361,7 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
           if (!origin) {
             continue; // laid out dynamically by the renderer; nothing to draw
           }
+          const target = item.part === "frame" ? body : stack;
           const node = new Konva.Image({
             image,
             x: origin.x,
@@ -339,8 +369,27 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
             listening: false,
           });
 
+          if (item.recolor !== undefined) {
+            // Keep the art's own alpha and replace its colour. Cached so
+            // `source-in` composites against this art alone.
+            const painted = new Konva.Group({ listening: false });
+            painted.add(
+              node,
+              new Konva.Rect({
+                ...origin,
+                ...size,
+                fill: item.recolor,
+                globalCompositeOperation: "source-in",
+                listening: false,
+              }),
+            );
+            painted.cache();
+            target.add(painted);
+            continue;
+          }
+
           if (!mask) {
-            stack.add(node);
+            target.add(node);
             continue;
           }
 
@@ -350,15 +399,7 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
           clipped.add(node);
           for (const maskImage of [mask, secondary]) {
             if (maskImage) {
-              clipped.add(
-                new Konva.Image({
-                  image: maskImage,
-                  x: (width - maskImage.naturalWidth) / 2,
-                  y: (height - maskImage.naturalHeight) / 2,
-                  globalCompositeOperation: "destination-in",
-                  listening: false,
-                }),
-              );
+              clipped.add(sheetMask(maskImage, "destination-in"));
             }
           }
           clipped.cache();
@@ -366,19 +407,35 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
             // Recolour what is already there instead of painting over it.
             clipped.globalCompositeOperation("source-atop");
           }
-          stack.add(clipped);
+          target.add(clipped);
+        }
+
+        for (const cutout of frameCutouts) {
+          body.add(sheetMask(cutout, "destination-in"));
+        }
+        if (ring !== undefined && ringMask !== undefined) {
+          // The ring's shape in the border color, painted `source-atop` so it
+          // lands only where the cut body still has art: a ring "No Border"
+          // took away stays away, as it does in the renderer.
+          const paint = new Konva.Group({ listening: false });
+          paint.add(
+            new Konva.Rect({
+              ...canvas,
+              fill: ring.color,
+              listening: false,
+            }),
+            sheetMask(ringMask, "destination-in"),
+          );
+          paint.cache();
+          paint.globalCompositeOperation("source-atop");
+          body.add(paint);
+        }
+        if (frameCutouts.length > 0 || ringMask !== undefined) {
+          body.cache();
         }
 
         for (const cutout of cutouts) {
-          stack.add(
-            new Konva.Image({
-              image: cutout,
-              x: (width - cutout.naturalWidth) / 2,
-              y: (height - cutout.naturalHeight) / 2,
-              globalCompositeOperation: "destination-in",
-              listening: false,
-            }),
-          );
+          stack.add(sheetMask(cutout, "destination-in"));
         }
         if (cutouts.length > 0) {
           stack.cache();
@@ -394,9 +451,20 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
     return () => {
       cancelled = true;
     };
-  }, [art, cutoutUrls, width, height]);
+  }, [art, frameCutoutUrls, ring, cutoutUrls, width, height]);
 
-  // Single-line text preview, at the authored size.
+  // The renderer's Retro collector preset centres its lines; the default runs
+  // them from the box's left edge.
+  const collectorAlign =
+    atPath(payload.frame, [
+      ...(boxSlot?.path.slice(0, -1) ?? []),
+      "collectorInfoPreset",
+    ]) === "retro"
+      ? "center"
+      : "left";
+
+  // Single-line text preview, at the authored size, in the style the current
+  // settings resolve each box to.
   useEffect(() => {
     const layer = textRef.current;
     if (!layer) {
@@ -411,14 +479,24 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
       layer.destroyChildren();
       const overflows: Record<string, number> = {};
 
-      for (const { key, box } of boxSlot ? boxesIn(payload, boxSlot) : []) {
+      for (const { key, box } of previewBoxes) {
+        if (hidden.has(key)) {
+          continue;
+        }
+        if (key === "collectorInfo") {
+          const sample = sampleText.collectorInfo;
+          if (sample) {
+            layer.add(buildCollectorPreview(sample, box, collectorAlign));
+          }
+          continue;
+        }
         const sample =
           key === "pt"
             ? [sampleText.power, sampleText.toughness].every(Boolean)
               ? `${sampleText.power ?? ""}/${sampleText.toughness ?? ""}`
               : ""
             : sampleText[key];
-        if (!isPreviewable(key) || !sample || hidden.has(key)) {
+        if (!isPreviewable(key) || !sample) {
           continue;
         }
         // The vehicle plate is dark art; the renderer switches to white on it.
@@ -440,7 +518,14 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
     return () => {
       cancelled = true;
     };
-  }, [payload, boxSlot, sampleText, ptIsVehicle, hidden, onOverflow]);
+  }, [
+    previewBoxes,
+    sampleText,
+    ptIsVehicle,
+    hidden,
+    onOverflow,
+    collectorAlign,
+  ]);
 
   // Boxes and the transformer.
   useEffect(() => {

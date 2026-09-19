@@ -10,7 +10,12 @@ import {
 } from "@chakra-ui/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import type { CardShape } from "@cardanvil/frame-kit/layout";
+import {
+  type CardShape,
+  type OverrideState,
+  type TemplateSettingValues,
+  borderStateFor,
+} from "@cardanvil/frame-kit/layout";
 
 import {
   getFrame,
@@ -33,12 +38,25 @@ import { CardShapePanel } from "./components/CardShapePanel.js";
 import { Inspector } from "./components/Inspector.js";
 import { KnobPanel } from "./components/KnobPanel.js";
 import { MaskPanel } from "./components/MaskPanel.js";
+import { SettingsPanel } from "./components/SettingsPanel.js";
 import { SharedEditDialog } from "./components/SharedEditDialog.js";
 import { ToolbarSelect } from "./components/ToolbarSelect.js";
 import { ColorModeButton } from "./components/ui/color-mode.js";
 import { DEFAULT_SHAPE, describeSelection } from "./lib/cardShape.js";
 import { composite } from "./lib/composite.js";
-import { atPath, boxesIn, layoutsOf } from "./lib/frameModel.js";
+import {
+  atPath,
+  boxesIn,
+  layoutsOf,
+  masksIn,
+  resolvedBoxesIn,
+} from "./lib/frameModel.js";
+import {
+  asFrame,
+  settingEntries,
+  settingsInEffect,
+  withSetting,
+} from "./lib/frameSettings.js";
 import { maskLayers } from "./lib/layers.js";
 import { type PendingEdits, pathKey, withPending } from "./lib/optimistic.js";
 import { PRESETS, useSampleText } from "./state/useSampleText.js";
@@ -81,6 +99,10 @@ export function App(): React.JSX.Element {
   const [maskOverride, setMaskOverride] = useState<ReadonlySet<string>>(
     new Set(),
   );
+  /** Template settings changed here, in the shape Card Anvil stores them. */
+  const [settingValues, setSettingValues] = useState<TemplateSettingValues>({});
+  /** Card Anvil's border color setting — app-wide, not part of the frame. */
+  const [borderColor, setBorderColor] = useState<string | null>(null);
 
   useEffect(() => {
     void getInfo().then(setInfo);
@@ -158,6 +180,55 @@ export function App(): React.JSX.Element {
     [view, maskSlot],
   );
 
+  // The settings in effect, read the way Card Anvil reads them: "No Border"
+  // at the frame level, everything else as the layout sees it.
+  const frame = useMemo(() => (view ? asFrame(view.frame) : undefined), [view]);
+  const settingList = useMemo(
+    () => (frame ? settingEntries(frame, layout) : []),
+    [frame, layout],
+  );
+  const inEffect = useMemo(
+    () => (frame ? settingsInEffect(frame, settingValues, layout) : undefined),
+    [frame, settingValues, layout],
+  );
+  const useNoBorder = inEffect?.frame.useNoBorder === true;
+  const useFullBorder = inEffect?.layout.useFullBorder === true;
+
+  /** What text boxes' `overrides` match on, for the card on the canvas. */
+  const overrideState = useMemo<OverrideState>(
+    () => ({
+      border: borderStateFor({
+        borderColor,
+        masks: view ? masksIn(view, maskSlot) : undefined,
+        useNoBorder,
+        useFullBorder,
+      }),
+      settings: {
+        ...inEffect?.layout,
+        // The studio's own controls stand in for these settings.
+        useNyxBorder,
+        useUBCrowns,
+        ...(variant === null ? {} : { frameVariant: variant }),
+      },
+    }),
+    [
+      view,
+      maskSlot,
+      borderColor,
+      useNoBorder,
+      useFullBorder,
+      inEffect,
+      useNyxBorder,
+      useUBCrowns,
+      variant,
+    ],
+  );
+  const previewBoxes = useMemo(
+    () =>
+      view && boxSlot ? resolvedBoxesIn(view, boxSlot, overrideState) : [],
+    [view, boxSlot, overrideState],
+  );
+
   const composed = useMemo(
     () =>
       view
@@ -175,9 +246,12 @@ export function App(): React.JSX.Element {
             },
             useNyxInsert,
             useUBCrowns,
+            borderColor,
+            useNoBorder,
+            useFullBorder,
             inspectMasks: maskOverride,
           })
-        : { layers: [], cutoutUrls: [] },
+        : { layers: [], frameCutoutUrls: [], cutoutUrls: [] },
     [
       view,
       assetSlot,
@@ -188,6 +262,9 @@ export function App(): React.JSX.Element {
       useNyxBorder,
       useNyxInsert,
       useUBCrowns,
+      borderColor,
+      useNoBorder,
+      useFullBorder,
       maskOverride,
     ],
   );
@@ -196,6 +273,11 @@ export function App(): React.JSX.Element {
   useEffect(() => {
     setMaskOverride(new Set());
   }, [slug, variant, layout]);
+
+  // Settings belong to a frame; another frame declares its own.
+  useEffect(() => {
+    setSettingValues({});
+  }, [slug]);
 
   // Keep the layout/slot selection valid as the frame changes underneath.
   useEffect(() => {
@@ -476,7 +558,10 @@ export function App(): React.JSX.Element {
             payload={view}
             boxSlot={boxSlot}
             art={composed.layers}
+            frameCutoutUrls={composed.frameCutoutUrls}
+            ring={composed.ring}
             cutoutUrls={composed.cutoutUrls}
+            previewBoxes={previewBoxes}
             selected={selected}
             hidden={hidden}
             showCardFace={showCardFace}
@@ -528,6 +613,19 @@ export function App(): React.JSX.Element {
             onNyxInsertChange={setUseNyxInsert}
             onUBCrownsChange={setUseUBCrowns}
           />
+          <SettingsPanel
+            entries={settingList}
+            values={inEffect?.frame ?? {}}
+            layout={layout}
+            borderColor={borderColor}
+            borderState={overrideState.border}
+            onBorderColorChange={setBorderColor}
+            onChange={(entry, value) => {
+              setSettingValues((current) =>
+                withSetting(current, entry, layout, value),
+              );
+            }}
+          />
           <VStack align="stretch" gap="1" p="3" borderBottomWidth="1px">
             <Text fontSize="xs" textTransform="uppercase" color="fg.muted">
               Sample text
@@ -547,7 +645,11 @@ export function App(): React.JSX.Element {
               </HStack>
             ))}
             {boxes
-              .filter(({ key }) => isPreviewable(key) && key !== "pt")
+              .filter(
+                ({ key }) =>
+                  (isPreviewable(key) && key !== "pt") ||
+                  key === "collectorInfo",
+              )
               .map(({ key }) => (
                 <HStack key={key} gap="2">
                   <Text fontSize="xs" color="fg.muted" w="80px" truncate>
@@ -566,7 +668,8 @@ export function App(): React.JSX.Element {
               One line, at the size you authored — no wrapping, no mana symbols
               and no auto-shrink. Card Anvil shrinks the title around the mana
               cost and the type line around the set symbol, so a box flagged
-              here may still fit there.
+              here may still fit there. The collector line is a stand-in, there
+              to show the style the settings above give it.
             </Text>
           </VStack>
           {slug && view && knobSlots.length > 0 && (
@@ -593,6 +696,7 @@ export function App(): React.JSX.Element {
               boxKey={selected}
               box={selectedBox}
               basePath={boxSlot.path}
+              state={overrideState}
               editable={editable}
               onChange={(field, value) => {
                 if (selected) {
