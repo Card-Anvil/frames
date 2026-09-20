@@ -11,10 +11,10 @@ import * as masks from "./masks";
 // its actual pinlines/text windows yet.
 const boxes: CardBoxes = {
   art: {
-    x: 376,
-    y: 610,
-    width: 2512,
-    height: 1839,
+    x: 486,
+    y: 553,
+    width: 2296,
+    height: 1842,
   },
   mana: {
     x: 450,
