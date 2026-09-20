@@ -1,0 +1,12 @@
+{
+  "id": "com.cardanvil.retro",
+  "slug": "retro",
+  "entry": "./src/index.ts",
+  "export": "retroFrame",
+  "author": {
+    "name": "Card Anvil",
+    "url": "https://github.com/Card-Anvil"
+  },
+  "license": "NOASSERTION",
+  "homepage": "https://github.com/Card-Anvil/frames"
+}

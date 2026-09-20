@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { FrameMetaSchema, FrameSchema } from "@cardanvil/frame-kit";
+import { resolveBoxOverrides } from "@cardanvil/frame-kit/layout";
 
 import frameMeta from "../frame.meta.json";
 import * as exported from "./index";
@@ -42,6 +43,34 @@ describe("M15 frame", () => {
       label: "Color Entire Border",
       defaultValue: false,
     });
+  });
+
+  // The partial mask leaves the collector strip black, so its text only has to
+  // adapt to a light border once the toggle colors the whole ring.
+  it("adapts normal's collector text only once the whole ring is colored", () => {
+    const { boxes } = m15Frame.config.layouts.normal;
+    const color = (useFullBorder: boolean) =>
+      resolveBoxOverrides(boxes, {
+        border: "light",
+        settings: { useFullBorder },
+      }).collectorInfo?.color;
+    expect(color(false)).toBe("white");
+    expect(color(true)).toBe("black");
+  });
+
+  it("adapts saga's collector text to any light border", () => {
+    const { boxes } = m15Frame.config.layouts.saga;
+    const resolved = resolveBoxOverrides(boxes, {
+      border: "light",
+      settings: { useFullBorder: false },
+    });
+    expect(resolved.collectorInfo?.color).toBe("black");
+  });
+
+  // Planeswalkers ship no border mask, so no border color ever reaches them.
+  it("never restyles the planeswalker's collector text", () => {
+    const { boxes } = m15Frame.config.layouts.normal_planeswalker;
+    expect(boxes.collectorInfo?.overrides).toBeUndefined();
   });
 });
 

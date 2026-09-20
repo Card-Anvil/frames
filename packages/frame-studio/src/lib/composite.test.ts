@@ -66,7 +66,13 @@ const run = (
   shape: Parameters<typeof composite>[0]["shape"],
   card: Parameters<typeof composite>[0]["card"] = {},
   overrides: Record<string, unknown> = {},
-  settings: { useNyxInsert?: boolean; useUBCrowns?: boolean } = {},
+  settings: {
+    useNyxInsert?: boolean;
+    useUBCrowns?: boolean;
+    borderColor?: string;
+    useNoBorder?: boolean;
+    useFullBorder?: boolean;
+  } = {},
 ) =>
   composite({
     payload: payload(overrides),
@@ -78,6 +84,9 @@ const run = (
     useNyxBorder: true,
     useNyxInsert: settings.useNyxInsert ?? false,
     useUBCrowns: settings.useUBCrowns ?? false,
+    borderColor: settings.borderColor ?? null,
+    useNoBorder: settings.useNoBorder ?? false,
+    useFullBorder: settings.useFullBorder ?? false,
     inspectMasks: new Set(),
   });
 
@@ -298,6 +307,73 @@ describe("decorations are derived from the card", () => {
   });
 });
 
+describe("the frame body and what is drawn over it", () => {
+  it("keeps the base and overlays apart from the decorations", () => {
+    const { layers } = run(
+      { colors: ["w", "u"], isLegendary: true },
+      { power: "4", toughness: "4" },
+    );
+    const parts = layers.map((layer) => layer.part);
+    expect(parts.slice(0, 5)).toEqual(Array(5).fill("frame"));
+    expect(parts.slice(5).every((part) => part === "decoration")).toBe(true);
+  });
+});
+
+describe("border settings", () => {
+  const borderMasks = {
+    masks: {
+      border: "/border.png",
+      borderFull: "/borderFull.png",
+      noBorder: "/noBorder.png",
+      legendary: "/legendary.png",
+    },
+  };
+
+  it("cuts nothing from a plain card", () => {
+    expect(run({ colors: ["w"] }, {}, borderMasks).frameCutoutUrls).toEqual([]);
+  });
+
+  // The same cutouts, in the same order, as `frameCutoutMasks` gives Card Anvil.
+  it("cuts the frame body the way the renderer does", () => {
+    const result = run({ colors: ["w"], isLegendary: true }, {}, borderMasks, {
+      useNoBorder: true,
+    });
+    expect(result.frameCutoutUrls).toEqual(["/noBorder.png", "/legendary.png"]);
+  });
+
+  it("recolors the ring only once a border color is picked", () => {
+    expect(run({ colors: ["w"] }, {}, borderMasks).ring).toBeUndefined();
+    expect(
+      run({ colors: ["w"] }, {}, borderMasks, { borderColor: "#ffffff" }).ring,
+    ).toEqual({ maskUrl: "/border.png", color: "#ffffff" });
+  });
+
+  it("recolors the whole ring under Color Entire Border", () => {
+    const result = run({ colors: ["w"] }, {}, borderMasks, {
+      borderColor: "#ffffff",
+      useFullBorder: true,
+    });
+    expect(result.ring?.maskUrl).toBe("/borderFull.png");
+  });
+
+  it("has no ring to recolor on a layout without a ring mask", () => {
+    expect(
+      run({ colors: ["w"] }, {}, {}, { borderColor: "#ffffff" }).ring,
+    ).toBeUndefined();
+  });
+
+  // The strip is its own art over the frame, so the ring recolor misses it;
+  // the renderer recolors it separately, even where there is no ring mask.
+  it("paints the crown's black strip the border color", () => {
+    const strip = (settings: Parameters<typeof run>[3]) =>
+      run({ colors: ["w"], isLegendary: true }, {}, {}, settings).layers.find(
+        (layer) => layer.id === "black",
+      );
+    expect(strip({})?.recolor).toBeUndefined();
+    expect(strip({ borderColor: "#ffffff" })?.recolor).toBe("#ffffff");
+  });
+});
+
 describe("inspection masks", () => {
   it("returns the switched-on masks as cutouts", () => {
     const result = composite({
@@ -310,6 +386,9 @@ describe("inspection masks", () => {
       useNyxBorder: true,
       useNyxInsert: false,
       useUBCrowns: false,
+      borderColor: null,
+      useNoBorder: false,
+      useFullBorder: false,
       inspectMasks: new Set(["pinlines", "nope"]),
     });
     expect(result.cutoutUrls).toEqual(["/pinlines.png"]);

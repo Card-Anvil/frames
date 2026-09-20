@@ -134,6 +134,37 @@ so on. The commented schema in
 [`packages/frame-kit/src/schema/frame.ts`](packages/frame-kit/src/schema/frame.ts)
 is the reference for what each one does.
 
+## Text that follows the border settings
+
+Card Anvil lets the user recolor a frame's border and, where a frame offers it,
+remove the border altogether. The renderer never restyles text for either on its
+own. A text box declares how it adapts with `overrides`: conditional restyles
+matched against the border as it is about to be drawn.
+
+```ts
+collectorInfo: {
+  ...bounds,
+  color: "white",
+  overrides: [
+    { when: { border: "none" }, style: { outlineColor: "black", outlineWidth: 19 } },
+    { when: { border: "light" }, style: { color: "black" } },
+  ],
+}
+```
+
+`border` is `"default"`; `"light"` or `"dark"` when a border color recolors the
+ring (named for whether black or white text reads better on it); or `"none"`
+when "No Border" cuts the ring away. A layout only leaves `"default"` where it
+ships the masks that make the change — `border` or `borderFull`, and `noBorder` —
+so a condition never fires on a frame whose border cannot change. `when.settings`
+matches the frame's own template settings as well: M15 recolors its collector
+line only once "Color Entire Border" is on.
+
+Those two rules are `onBorderTextOverrides`, and `withCollectorInfoDefaults`
+gives them to the collector info it fills in, because the collector line usually
+sits on the ring. Give the bounds your own `overrides` to replace them — `[]`
+when your collector line sits somewhere the border settings never reach.
+
 ## Extending another frame
 
 Frames may build on other frames. Depend on the package and import from its
@@ -208,6 +239,16 @@ colourless) and runs the same selection the app runs — `selectFrameLayers` in
 Scryfall parsing lifted out. Crowns, nicknames and PT plates are toggles, placed
 from the layout's own `crownConfig` / `nicknameConfig` / `ptImage` rather than
 centred.
+
+The Settings panel offers every template setting the frame and the current
+layout declare, next to Card Anvil's border color; the frame variant, nyx
+borders and UB crowns keep their own controls. They apply the way the app
+applies them, through the same frame-kit functions: the frame body loses the
+same cutouts ("No Border", the legendary crown's space, the extended-art
+silhouette), a border color repaints the same ring, and each text box is drawn
+with its `overrides` resolved for the border state that results. The inspector
+lists a box's overrides and marks the ones in effect, and a sample collector
+line shows what they do to it.
 
 Scroll zooms, dragging the background pans, `0` fits and `1` is 100%. Boxes snap
 to the card edges, the centre lines and each other (`alt` to override), and

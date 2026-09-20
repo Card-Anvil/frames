@@ -9,6 +9,12 @@ import {
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 
+import type { TextBoxOverride } from "@cardanvil/frame-kit";
+import {
+  type OverrideState,
+  overrideMatches,
+} from "@cardanvil/frame-kit/layout";
+
 import { getSource } from "../api/client.js";
 import type { Provenance, TextBox } from "../api/types.js";
 
@@ -17,8 +23,84 @@ export interface InspectorProps {
   boxKey: string | undefined;
   box: TextBox | undefined;
   basePath: readonly string[];
+  /** The border and settings the canvas is showing, to mark active overrides. */
+  state: OverrideState;
   editable: boolean;
   onChange: (field: string, value: number | string | boolean) => void;
+}
+
+/** The fields edited one input apiece: the box's scalars, not its `overrides`. */
+const scalarFields = (box: TextBox): string[] =>
+  Object.entries(box)
+    .filter(([, value]) =>
+      ["string", "number", "boolean"].includes(typeof value),
+    )
+    .map(([field]) => field);
+
+function describeWhen(when: TextBoxOverride["when"]): string {
+  const parts = [
+    ...(when.border === undefined
+      ? []
+      : [
+          `border ${typeof when.border === "string" ? when.border : when.border.join(" | ")}`,
+        ]),
+    ...Object.entries(when.settings ?? {}).map(
+      ([key, value]) => `${key} = ${String(value)}`,
+    ),
+  ];
+  return parts.length > 0 ? parts.join(", ") : "always";
+}
+
+const describeStyle = (style: TextBoxOverride["style"]): string =>
+  Object.entries(style)
+    .map(([field, value]) => `${field} ${String(value)}`)
+    .join(", ");
+
+/**
+ * A box's conditional restyles, read-only: which rule applies is the point,
+ * and the rules are written in the frame's source. The ones that match the
+ * border and settings on the canvas are marked, and are what it draws.
+ */
+function OverrideList(props: {
+  overrides: readonly TextBoxOverride[];
+  state: OverrideState;
+}): React.JSX.Element {
+  const { overrides, state } = props;
+  return (
+    <VStack align="stretch" gap="1" pt="2" borderTopWidth="1px">
+      <Text fontSize="xs" textTransform="uppercase" color="fg.muted">
+        Overrides
+      </Text>
+      {overrides.length === 0 && (
+        <Text fontSize="xs" color="fg.muted">
+          None: this box keeps its own style whatever the border does.
+        </Text>
+      )}
+      {overrides.map((override, index) => {
+        const active = overrideMatches(override.when, state);
+        return (
+          <HStack
+            // Rules have no identity beyond their position in the list.
+            key={index}
+            gap="2"
+            align="start"
+            opacity={active ? 1 : 0.5}
+          >
+            <Badge
+              size="sm"
+              colorPalette={active ? "teal" : "gray"}
+              variant={active ? "solid" : "outline"}
+            >
+              {active ? "active" : "idle"}
+            </Badge>
+            <Text fontSize="xs">
+              {describeWhen(override.when)} → {describeStyle(override.style)}
+            </Text>
+          </HStack>
+        );
+      })}
+    </VStack>
+  );
 }
 
 /** Order the contract declares, with geometry first. */
@@ -74,7 +156,7 @@ function ProvenanceBadge({ value }: { value: Provenance | undefined }) {
 }
 
 export function Inspector(props: InspectorProps): React.JSX.Element {
-  const { slug, boxKey, box, basePath, editable, onChange } = props;
+  const { slug, boxKey, box, basePath, state, editable, onChange } = props;
   const [provenance, setProvenance] = useState<Record<string, Provenance>>({});
 
   // Ask the server where each field is written, so a locked value is visible
@@ -85,7 +167,7 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
       return;
     }
     let cancelled = false;
-    const fields = Object.keys(box);
+    const fields = scalarFields(box);
     void Promise.all(
       fields.map(async (field) => {
         try {
@@ -120,8 +202,9 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
     );
   }
 
-  const present = FIELD_ORDER.filter((field) => field in box).concat(
-    Object.keys(box).filter((field) => !FIELD_ORDER.includes(field)),
+  const fields = scalarFields(box);
+  const present = FIELD_ORDER.filter((field) => fields.includes(field)).concat(
+    fields.filter((field) => !FIELD_ORDER.includes(field)),
   );
 
   return (
@@ -174,6 +257,10 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
           </Grid>
         );
       })}
+
+      {box.overrides !== undefined && (
+        <OverrideList overrides={box.overrides} state={state} />
+      )}
     </VStack>
   );
 }

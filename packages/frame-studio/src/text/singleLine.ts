@@ -1,8 +1,40 @@
 import Konva from "konva";
 
+import { textOutlineFor, textShadowFor } from "@cardanvil/frame-kit/layout";
+
 import type { TextBox } from "../api/types.js";
 import { resolveFamily } from "./fonts.js";
 import { type PreviewableBox, ptToPx } from "./metrics.js";
+
+/**
+ * The outline and drop shadow a text box is drawn with — Card Anvil's own
+ * rules, from frame-kit, so an outline still wins over a shadow and the
+ * shadow's offsets match.
+ */
+export function outlineAndShadow(box: TextBox): Konva.TextConfig {
+  const style = { ...box, fontSize: box.fontSize ?? 0 };
+  const outline = textOutlineFor(style);
+  const shadow = textShadowFor(style);
+  return {
+    ...(outline
+      ? {
+          stroke: outline.color,
+          strokeWidth: outline.width,
+          fillAfterStrokeEnabled: true,
+          lineJoin: "round",
+        }
+      : {}),
+    ...(shadow
+      ? {
+          shadowEnabled: true,
+          shadowColor: shadow.color,
+          shadowOffsetX: shadow.offsetX,
+          shadowOffsetY: shadow.offsetY,
+          shadowBlur: 0,
+        }
+      : {}),
+  };
+}
 
 /**
  * How the renderer draws each single-line box.
@@ -114,8 +146,6 @@ export function buildPreviewText(
   box: TextBox,
 ): PreviewText {
   const { family, fontStyle, align, substituted } = specFor(key, box);
-  const hasOutline =
-    box.outlineColor !== undefined && (box.outlineWidth ?? 0) > 0;
 
   const node = new Konva.Text({
     text,
@@ -133,14 +163,7 @@ export function buildPreviewText(
     fill: box.color ?? "black",
     wrap: "none",
     listening: false,
-    ...(hasOutline
-      ? {
-          stroke: box.outlineColor,
-          strokeWidth: box.outlineWidth,
-          fillAfterStrokeEnabled: true,
-          lineJoin: "round",
-        }
-      : {}),
+    ...outlineAndShadow(box),
     ...(box.opacity === undefined ? {} : { opacity: box.opacity }),
   });
 

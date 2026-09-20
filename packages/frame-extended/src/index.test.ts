@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { FrameMetaSchema, FrameSchema } from "@cardanvil/frame-kit";
+import { resolveBoxOverrides } from "@cardanvil/frame-kit/layout";
 
 import frameMeta from "../frame.meta.json";
 import * as exported from "./index";
@@ -33,6 +34,19 @@ describe("Extended Art frame", () => {
     expect(extendedFrame.templateSettings.useFullBorder.defaultValue).toBe(
       false,
     );
+  });
+
+  // The collector rule rides along with M15's bounds, and has to: it is
+  // written for the partial `border` mask this layout inherits.
+  it("adapts collector text only once the whole ring is colored", () => {
+    const { boxes } = extendedFrame.config.layouts.normal;
+    const color = (useFullBorder: boolean) =>
+      resolveBoxOverrides(boxes, {
+        border: "light",
+        settings: { useFullBorder },
+      }).collectorInfo?.color;
+    expect(color(false)).toBe("white");
+    expect(color(true)).toBe("black");
   });
 });
 

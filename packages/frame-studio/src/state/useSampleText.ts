@@ -5,6 +5,9 @@ export type SampleText = Readonly<Record<string, string>>;
 
 const STORAGE_KEY = "frame-studio.sampleText";
 
+/** One collector line, shared by every preset: it is there for its style. */
+const COLLECTOR_SAMPLE = "0279 R · SET · EN — Artist Name";
+
 export const DEFAULT_SAMPLE: SampleText = {
   title: "Serra Angel",
   type: "Creature — Angel",
@@ -12,6 +15,7 @@ export const DEFAULT_SAMPLE: SampleText = {
   keyword: "Flying, vigilance",
   power: "4",
   toughness: "4",
+  collectorInfo: COLLECTOR_SAMPLE,
 };
 
 /** Presets worth checking a box against: typical, long, and worst case. */
@@ -24,6 +28,7 @@ export const PRESETS: Readonly<Record<string, SampleText>> = {
     keyword: "Flying, first strike, lifelink",
     power: "10",
     toughness: "10",
+    collectorInfo: COLLECTOR_SAMPLE,
   },
   worst: {
     title: "Ramirez DePietro, Pillager of the Coast",
@@ -32,6 +37,7 @@ export const PRESETS: Readonly<Record<string, SampleText>> = {
     keyword: "Flying, vigilance, trample, haste, lifelink",
     power: "13",
     toughness: "13",
+    collectorInfo: COLLECTOR_SAMPLE,
   },
 };
 

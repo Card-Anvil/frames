@@ -174,6 +174,28 @@ export const FrameAssetsSchema = z.object({
    * see `getCardLayout`) in place of the usual `dfcIconSet`/`dfcIcon` mark.
    */
   lessonIcon: AssetUrlSchema.optional(),
+  /**
+   * Selects a built-in rules-text divider bar (between oracle and flavor
+   * text) instead of the app's default. Not an `AssetUrlSchema` — these are
+   * shared app assets any layout can opt into, not something a frame package
+   * bundles itself.
+   */
+  dividerBar: z.enum(["old"]).optional(),
+  /**
+   * Scales the divider bar's width (and, following its aspect ratio,
+   * height) relative to the app default. 1 = default size.
+   */
+  dividerBarScale: z.number().optional(),
+  /**
+   * Scales the gap between the oracle text and the divider bar. 1 =
+   * default gap.
+   */
+  dividerBarGapBefore: z.number().optional(),
+  /**
+   * Scales the gap between the divider bar and the flavor text. 1 =
+   * default gap.
+   */
+  dividerBarGapAfter: z.number().optional(),
 });
 export type FrameAssets = z.infer<typeof FrameAssetsSchema>;
 
@@ -203,10 +225,11 @@ export const LayoutMasksSchema = z.object({
    * A frame ships this only when its plain `border` mask deliberately covers
    * *less* than the whole ring — m15's stops short of the collector strip, so
    * that the default border recolor leaves the collector line on its original
-   * black. Declaring `borderFull` is therefore also what tells the renderer
-   * that `border` is a partial mask: see `useFullBorder` in `drawCardToStage`,
-   * which picks between the two and decides whether the collector text has to
-   * adapt to the border color.
+   * black. A `useFullBorder` template setting swaps this in for `border`.
+   *
+   * The renderer does not work out which text that puts on the recolored
+   * ring: a box that should adapt says so in its `overrides`, as m15's
+   * collector info does with `settings: { useFullBorder: true }`.
    */
   borderFull: AssetUrlSchema.optional(),
   legendary: AssetUrlSchema.optional(),

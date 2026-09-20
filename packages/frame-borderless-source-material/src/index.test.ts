@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { FrameMetaSchema, FrameSchema } from "@cardanvil/frame-kit";
+import { resolveBoxOverrides } from "@cardanvil/frame-kit/layout";
 
 import frameMeta from "../frame.meta.json";
 import * as exported from "./index";
@@ -41,6 +42,21 @@ describe("Borderless Source Material frame", () => {
       type: "boolean",
       label: "No Border",
       defaultValue: false,
+    });
+  });
+
+  // The toggle's helper text promises this outline, and the frame is what
+  // declares it — through the collector info defaults.
+  it("outlines collector info once No Border cuts the band away", () => {
+    const { boxes } = borderlessSourceMaterialFrame.config.layouts.normal;
+    const resolved = resolveBoxOverrides(boxes, {
+      border: "none",
+      settings: {},
+    });
+    expect(resolved.collectorInfo).toMatchObject({
+      color: "white",
+      outlineColor: "black",
+      outlineWidth: 19,
     });
   });
 });

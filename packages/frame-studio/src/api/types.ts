@@ -1,4 +1,5 @@
 /** Payload shapes served by `frame-kit studio`. Mirrors src/cli/studio. */
+import type { CollectorInfoLine, TextBoxOverride } from "@cardanvil/frame-kit";
 
 export interface Bounds {
   x: number;
@@ -7,6 +8,10 @@ export interface Bounds {
   height: number;
 }
 
+/**
+ * Any member of a box set. Bare bounds (`art`, `setSymbol`) come through the
+ * same way, which is why even `fontSize` is optional here.
+ */
 export interface TextBox extends Bounds {
   fontSize?: number;
   color?: string;
@@ -14,9 +19,16 @@ export interface TextBox extends Bounds {
   outlineWidth?: number;
   verticalAlign?: "top" | "center";
   textAlign?: "left" | "center" | "right";
+  letterSpacing?: number;
   fontFamily?: string;
   opacity?: number;
   shadow?: boolean;
+  shadowOffsetX?: number;
+  shadowOffsetY?: number;
+  /** Conditional restyles; see `TextBoxSchema` in frame-kit. */
+  overrides?: readonly TextBoxOverride[];
+  /** Collector info only; see `CollectorInfoBoxSchema` in frame-kit. */
+  lines?: readonly CollectorInfoLine[];
 }
 
 export interface FrameSlot {

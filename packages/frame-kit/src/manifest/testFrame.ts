@@ -41,6 +41,15 @@ export const testFrame: Frame = {
             color: "white",
             outlineColor: "black",
             fontFamily: "Beleren",
+            overrides: [
+              {
+                when: {
+                  border: ["light", "none"],
+                  settings: { style: "modern" },
+                },
+                style: { color: "black" },
+              },
+            ],
           },
           type: { x: 0, y: 0, width: 10, height: 10, fontSize: 12 },
           setSymbol: { x: 0, y: 0, width: 10, height: 10 },

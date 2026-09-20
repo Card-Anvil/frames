@@ -1,3 +1,9 @@
+import type { CardBoxes, LayoutMasks } from "@cardanvil/frame-kit";
+import {
+  type OverrideState,
+  resolveBoxOverrides,
+} from "@cardanvil/frame-kit/layout";
+
 import type { Bounds, FramePayload, FrameSlot, TextBox } from "../api/types.js";
 
 /** Reads the value at a dotted path, like the server's `getAtPath`. */
@@ -33,6 +39,39 @@ export function boxesIn(
   return Object.entries(set as Record<string, unknown>)
     .filter(([, value]) => isBounds(value))
     .map(([key, value]) => ({ key, box: value as TextBox }));
+}
+
+/**
+ * The boxes in one box-set slot as a render in `state` draws them — each text
+ * box's `overrides` resolved, exactly as Card Anvil resolves them.
+ */
+export function resolvedBoxesIn(
+  payload: FramePayload,
+  slot: FrameSlot,
+  state: OverrideState,
+): { key: string; box: TextBox }[] {
+  const set = atPath(payload.frame, slot.path);
+  if (set === null || typeof set !== "object") {
+    return [];
+  }
+  // The payload is the schema-validated frame, so a box-set slot really does
+  // hold a `CardBoxes`.
+  const resolved = resolveBoxOverrides(set as CardBoxes, state);
+  return Object.entries(resolved)
+    .filter(([, value]) => isBounds(value))
+    .map(([key, value]) => ({ key, box: value as TextBox }));
+}
+
+/**
+ * A mask slot's masks. Any object will do as a `LayoutMasks`, every mask in
+ * one being optional — and the payload is validated besides.
+ */
+export function masksIn(
+  payload: FramePayload,
+  slot: FrameSlot | undefined,
+): LayoutMasks | undefined {
+  const masks = slot ? atPath(payload.frame, slot.path) : undefined;
+  return masks !== null && typeof masks === "object" ? masks : undefined;
 }
 
 /** Distinct layouts in a frame, grouped by variant. */

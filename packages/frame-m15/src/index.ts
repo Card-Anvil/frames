@@ -1,5 +1,6 @@
 import { Frame, TemplateSettingsConfig, TextBox } from "@cardanvil/frame-kit";
 import {
+  omit,
   withCollectorInfoDefaults,
   withSettingsDefaults,
 } from "@cardanvil/frame-kit";
@@ -17,6 +18,15 @@ export const defaultCollectorInfoBounds = {
   fontSize: 50,
   color: "white",
   letterSpacing: 7.5,
+  // `masks.border` stops short of the collector strip, so the strip only takes
+  // a border color once "Color Entire Border" swaps in `masks.borderFull`.
+  // Replaces the helper's on-border default — M15 has no "No Border" either.
+  overrides: [
+    {
+      when: { border: "light", settings: { useFullBorder: true } },
+      style: { color: "black" },
+    },
+  ],
 } as const satisfies TextBox;
 
 export const defaultSettings = {
@@ -64,7 +74,12 @@ export const m15Frame = {
         defaultCollectorInfoBounds,
       ),
       saga: withSettingsDefaults(
-        withCollectorInfoDefaults(sagaLayoutConfig, defaultCollectorInfoBounds),
+        withCollectorInfoDefaults(
+          sagaLayoutConfig,
+          // The saga's `border` mask does cover the collector strip, so it
+          // takes the helper's on-border default rather than the rule above.
+          omit(defaultCollectorInfoBounds, ["overrides"]),
+        ),
         sagaSettings,
       ),
       // adventure: withCollectorInfoDefaults(

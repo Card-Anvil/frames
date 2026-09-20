@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { AssetUrlSchema } from "./assetUrl.js";
+import { CollectorInfoLineSchema } from "./collectorInfo.js";
 import {
   FrameAssetsSchema,
   FrameColorEnum,
@@ -22,7 +23,7 @@ export const BoundsSchema = z.object({
   height: z.number(),
 });
 
-export const TextBoxSchema = BoundsSchema.extend({
+const TextBoxFieldsSchema = BoundsSchema.extend({
   fontSize: z.number(),
   color: z.string().optional(),
   outlineColor: z.string().optional(),
@@ -39,10 +40,26 @@ export const TextBoxSchema = BoundsSchema.extend({
    * of the language-resolved default (e.g. title font). */
   fontFamily: z.string().optional(),
   opacity: z.number().min(0).max(1).optional(),
-  /** Whether mana-cost symbols in this box get a drop-shadow. Defaults to
-   * true when omitted (matches the original behavior). Set to false to
-   * disable the shadow (e.g. flipside mana-cost badges on light backgrounds). */
+  /**
+   * Whether this box's content gets a drop-shadow.
+   *
+   * For symbol boxes (mana cost, and symbols embedded in rules/abilities
+   * text) this defaults to true when omitted, matching the original
+   * behavior — set to false to disable it (e.g. flipside mana-cost badges on
+   * light backgrounds).
+   *
+   * For plain-text boxes (title, type, P/T, etc., rendered via
+   * `buildOutlinedText`) there is no legacy default: omitting this leaves
+   * them exactly as before, and it only takes effect once set to true. It
+   * has no effect together with `outlineColor`/`outlineWidth` — an outline
+   * always wins.
+   */
   shadow: z.boolean().optional(),
+  /** Overrides the drop-shadow's default offset (in the box's own `fontSize`
+   * units, same convention as the default formula). Only meaningful when
+   * `shadow` is true. */
+  shadowOffsetX: z.number().optional(),
+  shadowOffsetY: z.number().optional(),
   /** Shaped-text mask: a full-canvas-sized PNG whose opaque pixels define the
    * region text in this box may occupy. Alpha is what matters (any pixel with
    * alpha > ~12% counts as inside), so color is irrelevant. Each wrapped line
@@ -56,7 +73,90 @@ export const TextBoxSchema = BoundsSchema.extend({
   mask: AssetUrlSchema.optional(),
 });
 
+/**
+ * The frame's outer border as the renderer is about to draw it — what a text
+ * box's `overrides` match on through `when.border`:
+ *
+ * - `"default"`: the frame's own border art, untouched by any border setting.
+ * - `"light"` / `"dark"`: a user border color recolors the ring, because the
+ *   layout ships a `border` mask (or `borderFull`, under `useFullBorder`).
+ *   `"light"` when black text reads better on the chosen color (WCAG
+ *   contrast), `"dark"` when white does.
+ * - `"none"`: "No Border" is on and the layout ships a `noBorder` mask, so the
+ *   ring is cut away and whatever sat on it now sits over the art.
+ *
+ * Only a layout with those masks ever leaves `"default"`, so a condition on
+ * any other state never fires for a frame whose border cannot be recolored or
+ * removed.
+ */
+export const BorderStateSchema = z.enum(["default", "light", "dark", "none"]);
+
+export type BorderState = z.infer<typeof BorderStateSchema>;
+
+/**
+ * One conditional restyle of a text box: when every condition in `when` holds
+ * for a render, `style` is merged over the box. A condition left out matches
+ * anything.
+ */
+export const TextBoxOverrideSchema = z.object({
+  when: z.object({
+    /** The border state to match; an array matches any of its states. */
+    border: z
+      .union([BorderStateSchema, z.array(BorderStateSchema).readonly()])
+      .optional(),
+    /**
+     * Template settings that must hold, each compared with `===` against the
+     * value in effect for the layout — frame- and layout-level settings
+     * merged, defaults included. E.g. `{ useFullBorder: true }`.
+     */
+    settings: z
+      .record(z.string(), z.union([z.boolean(), z.string(), z.number()]))
+      .optional(),
+  }),
+  /**
+   * The fields to replace. Style only: parts of the app read box geometry
+   * without resolving overrides, so a conditional size or position would put
+   * them out of step with the render.
+   */
+  style: TextBoxFieldsSchema.pick({
+    color: true,
+    outlineColor: true,
+    outlineWidth: true,
+    shadow: true,
+    shadowOffsetX: true,
+    shadowOffsetY: true,
+    opacity: true,
+  }),
+});
+
+export type TextBoxOverride = z.infer<typeof TextBoxOverrideSchema>;
+
+export const TextBoxSchema = TextBoxFieldsSchema.extend({
+  /**
+   * Conditional restyles, applied in order at render time — where two matches
+   * set the same field, the later one wins. This is how a box adapts to the
+   * border settings: the renderer never restyles text on its own. Text printed
+   * on the border ring wants `onBorderTextOverrides`, which
+   * `withCollectorInfoDefaults` gives collector info unless its bounds bring
+   * their own — `[]` for none.
+   */
+  overrides: z.array(TextBoxOverrideSchema).readonly().optional(),
+});
+
 export type TextBox = z.infer<typeof TextBoxSchema>;
+
+export const CollectorInfoBoxSchema = TextBoxSchema.extend({
+  /**
+   * What the collector box prints, top line first. The renderer draws the
+   * default two-line layout (`defaultCollectorInfoLines`) when this is left
+   * out; `withCollectorInfoDefaults` fills that same default in. Build one from
+   * scratch for a frame with its own collector line, or start from
+   * `retroCollectorInfoLines`.
+   */
+  lines: z.array(CollectorInfoLineSchema).readonly().optional(),
+});
+
+export type CollectorInfoBox = z.infer<typeof CollectorInfoBoxSchema>;
 
 export const CardBoxesSchema = z.object({
   art: BoundsSchema,
@@ -68,7 +168,7 @@ export const CardBoxesSchema = z.object({
   abilities: TextBoxSchema.optional(),
   pt: TextBoxSchema.optional(),
   ptImage: z.object({ x: z.number(), y: z.number() }).optional(),
-  collectorInfo: TextBoxSchema.optional(),
+  collectorInfo: CollectorInfoBoxSchema.optional(),
   startingLoyalty: TextBoxSchema.optional(),
   nicknameTitle: TextBoxSchema.optional(),
   keyword: TextBoxSchema.optional(),
