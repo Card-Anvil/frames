@@ -6,8 +6,8 @@ import {
   withCollectorInfoDefaults,
 } from "@cardanvil/frame-kit";
 
-import { regularLayoutConfig } from "./regular/config";
 import preview from "./preview.png";
+import { regularLayoutConfig } from "./regular/config";
 
 // Matches M15's collector info bounds — the Retro boxes were copied from M15
 // as a starting point and share its canvas size.
