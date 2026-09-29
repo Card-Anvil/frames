@@ -154,11 +154,29 @@ describe("frame body", () => {
       { colors: ["w", "u"] },
       {},
       {
+        masks: { pinlines: "/pinlines.png", rightHalf: "/rightHalf.png" },
+      },
+    );
+    // No rules/twins masks: the base and the two pinline overlays survive.
+    expect(layers.map((layer) => layer.id)).toEqual([
+      "base.m",
+      "base.w/pinlines",
+      "base.u/pinlines",
+    ]);
+  });
+
+  it("halves the base of a two-colour card when the layout has no pinlines mask", () => {
+    const { layers } = run(
+      { colors: ["w", "u"] },
+      {},
+      {
         masks: { rightHalf: "/rightHalf.png" },
       },
     );
-    // No pinlines/rules/twins masks, so only the base survives.
-    expect(layers).toHaveLength(1);
+    expect(layers.map((layer) => layer.id)).toEqual([
+      "base.w",
+      "base.u/rightHalf",
+    ]);
   });
 });
 

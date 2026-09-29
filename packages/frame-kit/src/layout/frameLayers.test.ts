@@ -220,6 +220,28 @@ describe("selectFrameLayers", () => {
     );
     expect(layers.baseFrame).toEqual({ family: "base", color: "r" });
   });
+
+  it("halves a two-colour card's base when there is no pinlines mask", () => {
+    const layers = selectFrameLayers(frameDetailsFor({ colors: ["w", "u"] }), {
+      hasPinlineMask: false,
+    });
+    expect(layers.baseFrame).toEqual({ family: "base", color: "w" });
+    expect(layers.overlays).toEqual([
+      {
+        frame: { family: "base", color: "u" },
+        mask: "rightHalf",
+        preserveAlpha: true,
+      },
+    ]);
+  });
+
+  it("keeps three or more colours on gold when there is no pinlines mask", () => {
+    const layers = selectFrameLayers(
+      frameDetailsFor({ colors: ["w", "u", "b"] }),
+      { hasPinlineMask: false },
+    );
+    expect(layers.baseFrame).toEqual({ family: "base", color: "m" });
+  });
 });
 
 describe("splitTwoColor", () => {

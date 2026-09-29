@@ -287,6 +287,29 @@ export function selectFrameLayers(
     details.background === LAYERS.ARTIFACT &&
     details.identity.length > 0;
 
+  // Without a pinlines mask the split pinline overlays can never draw, so a
+  // two-colour card would fall to the gold frame; halve the base instead.
+  if (
+    family !== "land" &&
+    !hasPinlineMask &&
+    !details.isColorless &&
+    (details.background === LAYERS.GOLD || usesArtifactFallback)
+  ) {
+    const split = splitTwoColor(details.identity);
+    if (split) {
+      return {
+        baseFrame: makeFamilyRef(split[0], family),
+        overlays: [
+          {
+            frame: makeFamilyRef(split[1], family),
+            mask: "rightHalf",
+            preserveAlpha: true,
+          },
+        ],
+      };
+    }
+  }
+
   const baseColor = colorToken(
     family === "land" || usesArtifactFallback
       ? details.identity
