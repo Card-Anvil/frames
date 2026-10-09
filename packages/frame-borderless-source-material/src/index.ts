@@ -1,6 +1,10 @@
 import { Frame, TemplateSettingsConfig, TextBox } from "@cardanvil/frame-kit";
 import { withCollectorInfoDefaults } from "@cardanvil/frame-kit";
 
+import {
+  borderlessSourceMaterialAdventureLayoutConfig,
+  borderlessSourceMaterialPrepareLayoutConfig,
+} from "./inset/config";
 import borderlessSourceMaterialPreview from "./preview.jpg";
 import { borderlessSourceMaterialLayoutConfig } from "./regular/config";
 
@@ -34,6 +38,20 @@ export const borderlessSourceMaterialFrame = {
     layouts: {
       normal: withCollectorInfoDefaults(
         borderlessSourceMaterialLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      adventure: withCollectorInfoDefaults(
+        borderlessSourceMaterialAdventureLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      // An Omen differs from an Adventure only in its frame art, and this
+      // frame has none.
+      omen: withCollectorInfoDefaults(
+        borderlessSourceMaterialAdventureLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      prepare: withCollectorInfoDefaults(
+        borderlessSourceMaterialPrepareLayoutConfig,
         defaultCollectorInfoBounds,
       ),
     },
