@@ -53,11 +53,21 @@ const customLayouts = SCRYFALL_LAYOUTS.flatMap((layout) =>
  * `saga_transform`/`saga_transform_creature` cover a transform DFC where EITHER
  * face is a Saga — which physical side it is on varies per card and is resolved
  * at render time, not by separate keys.
+ *
+ * `omen` and `prepare` join `adventure` as the layouts that print a second
+ * spell inset in the text box (see the `inset*` boxes in `frame.ts`). Scryfall
+ * files Omen cards under `adventure`, told apart only by the inset's type
+ * line, but their frame art differs, so frames key them separately. `prepare`
+ * is a layout Scryfall does return; it is listed here rather than in
+ * `SCRYFALL_LAYOUTS` because `@scryfall/api-types` predates it, and that list
+ * has to match the package.
  */
 export const additionalLayouts = [
   "saga_creature",
   "saga_transform",
   "saga_transform_creature",
+  "omen",
+  "prepare",
 ] as const;
 
 export const layouts = [

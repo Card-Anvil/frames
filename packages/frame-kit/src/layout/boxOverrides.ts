@@ -32,6 +32,10 @@ const TEXT_BOX_KEYS = [
   "flipsideType",
   "flipsideManaCost",
   "flipsideRules",
+  "insetTitle",
+  "insetMana",
+  "insetType",
+  "insetRules",
 ] as const satisfies readonly (keyof CardBoxes)[];
 
 /** Whether every condition an override names holds for one render. */
