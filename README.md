@@ -106,6 +106,25 @@ the keys are quietly dropped when the frame is packaged. `frame-borderless`
 narrows its DFC icon barrels for exactly this reason; see
 [`transform/icons/dfcIconSets.ts`](packages/frame-borderless/src/transform/icons/dfcIconSets.ts).
 
+### Trimming art
+
+Author art on the full sheet so it lines up by itself, but where a field takes a
+position, ship it trimmed: a renderer pays for every pixel of an image,
+transparent or not. `frame-kit trim --shared` cuts a set of images to the one
+rectangle holding all of their visible pixels and prints its position:
+
+```bash
+frame-kit trim --shared packages/frame-m15/src/saga/abilities/banner/**/*.png
+# Every image was cut to 244 × 2787 at (237, 811) on the sheet.
+```
+
+```ts
+saga: { banner, bannerMasks, /* … */ bannerOrigin: { x: 237, y: 811 } },
+```
+
+The pixels and colour profile are kept exactly. Today `saga.bannerOrigin` is the
+field that takes a position; every other asset is drawn as a full sheet.
+
 ### Colors
 
 `w u b r g m a c l v` — WUBRG, gold (`m`), artifact (`a`), colorless (`c`),
@@ -387,6 +406,7 @@ frame-kit validate                     # check everything, write nothing
 frame-kit build --out dist             # check, then pack
 frame-kit build --out dist --watch     # …and repack on every change
 frame-kit schema meta                  # a format as JSON Schema
+frame-kit trim --shared <png...>       # cut art down to what is visible
 frame-kit --help
 ```
 

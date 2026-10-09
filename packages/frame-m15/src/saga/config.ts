@@ -11,7 +11,6 @@ import * as banner from "./abilities/banner";
 import * as bannerMasks from "./abilities/banner/masks";
 import * as bannerTransform from "./abilities/banner/transform";
 import * as bannerTransformMasks from "./abilities/banner/transform/masks";
-import * as bannerReadAheadMasks from "./abilities/banner/transform/masks/readAhead";
 // Base + nyx frames from the saga folder (nyx used for enchantments).
 import * as base from "./regular";
 import * as masks from "./regular/masks";
@@ -98,7 +97,9 @@ export const sagaLayoutConfig = {
       bannerTransform,
       bannerMasks,
       bannerTransformMasks,
-      bannerReadAheadMasks,
+      // Every banner and mask is trimmed to this rectangle of the sheet
+      // (`frame-kit trim --shared`), so they are drawn from its corner.
+      bannerOrigin: { x: 237, y: 811 },
     },
   },
   masks,
