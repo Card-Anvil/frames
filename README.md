@@ -119,9 +119,16 @@ back to `c` when absent.
 
 `config.layouts` is keyed by layout name: every Scryfall layout, plus a
 `<layout>_planeswalker` / `<layout>_case` cross-product for shapes Scryfall does
-not distinguish but frames must, plus `saga_creature`, `saga_transform` and
-`saga_transform_creature`. A frame only declares the layouts it supports;
-unsupported ones show as disabled in the app.
+not distinguish but frames must, plus `saga_creature`, `saga_transform`,
+`saga_transform_creature`, `omen` and `prepare`. A frame only declares the
+layouts it supports; unsupported ones show as disabled in the app.
+
+`adventure`, `omen` and `prepare` cards print a second spell inset in the text
+box. A layout for one places it with the `insetTitle`, `insetMana`, `insetType`
+and `insetRules` boxes and narrows `rules` to the column left over — the inset
+on the left for an Adventure or an Omen, on the right for a Prepare card.
+Scryfall files Omens under `adventure`; Card Anvil tells them apart by the
+inset's type line, so a frame can give each its own art.
 
 `config.alternateLayouts` holds named variants selected by a template setting —
 this is how Borderless offers its textless variants.

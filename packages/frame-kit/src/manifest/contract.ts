@@ -15,6 +15,9 @@ import { FrameSchema } from "../schema/frame.js";
  *   render with reduced fidelity.
  *
  * Version history:
+ * - 1.5: added the optional `insetTitle`, `insetMana`, `insetType` and
+ *   `insetRules` text boxes for the spell inset in an Adventure, Omen or
+ *   Prepare card's text box, and the `omen` and `prepare` layouts.
  * - 1.4: added the optional `overrides` on text boxes, conditional restyles
  *   matched against the border settings and template settings. Also the
  *   optional `shadowOffsetX`/`shadowOffsetY` on text boxes,
@@ -24,7 +27,7 @@ import { FrameSchema } from "../schema/frame.js";
  * - 1.2: added the optional `mask` asset URL on text boxes (shaped text).
  * - 1.1: added the optional `license` field on the manifest.
  */
-export const CONTRACT_VERSION = "1.4";
+export const CONTRACT_VERSION = "1.5";
 
 /** The only manifest kind any loader understands today. */
 export const DECLARATIVE_KIND = "declarative";

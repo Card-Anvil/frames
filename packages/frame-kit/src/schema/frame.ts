@@ -184,6 +184,17 @@ export const CardBoxesSchema = z.object({
   // when the other face is a land — lands have no mana cost, so the
   // flipsideManaCost badge is empty and the rules text fills that space.
   flipsideRules: TextBoxSchema.optional(),
+  // Adventure, Omen and Prepare cards print a second spell in a smaller frame
+  // inset within the text box. Its name, mana cost, type line and rules text
+  // come from the card's second face; `title`, `mana`, `type` and `rules` keep
+  // describing the card itself, with `rules` narrowed to the column the inset
+  // leaves free. Which side the inset sits on is the layout's own geometry —
+  // left for an Adventure or an Omen, right for a Prepare card — so the
+  // renderer draws these wherever they are put.
+  insetTitle: TextBoxSchema.optional(),
+  insetMana: TextBoxSchema.optional(),
+  insetType: TextBoxSchema.optional(),
+  insetRules: TextBoxSchema.optional(),
 });
 
 export type CardBoxes = z.infer<typeof CardBoxesSchema>;
