@@ -25,6 +25,37 @@ describe("Borderless Source Material frame", () => {
     ).toBeGreaterThan(0);
   });
 
+  // The inset spell and the card's own rules share the text box side by side,
+  // so each inset layout has to place all four inset boxes and keep the two
+  // columns apart.
+  it.each(["adventure", "omen", "prepare"] as const)(
+    "puts the %s layout's inset spell beside its rules",
+    (layout) => {
+      const { rules, insetTitle, insetMana, insetType, insetRules } =
+        borderlessSourceMaterialFrame.config.layouts[layout].boxes;
+      expect(rules).toBeDefined();
+      for (const box of [insetTitle, insetMana, insetType, insetRules]) {
+        expect(box).toBeDefined();
+        // Wholly to one side of the rules column or the other.
+        const apart =
+          box &&
+          rules &&
+          (box.x + box.width <= rules.x || rules.x + rules.width <= box.x);
+        expect(apart).toBe(true);
+      }
+    },
+  );
+
+  // The inset layouts change the boxes and nothing else, so "No Border" and a
+  // border color act on them exactly as they do on a regular card.
+  it("gives the inset layouts the regular layout's art and masks", () => {
+    const { layouts } = borderlessSourceMaterialFrame.config;
+    for (const layout of ["adventure", "omen", "prepare"] as const) {
+      expect(layouts[layout].frameAssets).toBe(layouts.normal.frameAssets);
+      expect(layouts[layout].masks).toBe(layouts.normal.masks);
+    }
+  });
+
   // "No Border" cuts the bottom band away, and the band is this frame's only
   // chrome — so the cutout mask and the toggle that applies it have to ship
   // together, or the setting renders and changes nothing.
