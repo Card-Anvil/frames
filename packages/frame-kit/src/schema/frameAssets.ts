@@ -115,6 +115,19 @@ export const SagaAssetConfigSchema = z.object({
   bannerTransform: ColorSetSchema.optional(),
   bannerMasks: BannerMasksSchema.optional(),
   bannerTransformMasks: BannerMasksSchema.optional(),
+  /**
+   * Where the banners and their masks sit on the sheet: the top-left corner
+   * of every one of them. Set it when they are trimmed to their visible part
+   * — `frame-kit trim --shared` cuts them all to one rectangle and prints this
+   * position. Omitted, they are full sheets, drawn from the corner. A read-ahead
+   * banner is moved down from here as one piece, masks and all.
+   */
+  bannerOrigin: z.object({ x: z.number(), y: z.number() }).optional(),
+  /**
+   * @deprecated Read-ahead cards use `bannerTransformMasks`, moved down with
+   * their banner. Still accepted so a frame that declares these loads, but
+   * never drawn.
+   */
   bannerReadAheadMasks: BannerMasksSchema.optional(),
 });
 export type SagaAssetConfig = z.infer<typeof SagaAssetConfigSchema>;
