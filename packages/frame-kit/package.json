@@ -79,10 +79,12 @@
   },
   "devDependencies": {
     "@types/node": "^24.13.2",
+    "@types/pngjs": "^6.0.5",
     "@types/yazl": "^3.3.1",
     "vite": "^7.3.6"
   },
   "dependencies": {
+    "pngjs": "^7.0.0",
     "yazl": "^3.3.1"
   },
   "bin": {

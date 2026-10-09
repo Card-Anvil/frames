@@ -82,6 +82,7 @@ frame-kit validate                # check every frame, write nothing
 frame-kit build --out dist        # check, then pack each one
 frame-kit build --out dist --watch  # …and repack whenever a source changes
 frame-kit schema meta             # a format as JSON Schema
+frame-kit trim --shared a.png b.png  # cut art down to what is visible
 frame-kit --help
 ```
 
@@ -152,6 +153,31 @@ reuse.
 Packaging needs Vite — it is what turns `import w from "./w.png"` into a file —
 so it is an **optional** peer dependency, loaded only when packaging runs. The
 schemas above work under plain Node and in a browser without it.
+
+### `frame-kit trim`
+
+```bash
+frame-kit trim [--shared] [--out <dir>] [--dry-run] [--json] <png...>
+```
+
+Cuts PNGs down to their visible pixels and prints where each now sits on the
+sheet. Art is authored on the full sheet so it lines up by itself, but a
+renderer decodes, caches and composites every pixel of an image, transparent or
+not — a Saga banner is under 5% of its sheet, and trimmed it costs a twentieth
+as much on every card.
+
+`--shared` cuts every image given to one rectangle, the smallest holding all of
+their visible pixels, so images drawn together — a banner and the masks cut from
+it — keep one position. Put that position in the frame wherever a field asks for
+one, such as `saga.bannerOrigin`; only fields that take a position can use
+trimmed art.
+
+The pixels kept are byte-for-byte the originals, and the chunks that tell a
+decoder how to show them — colour profile, gamma — are carried over, so the art
+draws exactly as before. Each trimmed image also records its position in an
+`oFFs` chunk, so trimming it again reports where it sits on the sheet rather
+than in itself. Without `--out` each image replaces its original. Only 8-bit
+PNGs are trimmed: decoding 16 bits a channel would lose detail.
 
 ### `frame-kit studio`
 

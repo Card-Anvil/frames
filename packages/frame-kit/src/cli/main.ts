@@ -11,6 +11,7 @@ import { Reporter, inGitHubActions } from "./report.js";
 import { SCHEMA_NAMES, type SchemaName, toJsonSchema } from "./schema.js";
 import { stableStringify } from "./stableJson.js";
 import { runStudio } from "./studio/serve.js";
+import { type Rect, trimImages } from "./trim.js";
 import { watchFrames } from "./watch.js";
 
 const USAGE = `frame-kit — package Card Anvil frames
@@ -21,6 +22,8 @@ Usage:
   frame-kit schema <name> [--out <file>] print a format as JSON Schema
                                          (${SCHEMA_NAMES.join(" | ")})
   frame-kit studio [options]             open the visual box editor
+  frame-kit trim <png...> [options]      cut images down to their visible
+                                         pixels, and say where they sit
   frame-kit --help
   frame-kit --version
 
@@ -39,6 +42,12 @@ build only:
                         in the index
   --watch               rebuild a frame whenever its source changes
 
+trim only:
+  --shared              cut every image to one rectangle holding all of their
+                        visible pixels, so they keep one position on the sheet
+  --out <dir>           write trimmed images here instead of replacing them
+  --dry-run             say what would be cut, write nothing
+
 studio only:
   --port <n>            port to serve on (default: 4620)
   --host <h>            interface to bind (default: 127.0.0.1)
@@ -46,6 +55,10 @@ studio only:
   --dev                 serve the studio's own UI from source, with hot
                         reloading (only inside the frames workspace)
   --no-write            serve read-only; refuse every edit
+
+A trimmed image keeps its pixels exactly, and records where it sits on the
+sheet so a second trim still reports that position. Put the position in the
+frame where the field asks for one, such as a Saga's bannerOrigin.
 
 The studio edits the literals in your source when you drag a box, so run it on
 a clean working tree. It needs TypeScript installed to find them.
@@ -235,6 +248,78 @@ async function runBuild(
   return reporter.ok ? EXIT.ok : EXIT.failed;
 }
 
+function describeRect(rect: Rect): string {
+  return `${String(rect.width)} × ${String(rect.height)} at (${String(rect.x)}, ${String(rect.y)})`;
+}
+
+async function runTrim(argv: string[]): Promise<number> {
+  let parsed: {
+    values: {
+      shared?: boolean | undefined;
+      out?: string | undefined;
+      "dry-run"?: boolean | undefined;
+      json?: boolean | undefined;
+    };
+    positionals: string[];
+  };
+  try {
+    parsed = parseArgs({
+      args: argv,
+      options: {
+        shared: { type: "boolean" },
+        out: { type: "string" },
+        "dry-run": { type: "boolean" },
+        json: { type: "boolean" },
+      },
+      allowPositionals: true,
+      strict: true,
+    });
+  } catch (cause) {
+    console.error(
+      `${cause instanceof Error ? cause.message : String(cause)}\n\n${USAGE}`,
+    );
+    return EXIT.usage;
+  }
+  const { values, positionals: files } = parsed;
+  if (files.length === 0) {
+    console.error(`trim needs at least one PNG.\n\n${USAGE}`);
+    return EXIT.usage;
+  }
+
+  const result = await trimImages(files, {
+    shared: values.shared === true,
+    ...(values.out !== undefined ? { outDir: values.out } : {}),
+    dryRun: values["dry-run"] === true,
+  });
+
+  if (values.json) {
+    console.log(JSON.stringify(result, null, 2));
+    return EXIT.ok;
+  }
+  for (const image of result.images) {
+    const from = `${String(image.width)} × ${String(image.height)}`;
+    const what = image.kept
+      ? `${from} → ${describeRect(image.kept)}`
+      : `${from}, nothing visible, left as it is`;
+    const nothingToCut =
+      image.kept?.width === image.width && image.kept.height === image.height;
+    const action = image.written
+      ? ""
+      : nothingToCut
+        ? "  (already trimmed)"
+        : values["dry-run"] && image.kept
+          ? "  (dry run)"
+          : "";
+    console.log(`${image.file}  ${what}${action}`);
+  }
+  if (result.shared) {
+    console.log(
+      `\nEvery image was cut to ${describeRect(result.shared)} on the sheet.`,
+    );
+  }
+  return EXIT.ok;
+}
+
 function isSchemaName(name: string): name is SchemaName {
   return (SCHEMA_NAMES as string[]).includes(name);
 }
@@ -290,6 +375,9 @@ async function main(argv: string[]): Promise<number> {
   }
   if (command === "studio") {
     return await runStudio(argv.slice(1));
+  }
+  if (command === "trim") {
+    return await runTrim(argv.slice(1));
   }
   if (command !== "validate" && command !== "build") {
     console.error(`Unknown command "${command}".\n\n${USAGE}`);

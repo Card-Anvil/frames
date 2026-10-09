@@ -58,3 +58,14 @@ export {
   toJsonSchema,
 } from "./schema.js";
 export { stableStringify } from "./stableJson.js";
+export {
+  type Pixels,
+  type Rect,
+  type TrimOptions,
+  type TrimResult,
+  type TrimmedImage,
+  cropPixels,
+  opaqueBounds,
+  trimImages,
+  unionBounds,
+} from "./trim.js";
