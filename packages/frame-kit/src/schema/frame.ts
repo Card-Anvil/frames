@@ -158,7 +158,35 @@ export const CollectorInfoBoxSchema = TextBoxSchema.extend({
 
 export type CollectorInfoBox = z.infer<typeof CollectorInfoBoxSchema>;
 
+/**
+ * How far a card is turned, in degrees clockwise, to read a box set. See
+ * `rotation` on `CardBoxesSchema`.
+ */
+export const RotationSchema = z.union([
+  z.literal(90),
+  z.literal(180),
+  z.literal(270),
+]);
+
+export type Rotation = z.infer<typeof RotationSchema>;
+
 export const CardBoxesSchema = z.object({
+  /**
+   * How far the card is turned, in degrees clockwise, to read this set: 90 for
+   * a battle or a split card, whose text runs up the sheet. Left out, the set
+   * reads upright.
+   *
+   * A turned set's boxes — `art` included — are measured on the sheet as it
+   * lies after that turn, so a text box stays the upright rectangle it is
+   * everywhere else. At 90 or 270 the default sheet is therefore 4440 wide and
+   * 3264 tall. The art is drawn turned with the set.
+   *
+   * `collectorInfo` is the exception: a card prints it upright along the
+   * sheet's bottom edge whichever way the text above it reads, so it is always
+   * measured on the unturned sheet. Frame art and masks never turn either —
+   * they are the sheet as printed.
+   */
+  rotation: RotationSchema.optional(),
   art: BoundsSchema,
   mana: TextBoxSchema,
   title: TextBoxSchema,
@@ -195,9 +223,44 @@ export const CardBoxesSchema = z.object({
   insetMana: TextBoxSchema.optional(),
   insetType: TextBoxSchema.optional(),
   insetRules: TextBoxSchema.optional(),
+  // A battle's defense, printed where a creature's power and toughness would
+  // be. Rules text wraps around it the way it does around `pt`.
+  defense: TextBoxSchema.optional(),
+  // A Fuse card prints its Fuse line once, in a bar under both halves, though
+  // Scryfall repeats it at the end of each half's rules. With this box the
+  // line is drawn here and dropped from both; without it, it stays in each
+  // half's rules.
+  fuse: TextBoxSchema.optional(),
 });
 
 export type CardBoxes = z.infer<typeof CardBoxesSchema>;
+
+/**
+ * Where a card's second face goes when it is printed on the same side as the
+ * first: the other half of a split card, the sideways half of an aftermath
+ * card, the upside-down half of a flip card. Its name, mana cost, type line,
+ * rules text and power/toughness come from the card's second face, each drawn
+ * where its box is and left out where there is none.
+ *
+ * A set of its own rather than more members of `CardBoxes` because it can be
+ * turned on its own: `rotation` means what it does there, and is likewise
+ * measured against the sheet, not against the first face's set. A split card
+ * turns both sets 90; an aftermath card leaves the first upright and turns
+ * this one 270; a flip card turns this one 180.
+ *
+ * The card has one art, placed by the first face's `art`.
+ */
+export const SecondFaceBoxesSchema = z.object({
+  rotation: RotationSchema.optional(),
+  title: TextBoxSchema,
+  mana: TextBoxSchema.optional(),
+  type: TextBoxSchema,
+  setSymbol: BoundsSchema.optional(),
+  rules: TextBoxSchema.optional(),
+  pt: TextBoxSchema.optional(),
+});
+
+export type SecondFaceBoxes = z.infer<typeof SecondFaceBoxesSchema>;
 
 /**
  * Configuration for planeswalker ability rendering.
@@ -359,6 +422,12 @@ export const LayoutConfigSchema = z.object({
   tallBoxes: CardBoxesSchema.optional(),
   /** Boxes for 2-ability planeswalkers (overrides `boxes` when set). */
   twoAbilityBoxes: CardBoxesSchema.optional(),
+  /**
+   * The second face of a card that prints both faces on one side — split,
+   * aftermath and flip cards. Drawn alongside `boxes`, which keeps describing
+   * the first face. See `SecondFaceBoxesSchema`.
+   */
+  secondFaceBoxes: SecondFaceBoxesSchema.optional(),
   frameAssets: FrameAssetsSchema,
   masks: LayoutMasksSchema.optional(),
   planeswalkerConfig: PlaneswalkerRenderConfigSchema.optional(),

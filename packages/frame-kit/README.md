@@ -229,7 +229,14 @@ How a frame is drawn for one card, as pure functions:
 - `resolveBoxOverrides(boxes, state)` — a box set with each text box's
   `overrides` merged in for one render's border state and template settings,
   so everything that draws a frame agrees on what a condition matches.
-  `overrideMatches` tests a single rule.
+  `overrideMatches` tests a single rule, and
+  `resolveSecondFaceBoxOverrides` does the same for a `secondFaceBoxes` set.
+- `turnPlacement(sheet, rotation)` / `turnMatrix(sheet, rotation)` — where a
+  turned box set (one with a `rotation`) sits on the sheet, as a node's
+  position and rotation or as a matrix. `turnedSheetSize` is the sheet as such
+  a set measures it, `turnedBoundsOnSheet` one of its boxes back on the sheet
+  as printed, and `turnedVectorOnSheet` / `sheetVectorInTurned` a direction
+  taken one way or the other.
 - `templateSettingDefaults(frame)`, `mergeTemplateSettings` and
   `layoutTemplateSettings(settings, layout)` — a frame's settings the way Card
   Anvil stores them, and the values in effect for one layout.

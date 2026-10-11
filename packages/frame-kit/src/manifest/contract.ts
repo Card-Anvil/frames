@@ -15,6 +15,10 @@ import { FrameSchema } from "../schema/frame.js";
  *   render with reduced fidelity.
  *
  * Version history:
+ * - 1.6: added the optional `rotation` on a box set, for text and art read
+ *   with the card turned; the optional `secondFaceBoxes` set, for a second
+ *   face printed on the same side as the first; the optional `defense` and
+ *   `fuse` text boxes; and the `aftermath` layout.
  * - 1.5: added the optional `insetTitle`, `insetMana`, `insetType` and
  *   `insetRules` text boxes for the spell inset in an Adventure, Omen or
  *   Prepare card's text box, and the `omen` and `prepare` layouts.
@@ -27,7 +31,7 @@ import { FrameSchema } from "../schema/frame.js";
  * - 1.2: added the optional `mask` asset URL on text boxes (shaped text).
  * - 1.1: added the optional `license` field on the manifest.
  */
-export const CONTRACT_VERSION = "1.5";
+export const CONTRACT_VERSION = "1.6";
 
 /** The only manifest kind any loader understands today. */
 export const DECLARATIVE_KIND = "declarative";
