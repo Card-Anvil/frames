@@ -16,13 +16,19 @@ export const pxToPt = (px: number): number => px / PT_TO_PX;
 /**
  * Boxes the studio previews text in.
  *
- * Exactly the four the renderer draws with `buildOutlinedText`: they need no
+ * Exactly the ones the renderer draws with `buildOutlinedText`: they need no
  * wrapping, no symbol layout and no auto-shrink, so what is drawn is what the
- * box says. Rules, abilities and `keyword` wrap, so they are deliberately
- * absent — reproducing those means reproducing the renderer, and Card Anvil
- * stays the authority on them.
+ * box says. Rules, abilities, `keyword` and `fuse` wrap, so they are
+ * deliberately absent — reproducing those means reproducing the renderer, and
+ * Card Anvil stays the authority on them.
  */
-export const PREVIEWABLE = ["title", "type", "nicknameTitle", "pt"] as const;
+export const PREVIEWABLE = [
+  "title",
+  "type",
+  "nicknameTitle",
+  "pt",
+  "defense",
+] as const;
 
 export type PreviewableBox = (typeof PREVIEWABLE)[number];
 
