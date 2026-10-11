@@ -309,6 +309,15 @@ flagged when they overflow their box. That is a single line each: no rules text,
 no mana symbols, and none of the renderer's auto-shrink, which is what makes the
 app the authority on whether a frame really renders.
 
+A box set with a `rotation` is drawn through its turn, so its boxes and sample
+text sit where the app draws them — sideways or upside down over the frame art,
+which stays as printed. The toolbar says how far the set is turned. Dragging,
+resizing and the arrow keys all move a box the way it moves on screen, and what
+is written to the source is the number in the set's own turned space;
+`collectorInfo` is the one box that stays on the unturned sheet. A second
+face's boxes are their own box set, `secondFaceBoxes`, in the box set picker.
+`rotation` itself is not a number to drag: change it in the source.
+
 The frame body is not picked by hand: the Card panel takes a colour identity
 plus the type switches (artifact, vehicle, land, enchantment, hybrid, devoid,
 colourless) and runs the same selection the app runs — `selectFrameLayers` in

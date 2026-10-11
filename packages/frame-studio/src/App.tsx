@@ -50,6 +50,7 @@ import {
   layoutsOf,
   masksIn,
   resolvedBoxesIn,
+  rotationOf,
 } from "./lib/frameModel.js";
 import {
   asFrame,
@@ -173,6 +174,9 @@ export function App(): React.JSX.Element {
     () => (view && boxSlot ? boxesIn(view, boxSlot) : []),
     [view, boxSlot],
   );
+  // Shown beside the box-set picker: a turned set's numbers are measured on
+  // the turned sheet, which is worth knowing before reading them.
+  const rotation = view ? rotationOf(view, boxSlot) : undefined;
   const selectedBox = boxes.find((entry) => entry.key === selected)?.box;
 
   const masks = useMemo(
@@ -472,6 +476,13 @@ export function App(): React.JSX.Element {
             .map((slot) => ({ value: slot.key, label: slot.key }))}
           onChange={setSlotKey}
         />
+        {rotation !== undefined && (
+          <Badge
+            title={`This box set is read with the card turned ${String(rotation)}° clockwise. Its boxes are measured on the sheet as it then lies; collectorInfo stays on the unturned sheet. Change \`rotation\` in the frame's source.`}
+          >
+            turned {rotation}°
+          </Badge>
+        )}
 
         <Button
           size="xs"

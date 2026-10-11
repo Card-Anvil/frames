@@ -77,6 +77,13 @@ const SPECS: Record<PreviewableBox, BoxTextSpec> = {
     align: "center",
     honoursFontFamily: false,
   },
+  // A battle's defense is drawn the way power and toughness are.
+  defense: {
+    family: "Beleren Small Caps",
+    fontStyle: "bold",
+    align: "center",
+    honoursFontFamily: false,
+  },
 };
 
 /** The font, style and alignment a box is actually drawn with. */

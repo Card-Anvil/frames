@@ -15,6 +15,7 @@ export const DEFAULT_SAMPLE: SampleText = {
   keyword: "Flying, vigilance",
   power: "4",
   toughness: "4",
+  defense: "4",
   collectorInfo: COLLECTOR_SAMPLE,
 };
 
@@ -28,6 +29,7 @@ export const PRESETS: Readonly<Record<string, SampleText>> = {
     keyword: "Flying, first strike, lifelink",
     power: "10",
     toughness: "10",
+    defense: "7",
     collectorInfo: COLLECTOR_SAMPLE,
   },
   worst: {
@@ -37,6 +39,7 @@ export const PRESETS: Readonly<Record<string, SampleText>> = {
     keyword: "Flying, vigilance, trample, haste, lifelink",
     power: "13",
     toughness: "13",
+    defense: "12",
     collectorInfo: COLLECTOR_SAMPLE,
   },
 };
