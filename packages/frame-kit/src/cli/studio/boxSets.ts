@@ -1,6 +1,10 @@
 import { z } from "zod";
 
-import { CardBoxesSchema, LayoutConfigSchema } from "../../schema/frame.js";
+import {
+  CardBoxesSchema,
+  LayoutConfigSchema,
+  SecondFaceBoxesSchema,
+} from "../../schema/frame.js";
 import {
   FrameAssetsSchema,
   LayoutMasksSchema,
@@ -54,6 +58,8 @@ function unwrap(schema: z.ZodType): { inner: z.ZodType; wrapped: boolean } {
 
 const KIND_BY_SCHEMA = new Map<z.ZodType, SlotKind>([
   [CardBoxesSchema, "boxes"],
+  // A second face's set is boxes like any other, only fewer of them.
+  [SecondFaceBoxesSchema, "boxes"],
   [FrameAssetsSchema, "assets"],
   [LayoutMasksSchema, "masks"],
 ]);

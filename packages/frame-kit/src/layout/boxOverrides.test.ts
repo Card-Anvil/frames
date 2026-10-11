@@ -4,10 +4,16 @@ import { z } from "zod";
 import {
   type CardBoxes,
   CardBoxesSchema,
+  type SecondFaceBoxes,
+  SecondFaceBoxesSchema,
   type TextBox,
   TextBoxSchema,
 } from "../schema/frame.js";
-import { type OverrideState, resolveBoxOverrides } from "./boxOverrides.js";
+import {
+  type OverrideState,
+  resolveBoxOverrides,
+  resolveSecondFaceBoxOverrides,
+} from "./boxOverrides.js";
 
 const bounds = { x: 0, y: 0, width: 10, height: 10 };
 const text = { ...bounds, fontSize: 12, color: "white" } satisfies TextBox;
@@ -166,6 +172,65 @@ describe("resolveBoxOverrides", () => {
       border: "default",
       settings: {},
     });
+    expect(textKeys.length).toBeGreaterThan(0);
+    for (const key of textKeys) {
+      expect(resolved[key], key).toEqual({ ...text, color: "red" });
+    }
+  });
+
+  // A set's turn is not a box: it has to come through as the number it is.
+  it("leaves a turned set's rotation alone", () => {
+    const boxes: CardBoxes = { ...boxesWith(onBorder), rotation: 90 };
+    expect(
+      resolveBoxOverrides(boxes, { border: "light", settings: {} }).rotation,
+    ).toBe(90);
+  });
+});
+
+describe("resolveSecondFaceBoxOverrides", () => {
+  const secondFace = {
+    rotation: 180,
+    title: onBorder,
+    type: text,
+    setSymbol: bounds,
+  } satisfies SecondFaceBoxes;
+
+  it("merges a matching override and keeps the rest of the set", () => {
+    expect(
+      resolveSecondFaceBoxOverrides(secondFace, {
+        border: "light",
+        settings: {},
+      }),
+    ).toEqual({
+      rotation: 180,
+      title: { ...text, color: "black" },
+      type: text,
+      setSymbol: bounds,
+    });
+  });
+
+  // The same guard as the first face's list.
+  it("resolves every text box a second face defines", () => {
+    const textKeys = Object.entries(SecondFaceBoxesSchema.shape)
+      .filter(
+        ([, schema]) =>
+          (schema instanceof z.ZodOptional ? schema.unwrap() : schema) ===
+          TextBoxSchema,
+      )
+      .map(([key]) => key);
+    const restyled = {
+      ...text,
+      overrides: [{ when: {}, style: { color: "red" } }],
+    } satisfies TextBox;
+    const boxes: SecondFaceBoxes = {
+      ...secondFace,
+      ...Object.fromEntries(textKeys.map((key) => [key, restyled])),
+    };
+
+    const resolved: Record<string, unknown> = resolveSecondFaceBoxOverrides(
+      boxes,
+      { border: "default", settings: {} },
+    );
     expect(textKeys.length).toBeGreaterThan(0);
     for (const key of textKeys) {
       expect(resolved[key], key).toEqual({ ...text, color: "red" });

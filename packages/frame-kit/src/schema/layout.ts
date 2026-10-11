@@ -61,6 +61,11 @@ const customLayouts = SCRYFALL_LAYOUTS.flatMap((layout) =>
  * is a layout Scryfall does return; it is listed here rather than in
  * `SCRYFALL_LAYOUTS` because `@scryfall/api-types` predates it, and that list
  * has to match the package.
+ *
+ * `aftermath` is to `split` what `omen` is to `adventure`: Scryfall files an
+ * aftermath card under `split`, told apart only by its Aftermath keyword, but
+ * it prints its first half upright and its second sideways where a split card
+ * turns both.
  */
 export const additionalLayouts = [
   "saga_creature",
@@ -68,6 +73,7 @@ export const additionalLayouts = [
   "saga_transform_creature",
   "omen",
   "prepare",
+  "aftermath",
 ] as const;
 
 export const layouts = [

@@ -139,8 +139,8 @@ back to `c` when absent.
 `config.layouts` is keyed by layout name: every Scryfall layout, plus a
 `<layout>_planeswalker` / `<layout>_case` cross-product for shapes Scryfall does
 not distinguish but frames must, plus `saga_creature`, `saga_transform`,
-`saga_transform_creature`, `omen` and `prepare`. A frame only declares the
-layouts it supports; unsupported ones show as disabled in the app.
+`saga_transform_creature`, `omen`, `prepare` and `aftermath`. A frame only
+declares the layouts it supports; unsupported ones show as disabled in the app.
 
 `adventure`, `omen` and `prepare` cards print a second spell inset in the text
 box. A layout for one places it with the `insetTitle`, `insetMana`, `insetType`
@@ -148,6 +148,57 @@ and `insetRules` boxes and narrows `rules` to the column left over — the inset
 on the left for an Adventure or an Omen, on the right for a Prepare card.
 Scryfall files Omens under `adventure`; Card Anvil tells them apart by the
 inset's type line, so a frame can give each its own art.
+
+### Cards read turned
+
+A battle, a split card, an aftermath card and a flip card each print text that
+does not read upright. Two things in a layout cover all four.
+
+**A box set can be turned.** `rotation` on a set — `90`, `180` or `270` — is how
+far the card is turned, clockwise, to read it. The set's boxes, `art` included,
+are then measured on the sheet _as it lies after that turn_, so a text box stays
+the upright rectangle it is everywhere else: at `90` or `270` the default sheet
+is 4440 wide and 3264 tall. The art is drawn turned with the set.
+
+```ts
+// A battle is read with the card turned a quarter turn clockwise.
+boxes: {
+  rotation: 90,
+  art: { x: 440, y: 0, width: 4000, height: 3264 },
+  title: { x: 700, y: 386, width: 3300, height: 172, fontSize: 119 },
+  // ...
+}
+```
+
+Two things never turn. `collectorInfo` is always measured on the unturned
+sheet, because a card prints it upright along the bottom edge whichever way the
+text above it reads. And frame art and masks are the sheet as printed: a battle
+frame's PNG is the portrait sheet with the frame lying on its side.
+
+**A second face can share the side.** `secondFaceBoxes` is a set of its own for
+the card's second face — `title` and `type`, plus `mana`, `rules`, `pt` and
+`setSymbol` where the face has them — with its own `rotation`, also measured
+against the sheet. `boxes` keeps describing the first face.
+
+| Layout      | `boxes`   | `secondFaceBoxes` | Covers                          |
+| ----------- | --------- | ----------------- | ------------------------------- |
+| `battle`    | turned 90 | —                 | Battles; `backBoxes` is upright |
+| `split`     | turned 90 | turned 90         | Split cards, Fuse, Rooms        |
+| `aftermath` | upright   | turned 270        | Aftermath cards                 |
+| `flip`      | upright   | turned 180        | Kamigawa flip cards             |
+
+Those are how the real cards print; nothing stops a frame laying one out some
+other way. Scryfall files a battle under `transform` and an aftermath card
+under `split`. Card Anvil tells them apart by the front face's type line and
+the Aftermath keyword, and a frame without a `battle` or `aftermath` layout
+draws them through `transform` or `split` instead.
+
+Two boxes on `boxes` belong to these cards. `defense` is a battle's defense, and
+rules text wraps around it the way it does around `pt`. `fuse` is the Fuse line
+a Fuse card prints once under both halves: with the box, the line is drawn there
+and dropped from each half's rules; without it, it stays in both.
+
+The card has one art, placed by `boxes.art`.
 
 `config.alternateLayouts` holds named variants selected by a template setting —
 this is how Borderless offers its textless variants.
