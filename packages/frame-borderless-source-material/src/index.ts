@@ -7,6 +7,12 @@ import {
 } from "./inset/config";
 import borderlessSourceMaterialPreview from "./preview.jpg";
 import { borderlessSourceMaterialLayoutConfig } from "./regular/config";
+import {
+  borderlessSourceMaterialAftermathLayoutConfig,
+  borderlessSourceMaterialBattleLayoutConfig,
+  borderlessSourceMaterialFlipLayoutConfig,
+  borderlessSourceMaterialSplitLayoutConfig,
+} from "./turned/config";
 
 export const defaultCollectorInfoBounds = {
   x: 333,
@@ -52,6 +58,23 @@ export const borderlessSourceMaterialFrame = {
       ),
       prepare: withCollectorInfoDefaults(
         borderlessSourceMaterialPrepareLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      battle: withCollectorInfoDefaults(
+        borderlessSourceMaterialBattleLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      // Rooms and Fuse cards are split cards to Scryfall and to this frame.
+      split: withCollectorInfoDefaults(
+        borderlessSourceMaterialSplitLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      aftermath: withCollectorInfoDefaults(
+        borderlessSourceMaterialAftermathLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      flip: withCollectorInfoDefaults(
+        borderlessSourceMaterialFlipLayoutConfig,
         defaultCollectorInfoBounds,
       ),
     },
