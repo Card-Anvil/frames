@@ -37,7 +37,7 @@ async function importVite(): Promise<typeof import("vite")> {
  * loop would appear to run and do nothing.
  */
 export function invalidateFrameModules(frameServer: FrameServer): void {
-  // Both supported Vite majors expose the SSR module graph here; the legacy
+  // Every supported Vite major exposes the SSR module graph here; the legacy
   // top-level accessor is deprecated.
   frameServer.server.environments.ssr.moduleGraph.invalidateAll();
 }
