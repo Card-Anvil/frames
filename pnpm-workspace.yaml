@@ -1,7 +1,8 @@
 packages:
   - "packages/*"
 
-# esbuild ships a platform binary and needs its postinstall to run; Vite and
-# Vitest depend on it. Everything else stays unapproved by default.
+# esbuild ships a platform binary and needs its postinstall to run. Vite 8 no
+# longer depends on it, but still resolves it as an optional peer, so it stays
+# installed. Everything else stays unapproved by default.
 allowBuilds:
   esbuild: true

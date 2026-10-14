@@ -150,7 +150,10 @@ async function startUiDevServer(
   const server = await vite.createServer({
     root: srcDir,
     appType: "spa",
-    server: { middlewareMode: true, hmr: { server: httpServer } },
+    // `ws.server` is Vite 8's spelling (`hmr.server` is deprecated there, and
+    // Vite 7 has no `ws` options at all). Only the workspace runs --dev, and it
+    // pins Vite 8, so the published peer range never reaches this line.
+    server: { middlewareMode: true, ws: { server: httpServer } },
   });
 
   return {
