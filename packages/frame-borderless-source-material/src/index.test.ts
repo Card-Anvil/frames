@@ -246,6 +246,124 @@ describe("Borderless Source Material frame", () => {
   });
 });
 
+describe("Borderless Source Material column layouts", () => {
+  const { layouts } = borderlessSourceMaterialFrame.config;
+  const bandTop = layouts.normal.boxes.art.height;
+
+  /** Every text box a set places, left out of it only the art. */
+  const textBoxes = (boxes: Record<string, unknown>) =>
+    Object.entries(boxes).filter(
+      (entry): entry is [string, Bounds] =>
+        entry[0] !== "art" &&
+        entry[0] !== "collectorInfo" &&
+        typeof entry[1] === "object" &&
+        entry[1] !== null,
+    );
+
+  // A Saga's chapters run down the left of the card; a Class's levels and a
+  // Case's steps down the right. The two columns are one shape, mirrored.
+  it("mirrors the saga column for classes and cases", () => {
+    const saga = layouts.saga.boxes.abilities;
+    for (const layout of ["class", "case"] as const) {
+      const column = layouts[layout].boxes.abilities;
+      expect(saga && column).toBeTruthy();
+      if (!saga || !column) {
+        continue;
+      }
+      expect(column.x).toBe(SHEET.width - (saga.x + saga.width));
+      expect(column.width).toBe(saga.width);
+      expect(column.y).toBe(saga.y);
+      expect(column.height).toBe(saga.height);
+    }
+  });
+
+  // The column replaces the rules box. Leaving it in would draw nothing but
+  // still outline an empty box in debug view.
+  it.each(["saga", "saga_creature", "class", "case"] as const)(
+    "draws the %s layout's text in a column, not a rules box",
+    (layout) => {
+      expect(layouts[layout].boxes.abilities).toBeDefined();
+      expect(layouts[layout].boxes.rules).toBeUndefined();
+    },
+  );
+
+  it.each([
+    "saga",
+    "saga_creature",
+    "saga_transform",
+    "saga_transform_creature",
+    "class",
+    "case",
+  ] as const)(
+    "keeps the %s layout's text on the art, off the band",
+    (layout) => {
+      const config: LayoutConfig = layouts[layout];
+      for (const boxes of [
+        config.boxes,
+        config.backBoxes,
+        config.sagaFrontBoxes,
+        config.sagaBackBoxes,
+      ]) {
+        for (const [key, box] of textBoxes(boxes ?? {})) {
+          expect(box.x, key).toBeGreaterThanOrEqual(0);
+          expect(box.y, key).toBeGreaterThanOrEqual(0);
+          expect(box.x + box.width, key).toBeLessThanOrEqual(SHEET.width);
+          expect(box.y + box.height, key).toBeLessThanOrEqual(bandTop);
+        }
+      }
+    },
+  );
+
+  // The column never crosses the type line under it.
+  it.each(["saga", "saga_creature", "class", "case"] as const)(
+    "ends the %s layout's column above its type line",
+    (layout) => {
+      const { abilities, type } = layouts[layout].boxes;
+      expect(abilities).toBeDefined();
+      if (abilities) {
+        expect(abilities.y + abilities.height).toBeLessThanOrEqual(type.y);
+      }
+    },
+  );
+
+  // Which face of a transforming Saga is the Saga varies per card, so the
+  // layout carries the Saga's boxes for either side and the regular layout's
+  // for the other face.
+  it("draws a transforming saga's plain face as a regular card", () => {
+    const { saga, saga_creature, saga_transform, saga_transform_creature } =
+      layouts;
+    for (const config of [saga_transform, saga_transform_creature]) {
+      expect(config.boxes.title).toBe(layouts.normal.boxes.title);
+      expect(config.boxes.rules).toBe(layouts.normal.boxes.rules);
+      expect(config.backBoxes?.rules).toBe(layouts.normal.boxes.rules);
+    }
+    expect(saga_transform.sagaFrontBoxes?.abilities).toBe(saga.boxes.abilities);
+    expect(saga_transform.sagaBackBoxes?.abilities).toBe(saga.boxes.abilities);
+    expect(saga_transform_creature.sagaFrontBoxes?.abilities).toBe(
+      saga_creature.boxes.abilities,
+    );
+    expect(saga_transform_creature.sagaBackBoxes?.keyword).toBe(
+      saga_creature.boxes.keyword,
+    );
+  });
+
+  // No new frame art: every column layout is the regular layout's band and
+  // masks, and draws its chapter numerals as text rather than badges.
+  it.each([
+    "saga",
+    "saga_creature",
+    "saga_transform",
+    "saga_transform_creature",
+    "class",
+    "case",
+  ] as const)("gives the %s layout the regular layout's art", (layout) => {
+    const config: LayoutConfig = layouts[layout];
+    expect(config.frameAssets).toBe(layouts.normal.frameAssets);
+    expect(config.masks).toBe(layouts.normal.masks);
+    expect(config.frameAssets.saga).toBeUndefined();
+  });
+});
+
 describe("frame.meta.json", () => {
   it("describes this package", () => {
     const meta = FrameMetaSchema.parse(frameMeta);
