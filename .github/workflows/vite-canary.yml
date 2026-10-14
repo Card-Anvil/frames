@@ -1,9 +1,9 @@
 name: Vite canary
 
 # Packaging loads frames through Vite's ssrLoadModule, which Vite 6 soft-
-# deprecated in favour of the Environment API and which is a candidate for
-# removal in Vite 8. This turns that removal into a red build here, rather
-# than a broken release in somebody else's repository.
+# deprecated in favour of the Environment API. Vite 8 kept it, but a later
+# major may not. This turns that removal into a red build here, rather than a
+# broken release in somebody else's repository.
 on:
   schedule:
     - cron: "0 6 * * 1"
