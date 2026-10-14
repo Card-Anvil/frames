@@ -38,6 +38,17 @@ describe("withCollectorInfoDefaults", () => {
     expect(config.backBoxes?.collectorInfo).toEqual(expected);
   });
 
+  // A two-ability planeswalker is drawn from these instead of `boxes`.
+  it("fills in collector info on two-ability planeswalker boxes", () => {
+    const config = withCollectorInfoDefaults(
+      { ...layout, twoAbilityBoxes: boxes },
+      collectorBounds,
+    );
+    expect(config.twoAbilityBoxes.collectorInfo).toEqual(
+      config.boxes.collectorInfo,
+    );
+  });
+
   it("keeps the overrides the bounds bring, including none", () => {
     const own = [
       { when: { border: "dark" }, style: { color: "red" } },

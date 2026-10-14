@@ -10,3 +10,5 @@ export {
   borderlessSourceMaterialSagaLayoutConfig,
   borderlessSourceMaterialSectionedLayoutConfig,
 } from "./sectioned/config";
+
+export { borderlessSourceMaterialPlaneswalkerLayoutConfig } from "./planeswalker/config";

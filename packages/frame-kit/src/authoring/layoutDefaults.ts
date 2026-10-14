@@ -55,6 +55,14 @@ export function withCollectorInfoDefaults<T extends LayoutConfig>(
           collectorInfo: config.tallBoxes.collectorInfo ?? collectorInfo,
         }
       : undefined,
+    // Planeswalkers with two abilities swap `boxes` for these (see
+    // renderCardToCanvas), which would otherwise drop collector info.
+    twoAbilityBoxes: config.twoAbilityBoxes
+      ? {
+          ...config.twoAbilityBoxes,
+          collectorInfo: config.twoAbilityBoxes.collectorInfo ?? collectorInfo,
+        }
+      : undefined,
     backBoxes: config.backBoxes
       ? {
           ...config.backBoxes,
