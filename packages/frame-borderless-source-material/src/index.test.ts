@@ -378,6 +378,107 @@ describe("Borderless Source Material column layouts", () => {
   });
 });
 
+describe("Borderless Source Material planeswalker layouts", () => {
+  const { layouts } = borderlessSourceMaterialFrame.config;
+  const bandTop = layouts.normal.boxes.art.height;
+  const PLANESWALKER_LAYOUTS = [
+    "normal_planeswalker",
+    "transform_planeswalker",
+    "modal_dfc_planeswalker",
+  ] as const;
+
+  /** Every box set a planeswalker layout may draw a face from. */
+  const boxSets = (config: LayoutConfig) =>
+    [
+      config.boxes,
+      config.twoAbilityBoxes,
+      config.tallBoxes,
+      config.backBoxes,
+    ].filter((boxes) => boxes !== undefined);
+
+  it.each(PLANESWALKER_LAYOUTS)(
+    "keeps the %s layout's text on the art, off the band",
+    (layout) => {
+      for (const boxes of boxSets(layouts[layout])) {
+        for (const [key, box] of Object.entries(boxes)) {
+          if (key === "art" || key === "collectorInfo") {
+            continue;
+          }
+          const { x, y, width, height } = box as Bounds;
+          expect(x, key).toBeGreaterThanOrEqual(0);
+          expect(y, key).toBeGreaterThanOrEqual(0);
+          expect(x + width, key).toBeLessThanOrEqual(SHEET.width);
+          expect(y + height, key).toBeLessThanOrEqual(bandTop);
+        }
+      }
+    },
+  );
+
+  // The starting loyalty takes the corner power and toughness take on a
+  // regular card, and the last ability wraps around it, so it has to sit in
+  // the abilities box's bottom-right corner.
+  it("sets the starting loyalty in the abilities' bottom-right corner", () => {
+    for (const boxes of boxSets(layouts.normal_planeswalker)) {
+      const { abilities, startingLoyalty, rules, pt } = boxes;
+      expect(rules).toBeUndefined();
+      expect(pt).toBeUndefined();
+      expect(abilities && startingLoyalty).toBeTruthy();
+      if (!abilities || !startingLoyalty) {
+        continue;
+      }
+      expect(startingLoyalty.x + startingLoyalty.width).toBe(
+        abilities.x + abilities.width,
+      );
+      expect(startingLoyalty.y).toBeLessThan(abilities.y + abilities.height);
+      expect(startingLoyalty.y).toBeGreaterThan(abilities.y);
+    }
+  });
+
+  // Four abilities need more room: the type line moves up, and the abilities
+  // with it.
+  it("raises the type line for a four-ability planeswalker", () => {
+    const { boxes, tallBoxes } = layouts.normal_planeswalker;
+    expect(tallBoxes).toBeDefined();
+    expect(tallBoxes?.type.y).toBeLessThan(boxes.type.y);
+    expect(tallBoxes?.abilities?.y).toBeLessThan(boxes.abilities?.y ?? 0);
+  });
+
+  // The cost column has to be wide enough to set a cost in, and a static
+  // ability, with no cost, starts at the column's left edge.
+  it("gives loyalty abilities a cost column and statics none", () => {
+    const config = layouts.normal_planeswalker.planeswalkerConfig;
+    expect(config?.textPaddingX).toBeGreaterThan(0);
+    expect(config?.staticTextPaddingX).toBe(0);
+  });
+
+  // No badge, band or separator art: Card Anvil draws a planeswalker without
+  // `frameAssets.planeswalker` as text alone.
+  it.each([...PLANESWALKER_LAYOUTS, "transform", "modal_dfc"] as const)(
+    "gives the %s layout the regular layout's art",
+    (layout) => {
+      const config: LayoutConfig = layouts[layout];
+      expect(config.frameAssets).toBe(layouts.normal.frameAssets);
+      expect(config.masks).toBe(layouts.normal.masks);
+      if (layout !== "normal_planeswalker") {
+        expect(config.backFrameAssets).toBe(layouts.normal.frameAssets);
+        expect(config.backMasks).toBe(layouts.normal.masks);
+      }
+      expect(config.frameAssets.planeswalker).toBeUndefined();
+    },
+  );
+
+  // Both faces of a double-faced card are regular cards here; only a
+  // transform front adds its back face's power and toughness.
+  it("draws both faces of a double-faced card as regular cards", () => {
+    const { transform, modal_dfc } = layouts;
+    for (const config of [transform, modal_dfc]) {
+      expect(config.boxes.rules).toBe(layouts.normal.boxes.rules);
+      expect(config.backBoxes?.rules).toBe(layouts.normal.boxes.rules);
+    }
+    expect(transform.boxes.flipsidePt).toBeDefined();
+  });
+});
+
 describe("frame.meta.json", () => {
   it("describes this package", () => {
     const meta = FrameMetaSchema.parse(frameMeta);
