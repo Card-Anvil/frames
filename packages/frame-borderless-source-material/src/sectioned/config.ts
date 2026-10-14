@@ -108,6 +108,9 @@ const sagaConfig = {
   textPaddingX: 60,
   badgeWidth: 230,
   badgeOffsetX: 60,
+  // The column starts at chapter I, leaving out the reminder, as Borderless
+  // does: on a card with no frame around its text it only crowds the art.
+  skipReminder: true,
 };
 
 export const borderlessSourceMaterialSagaLayoutConfig: LayoutConfig = {
@@ -143,8 +146,10 @@ export const borderlessSourceMaterialSagaTransformCreatureLayoutConfig: LayoutCo
   };
 
 // A Class's levels and a Case's steps are both a column of sections on the
-// right, so the two share one set of boxes.
+// right, so the two share one set of boxes. A Class's column starts at level
+// 1, leaving out its reminder the way a Saga's leaves out its own.
 export const borderlessSourceMaterialSectionedLayoutConfig: LayoutConfig = {
   ...borderlessSourceMaterialLayoutConfig,
   boxes: sectionedBoxes,
+  sectionConfig: { skipReminder: true },
 };

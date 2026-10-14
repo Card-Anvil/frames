@@ -347,6 +347,20 @@ describe("Borderless Source Material column layouts", () => {
     );
   });
 
+  // Neither a Saga's reminder nor a Class's is drawn: the column starts at
+  // chapter I or level 1.
+  it("leaves the reminder out of sagas and classes", () => {
+    for (const layout of [
+      "saga",
+      "saga_creature",
+      "saga_transform",
+      "saga_transform_creature",
+    ] as const) {
+      expect(layouts[layout].sagaConfig?.skipReminder, layout).toBe(true);
+    }
+    expect(layouts.class.sectionConfig?.skipReminder).toBe(true);
+  });
+
   // No new frame art: every column layout is the regular layout's band and
   // masks, and draws its chapter numerals as text rather than badges.
   it.each([
