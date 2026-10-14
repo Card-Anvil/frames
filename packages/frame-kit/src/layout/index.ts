@@ -30,6 +30,7 @@ export {
   type OverrideState,
   overrideMatches,
   resolveBoxOverrides,
+  resolveSecondFaceBoxOverrides,
 } from "./boxOverrides.js";
 export {
   type RgbColor,
@@ -92,3 +93,15 @@ export {
   textOutlineFor,
   textShadowFor,
 } from "./textStyle.js";
+export {
+  type Matrix,
+  type Point,
+  type Size,
+  applyMatrix,
+  sheetVectorInTurned,
+  turnMatrix,
+  turnPlacement,
+  turnedBoundsOnSheet,
+  turnedSheetSize,
+  turnedVectorOnSheet,
+} from "./turn.js";

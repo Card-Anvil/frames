@@ -26,9 +26,15 @@ describe("pt to px", () => {
 describe("previewable boxes", () => {
   // Everything here must be a single line in the real renderer: no wrapping,
   // no symbols, no auto-shrink. `pt` qualifies because it renders as one
-  // "power/toughness" string.
+  // "power/toughness" string, and a battle's `defense` is one number.
   it("covers exactly the boxes buildOutlinedText draws", () => {
-    expect([...PREVIEWABLE]).toEqual(["title", "type", "nicknameTitle", "pt"]);
+    expect([...PREVIEWABLE]).toEqual([
+      "title",
+      "type",
+      "nicknameTitle",
+      "pt",
+      "defense",
+    ]);
   });
 
   // `keyword` looks single-line but wraps, with its own overlap handling
@@ -38,6 +44,7 @@ describe("previewable boxes", () => {
       "rules",
       "abilities",
       "keyword",
+      "fuse",
       "mana",
       "collectorInfo",
     ]) {

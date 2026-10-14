@@ -1,6 +1,7 @@
 import type {
   BorderState,
   CardBoxes,
+  SecondFaceBoxes,
   TextBox,
   TextBoxOverride,
 } from "../schema/frame.js";
@@ -36,7 +37,21 @@ const TEXT_BOX_KEYS = [
   "insetMana",
   "insetType",
   "insetRules",
+  "defense",
+  "fuse",
 ] as const satisfies readonly (keyof CardBoxes)[];
+
+/**
+ * The same for a second face's set. `boxOverrides.test.ts` holds this list to
+ * the contract too.
+ */
+const SECOND_FACE_TEXT_BOX_KEYS = [
+  "title",
+  "mana",
+  "type",
+  "rules",
+  "pt",
+] as const satisfies readonly (keyof SecondFaceBoxes)[];
 
 /** Whether every condition an override names holds for one render. */
 export function overrideMatches(
@@ -76,6 +91,21 @@ export function resolveBoxOverrides(
 ): CardBoxes {
   const resolved = { ...boxes };
   for (const key of TEXT_BOX_KEYS) {
+    const box = boxes[key];
+    if (box?.overrides) {
+      resolved[key] = resolveTextBox(box, state);
+    }
+  }
+  return resolved;
+}
+
+/** {@link resolveBoxOverrides} for the set a second face is drawn from. */
+export function resolveSecondFaceBoxOverrides(
+  boxes: SecondFaceBoxes,
+  state: OverrideState,
+): SecondFaceBoxes {
+  const resolved = { ...boxes };
+  for (const key of SECOND_FACE_TEXT_BOX_KEYS) {
     const box = boxes[key];
     if (box?.overrides) {
       resolved[key] = resolveTextBox(box, state);

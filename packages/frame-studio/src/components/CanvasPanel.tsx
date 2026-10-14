@@ -2,11 +2,17 @@ import { Box } from "@chakra-ui/react";
 import Konva from "konva";
 import { useCallback, useEffect, useRef } from "react";
 
-import { placementOrigin } from "@cardanvil/frame-kit/layout";
+import {
+  placementOrigin,
+  sheetVectorInTurned,
+  turnPlacement,
+  turnedSheetSize,
+  turnedVectorOnSheet,
+} from "@cardanvil/frame-kit/layout";
 
 import type { Bounds, FramePayload, FrameSlot, TextBox } from "../api/types.js";
 import type { ArtLayer, CompositeResult } from "../lib/composite.js";
-import { boxesIn } from "../lib/frameModel.js";
+import { boxesIn, isTurnedWithSet, rotationOf } from "../lib/frameModel.js";
 import { boxColor } from "../lib/hues.js";
 import { CARD_INSET, type Guide, snapBounds } from "../lib/snapping.js";
 import { buildCollectorPreview } from "../text/collector.js";
@@ -114,6 +120,13 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
   const transformerRef = useRef<Konva.Transformer | null>(null);
 
   const { width, height } = payload.canvas;
+  /**
+   * How far the card is turned to read this box set. A turned set's boxes are
+   * measured on the sheet as it then lies, so its rectangles, guides and text
+   * previews are drawn through that turn — where Card Anvil draws them — and
+   * an edit writes numbers in the set's own space. The frame art never turns.
+   */
+  const rotation = rotationOf(payload, boxSlot);
 
   /** Stage scale at which the whole sheet fits; the zoom baseline. */
   const fitScaleRef = useRef(1);
@@ -193,7 +206,8 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
     const text = new Konva.Layer({ listening: false });
     const overlay = new Konva.Layer();
     const transformer = new Konva.Transformer({
-      // The contract has no rotation — offering a handle for it would lie.
+      // A box has no rotation of its own — a whole set is turned, and that is
+      // a source edit — so offering a handle for it would lie.
       rotateEnabled: false,
       keepRatio: false,
       ignoreStroke: true,
@@ -468,6 +482,17 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
       }
       layer.destroyChildren();
       const overflows: Record<string, number> = {};
+      // A turned set's previews are laid out in the set's own space, in a
+      // group carrying its turn.
+      const turned = rotation
+        ? new Konva.Group({
+            ...turnPlacement({ width, height }, rotation),
+            listening: false,
+          })
+        : undefined;
+      if (turned) {
+        layer.add(turned);
+      }
 
       for (const { key, box } of previewBoxes) {
         if (hidden.has(key)) {
@@ -495,7 +520,22 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
           sample,
           key === "pt" && ptIsVehicle ? { ...box, color: "white" } : box,
         );
-        layer.add(preview.node);
+        if (turned && rotation) {
+          // A canvas shadow is offset on the sheet whatever turn is in
+          // effect, so it is turned back to fall the way the text reads.
+          preview.node.shadowOffset(
+            turnedVectorOnSheet(
+              {
+                x: preview.node.shadowOffsetX(),
+                y: preview.node.shadowOffsetY(),
+              },
+              rotation,
+            ),
+          );
+          turned.add(preview.node);
+        } else {
+          layer.add(preview.node);
+        }
         if (preview.overflow > 0) {
           overflows[key] = preview.overflow;
         }
@@ -508,7 +548,16 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
     return () => {
       cancelled = true;
     };
-  }, [previewBoxes, sampleText, ptIsVehicle, hidden, onOverflow]);
+  }, [
+    previewBoxes,
+    sampleText,
+    ptIsVehicle,
+    hidden,
+    onOverflow,
+    rotation,
+    width,
+    height,
+  ]);
 
   // Boxes and the transformer.
   useEffect(() => {
@@ -538,18 +587,48 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
       );
     }
 
-    const guideGroup = new Konva.Group({ listening: false });
-    overlay.add(guideGroup);
+    /**
+     * Somewhere boxes are drawn and measured: the sheet itself, or a turned
+     * set's own space. Each has its own extent, and its own guides — a snap
+     * line only means something in the space its box is measured in.
+     */
+    interface Space {
+      readonly parent: Konva.Layer | Konva.Group;
+      readonly size: { width: number; height: number };
+      readonly guides: Konva.Group;
+    }
+    const spaceIn = (
+      parent: Konva.Layer | Konva.Group,
+      size: Space["size"],
+    ): Space => {
+      const guides = new Konva.Group({ listening: false });
+      parent.add(guides);
+      return { parent, size, guides };
+    };
+    const sheetSpace = spaceIn(overlay, { width, height });
+    let turnedSpace: Space | undefined;
+    if (rotation) {
+      const turnedGroup = new Konva.Group(
+        turnPlacement({ width, height }, rotation),
+      );
+      overlay.add(turnedGroup);
+      turnedSpace = spaceIn(
+        turnedGroup,
+        turnedSheetSize({ width, height }, rotation),
+      );
+    }
+    const spaceOf = (key: string): Space =>
+      turnedSpace && isTurnedWithSet(key) ? turnedSpace : sheetSpace;
 
-    const drawGuides = (guides: readonly Guide[]) => {
-      guideGroup.destroyChildren();
+    const drawGuides = (space: Space, guides: readonly Guide[]) => {
+      space.guides.destroyChildren();
       for (const guide of guides) {
-        guideGroup.add(
+        space.guides.add(
           new Konva.Line({
             points:
               guide.axis === "x"
-                ? [guide.at, 0, guide.at, height]
-                : [0, guide.at, width, guide.at],
+                ? [guide.at, 0, guide.at, space.size.height]
+                : [0, guide.at, space.size.width, guide.at],
             stroke: SELECTION_COLOR,
             strokeWidth: 2,
             dash: [12, 10],
@@ -557,7 +636,7 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
           }),
         );
       }
-      guideGroup.moveToTop();
+      space.guides.moveToTop();
       overlay.batchDraw();
     };
 
@@ -569,6 +648,7 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
         return;
       }
       const isSelected = key === selected;
+      const space = spaceOf(key);
       const rect = new Konva.Rect({
         x: box.x,
         y: box.y,
@@ -593,10 +673,15 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
           return live;
         }
         const siblings = boxes
-          .filter((entry) => entry.key !== key && !hidden.has(entry.key))
+          .filter(
+            (entry) =>
+              entry.key !== key &&
+              !hidden.has(entry.key) &&
+              spaceOf(entry.key) === space,
+          )
           .map((entry) => entry.box);
-        const snapped = snapBounds(live, { width, height }, siblings);
-        drawGuides(snapped.guides);
+        const snapped = snapBounds(live, space.size, siblings);
+        drawGuides(space, snapped.guides);
         return snapped.bounds;
       };
 
@@ -619,14 +704,14 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
       // values, and each commit rewrites a source file.
       rect.on("dragend", (event) => {
         const snapped = applySnap(isAltDown(event.evt));
-        drawGuides([]);
+        drawGuides(space, []);
         rect.position({ x: snapped.x, y: snapped.y });
         onCommit(key, snapped);
       });
       // Transformer writes scaleX/scaleY, not width/height. Fold the scale
       // back in and reset it, or the next transform compounds.
       rect.on("transformend", () => {
-        drawGuides([]);
+        drawGuides(space, []);
         const next = {
           x: Math.round(rect.x()),
           y: Math.round(rect.y()),
@@ -638,7 +723,7 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
         onCommit(key, next);
       });
 
-      overlay.add(rect);
+      space.parent.add(rect);
       if (isSelected) {
         selectedNode = rect;
       }
@@ -656,12 +741,14 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
     editable,
     width,
     height,
+    rotation,
     onCommit,
     onHover,
     onSelect,
   ]);
 
-  // Arrow keys nudge in canvas pixels, independent of zoom.
+  // Arrow keys nudge in canvas pixels, independent of zoom — and in the
+  // direction the key points on screen, whichever way the box's set is turned.
   useEffect(() => {
     if (!selected || !boxSlot || !editable) {
       return;
@@ -686,9 +773,13 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
         return;
       }
       const box: TextBox = found.box;
+      const nudge = sheetVectorInTurned(
+        { x: delta[0] * step, y: delta[1] * step },
+        isTurnedWithSet(selected) ? rotation : undefined,
+      );
       onCommit(selected, {
-        x: box.x + delta[0] * step,
-        y: box.y + delta[1] * step,
+        x: box.x + nudge.x,
+        y: box.y + nudge.y,
         width: box.width,
         height: box.height,
       });
@@ -697,7 +788,7 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
     return () => {
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [selected, boxSlot, payload, editable, onCommit]);
+  }, [selected, boxSlot, payload, editable, onCommit, rotation]);
 
   return (
     <Box

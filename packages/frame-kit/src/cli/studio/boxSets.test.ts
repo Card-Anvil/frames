@@ -21,6 +21,7 @@ describe("layoutSlots", () => {
       "sagaBackCreatureBoxes",
       "sagaFrontBoxes",
       "sagaFrontCreatureBoxes",
+      "secondFaceBoxes",
       "tallBoxes",
       "twoAbilityBoxes",
     ]);
@@ -81,7 +82,7 @@ describe("layoutSlots", () => {
 
   it("boxSlots is the boxes subset", () => {
     expect(boxSlots().every((slot) => slot.kind === "boxes")).toBe(true);
-    expect(boxSlots()).toHaveLength(11);
+    expect(boxSlots()).toHaveLength(12);
   });
 });
 

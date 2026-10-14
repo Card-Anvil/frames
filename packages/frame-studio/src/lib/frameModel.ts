@@ -1,4 +1,4 @@
-import type { CardBoxes, LayoutMasks } from "@cardanvil/frame-kit";
+import type { CardBoxes, LayoutMasks, Rotation } from "@cardanvil/frame-kit";
 import {
   type OverrideState,
   resolveBoxOverrides,
@@ -26,6 +26,34 @@ export const isBounds = (value: unknown): value is Bounds =>
   value !== null &&
   typeof (value as Bounds).x === "number" &&
   typeof (value as Bounds).width === "number";
+
+/**
+ * How far the card is turned to read one box-set slot's boxes — the set's
+ * `rotation`, or `undefined` for a set that reads upright. A turned set is
+ * measured on the sheet as it lies after that turn, so everything the studio
+ * draws from the set has to go through the same turn (see `CardBoxesSchema`).
+ */
+export function rotationOf(
+  payload: FramePayload,
+  slot: FrameSlot | undefined,
+): Rotation | undefined {
+  const set = slot ? atPath(payload.frame, slot.path) : undefined;
+  if (set === null || typeof set !== "object") {
+    return undefined;
+  }
+  const { rotation } = set as { rotation?: unknown };
+  return rotation === 90 || rotation === 180 || rotation === 270
+    ? rotation
+    : undefined;
+}
+
+/**
+ * The one member of a turned set that does not turn with it: a card prints
+ * its collector line upright along the sheet's bottom edge whichever way the
+ * text above it reads.
+ */
+export const isTurnedWithSet = (key: string): boolean =>
+  key !== "collectorInfo";
 
 /** The boxes in one box-set slot, in contract order. */
 export function boxesIn(
