@@ -8,6 +8,13 @@ import {
 import borderlessSourceMaterialPreview from "./preview.jpg";
 import { borderlessSourceMaterialLayoutConfig } from "./regular/config";
 import {
+  borderlessSourceMaterialSagaCreatureLayoutConfig,
+  borderlessSourceMaterialSagaLayoutConfig,
+  borderlessSourceMaterialSagaTransformCreatureLayoutConfig,
+  borderlessSourceMaterialSagaTransformLayoutConfig,
+  borderlessSourceMaterialSectionedLayoutConfig,
+} from "./sectioned/config";
+import {
   borderlessSourceMaterialAftermathLayoutConfig,
   borderlessSourceMaterialBattleLayoutConfig,
   borderlessSourceMaterialFlipLayoutConfig,
@@ -75,6 +82,31 @@ export const borderlessSourceMaterialFrame = {
       ),
       flip: withCollectorInfoDefaults(
         borderlessSourceMaterialFlipLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      saga: withCollectorInfoDefaults(
+        borderlessSourceMaterialSagaLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      saga_creature: withCollectorInfoDefaults(
+        borderlessSourceMaterialSagaCreatureLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      saga_transform: withCollectorInfoDefaults(
+        borderlessSourceMaterialSagaTransformLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      saga_transform_creature: withCollectorInfoDefaults(
+        borderlessSourceMaterialSagaTransformCreatureLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      // A Class's levels and a Case's steps share one column of boxes.
+      class: withCollectorInfoDefaults(
+        borderlessSourceMaterialSectionedLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      case: withCollectorInfoDefaults(
+        borderlessSourceMaterialSectionedLayoutConfig,
         defaultCollectorInfoBounds,
       ),
     },
