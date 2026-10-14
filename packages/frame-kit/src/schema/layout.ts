@@ -39,8 +39,12 @@ export type ScryfallLayoutName = (typeof SCRYFALL_LAYOUTS)[number];
 
 /**
  * Card shapes that Scryfall does not distinguish but frames must: a
- * planeswalker and a Case are `normal`/`class` to Scryfall, yet need their own
- * box geometry. Crossed with every Scryfall layout to form `<layout>_<special>`.
+ * planeswalker is `normal` to Scryfall, yet needs its own box geometry. Crossed
+ * with every Scryfall layout to form `<layout>_<special>`.
+ *
+ * `case` is here for compatibility only. Scryfall files a Case under a `case`
+ * layout of its own (see `additionalLayouts`), and Card Anvil keys every Case
+ * card there, so a `<layout>_case` key is never looked up.
  */
 export const specialLayouts = ["planeswalker", "case"] as const;
 
@@ -66,6 +70,10 @@ const customLayouts = SCRYFALL_LAYOUTS.flatMap((layout) =>
  * aftermath card under `split`, told apart only by its Aftermath keyword, but
  * it prints its first half upright and its second sideways where a split card
  * turns both.
+ *
+ * `case` is a layout Scryfall returns for Case cards (e.g. Case of the Burning
+ * Masks), listed here rather than in `SCRYFALL_LAYOUTS` for the reason
+ * `prepare` is: `@scryfall/api-types` predates it.
  */
 export const additionalLayouts = [
   "saga_creature",
@@ -74,6 +82,7 @@ export const additionalLayouts = [
   "omen",
   "prepare",
   "aftermath",
+  "case",
 ] as const;
 
 export const layouts = [
