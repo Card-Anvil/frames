@@ -5,6 +5,12 @@ import {
   borderlessSourceMaterialAdventureLayoutConfig,
   borderlessSourceMaterialPrepareLayoutConfig,
 } from "./inset/config";
+import {
+  borderlessSourceMaterialDfcPlaneswalkerLayoutConfig,
+  borderlessSourceMaterialModalDfcLayoutConfig,
+  borderlessSourceMaterialPlaneswalkerLayoutConfig,
+  borderlessSourceMaterialTransformLayoutConfig,
+} from "./planeswalker/config";
 import borderlessSourceMaterialPreview from "./preview.jpg";
 import { borderlessSourceMaterialLayoutConfig } from "./regular/config";
 import {
@@ -107,6 +113,28 @@ export const borderlessSourceMaterialFrame = {
       ),
       case: withCollectorInfoDefaults(
         borderlessSourceMaterialSectionedLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      normal_planeswalker: withCollectorInfoDefaults(
+        borderlessSourceMaterialPlaneswalkerLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      transform: withCollectorInfoDefaults(
+        borderlessSourceMaterialTransformLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      modal_dfc: withCollectorInfoDefaults(
+        borderlessSourceMaterialModalDfcLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      // The planeswalker face of a double-faced planeswalker; its other face,
+      // when it is not one, is drawn through `transform` or `modal_dfc`.
+      transform_planeswalker: withCollectorInfoDefaults(
+        borderlessSourceMaterialDfcPlaneswalkerLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      modal_dfc_planeswalker: withCollectorInfoDefaults(
+        borderlessSourceMaterialDfcPlaneswalkerLayoutConfig,
         defaultCollectorInfoBounds,
       ),
     },
