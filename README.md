@@ -14,6 +14,7 @@ built exactly the way a frame anywhere else should be.
 | [`@cardanvil/frame-borderless`](packages/frame-borderless)                                 | The Borderless frame.                                                                                      |
 | [`@cardanvil/frame-borderless-source-material`](packages/frame-borderless-source-material) | The Borderless Source Material frame.                                                                      |
 | [`@cardanvil/frame-extended`](packages/frame-extended)                                     | Extended Art, derived from M15 and Borderless.                                                             |
+| [`@cardanvil/frame-japan-showcase`](packages/frame-japan-showcase)                         | The Japan Showcase frame.                                                                                  |
 
 ```bash
 pnpm install
