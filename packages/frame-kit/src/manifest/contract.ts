@@ -15,6 +15,8 @@ import { FrameSchema } from "../schema/frame.js";
  *   render with reduced fidelity.
  *
  * Version history:
+ * - 1.8: added the optional `fullBorder` frame asset, border art drawn under
+ *   the base frame while `useFullBorder` is on.
  * - 1.7: added the optional `firstArt` on a box set and `art` on a second
  *   face's set: the windows a card's two arts go in once it has a second one.
  * - 1.6: added the optional `rotation` on a box set, for text and art read
@@ -33,7 +35,7 @@ import { FrameSchema } from "../schema/frame.js";
  * - 1.2: added the optional `mask` asset URL on text boxes (shaped text).
  * - 1.1: added the optional `license` field on the manifest.
  */
-export const CONTRACT_VERSION = "1.7";
+export const CONTRACT_VERSION = "1.8";
 
 /** The only manifest kind any loader understands today. */
 export const DECLARATIVE_KIND = "declarative";
