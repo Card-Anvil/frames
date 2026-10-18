@@ -188,6 +188,13 @@ export const CardBoxesSchema = z.object({
    */
   rotation: RotationSchema.optional(),
   art: BoundsSchema,
+  /**
+   * Where the card's first art goes once it has a second one, which goes in
+   * the second face's `art` (see `SecondFaceBoxesSchema`). Left out, the first
+   * art keeps `art`. A card has one art until a second is added, so `art` is
+   * still what every card is imported with.
+   */
+  firstArt: BoundsSchema.optional(),
   mana: TextBoxSchema,
   title: TextBoxSchema,
   type: TextBoxSchema,
@@ -248,10 +255,20 @@ export type CardBoxes = z.infer<typeof CardBoxesSchema>;
  * turns both sets 90; an aftermath card leaves the first upright and turns
  * this one 270; a flip card turns this one 180.
  *
- * The card has one art, placed by the first face's `art`.
+ * The card has one art, placed by the first face's `art`, unless this set has
+ * an `art` of its own and the card has been given a second art.
  */
 export const SecondFaceBoxesSchema = z.object({
   rotation: RotationSchema.optional(),
+  /**
+   * Where a second art goes: measured like the rest of this set, and drawn
+   * turned with it, so it reads the way this face's text does. A layout whose
+   * second face has one can take a second art; while a card has one, its first
+   * art moves to the first face's `firstArt`. The two are split where they
+   * meet — a straight seam midway between them — and each runs on past its
+   * other edges under the frame, as a lone art does.
+   */
+  art: BoundsSchema.optional(),
   title: TextBoxSchema,
   mana: TextBoxSchema.optional(),
   type: TextBoxSchema,
