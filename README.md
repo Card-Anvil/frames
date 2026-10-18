@@ -198,6 +198,31 @@ rules text wraps around it the way it does around `pt`. `fuse` is the Fuse line
 a Fuse card prints once under both halves: with the box, the line is drawn there
 and dropped from each half's rules; without it, it stays in both.
 
+**Each half can have its own art.** Give `secondFaceBoxes` an `art` window and a
+card of that layout can take a second art, drawn there and turned with the set,
+so it reads the way its half's text does. While a card has one, its first art
+moves from `boxes.art` to `boxes.firstArt` (or stays in `art`, should you leave
+`firstArt` out). Every card is imported with one art, so `art` is still the
+window most cards use; size `firstArt` and the second `art` to split it between
+the halves.
+
+```ts
+splitBoxes = {
+  rotation: 90,
+  art: { x: 440, y: 0, width: 4000, height: 3264 }, // one art: all of it
+  firstArt: { x: 440, y: 0, width: 1941, height: 3264 }, // two: the left half
+  // ...
+};
+splitSecondFaceBoxes = {
+  rotation: 90,
+  art: { x: 2381, y: 0, width: 2059, height: 3264 }, // and the right
+  // ...
+};
+```
+
+The two arts meet at a straight seam midway between their windows; past their
+other edges each runs on under the frame, as a lone art does.
+
 The card has one art, placed by `boxes.art`.
 
 `config.alternateLayouts` holds named variants selected by a template setting —
