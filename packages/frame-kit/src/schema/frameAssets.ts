@@ -157,6 +157,15 @@ export const FrameAssetsSchema = z.object({
   /** Extended-art overlay drawn on top of the masked frame. */
   extendedOverlay: AssetUrlSchema.optional(),
   /**
+   * Border art drawn *under* the base frame while the `useFullBorder` template
+   * setting is on — for a frame whose base art leaves part of the ring empty.
+   * It is one image for every color, cut by the same cutouts as the frame
+   * ("No Border" among them), and filled with the border color when one is
+   * picked: on its own, before the base frame goes on top, so the frame's own
+   * art is never repainted.
+   */
+  fullBorder: AssetUrlSchema.optional(),
+  /**
    * Legacy single DFC icon overlaid on the crown of transform cards. Superseded
    * by `dfcIconSet` (resolved from the card's actual `frame_effects`); kept as
    * a fallback for any layout that hasn't shipped the full icon set.
@@ -238,7 +247,8 @@ export const LayoutMasksSchema = z.object({
    * A frame ships this only when its plain `border` mask deliberately covers
    * *less* than the whole ring — m15's stops short of the collector strip, so
    * that the default border recolor leaves the collector line on its original
-   * black. A `useFullBorder` template setting swaps this in for `border`.
+   * black. A `useFullBorder` template setting swaps this in for `border`, and
+   * draws `frameAssets.fullBorder` when the frame ships one.
    *
    * The renderer does not work out which text that puts on the recolored
    * ring: a box that should adapt says so in its `overrides`, as m15's
