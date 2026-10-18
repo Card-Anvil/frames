@@ -171,6 +171,12 @@ importers:
         specifier: workspace:^
         version: link:../frame-kit
 
+  packages/frame-japan-showcase:
+    devDependencies:
+      '@cardanvil/frame-kit':
+        specifier: workspace:^
+        version: link:../frame-kit
+
   packages/frame-kit:
     dependencies:
       pngjs:
