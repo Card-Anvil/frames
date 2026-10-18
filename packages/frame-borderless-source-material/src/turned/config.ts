@@ -107,12 +107,21 @@ const battleBoxes: CardBoxes = {
 // the sheet. The 200px gutter between them is wide for the reason the inset
 // layouts' is: nothing but space keeps one half's mana cost off the other
 // half's name. A Fuse card's Fuse line runs under both columns.
+//
+// Given a second art, each half has its own behind its column, split down the
+// middle of the gutter at x 2381.
 const splitBoxes: CardBoxes = {
   rotation: 90,
   art: {
     x: 440,
     y: 0,
     width: 4000,
+    height: 3264,
+  },
+  firstArt: {
+    x: 440,
+    y: 0,
+    width: 1941,
     height: 3264,
   },
   mana: {
@@ -177,6 +186,12 @@ const splitBoxes: CardBoxes = {
 
 const splitSecondFaceBoxes: SecondFaceBoxes = {
   rotation: 90,
+  art: {
+    x: 2381,
+    y: 0,
+    width: 2059,
+    height: 3264,
+  },
   mana: {
     x: 2474,
     y: 374,
@@ -230,8 +245,18 @@ const splitSecondFaceBoxes: SecondFaceBoxes = {
 // regular card. The aftermath half sits under it turned the other way from a
 // split card's — a quarter turn counter-clockwise to read, so its text runs
 // down the sheet — as one 1480px column between the first half and the band.
+//
+// Given a second art, the first half's ends at y 2340, midway between its
+// rules and the aftermath half's name, and the second runs from there to the
+// band.
 const aftermathBoxes: CardBoxes = {
   art: regularBoxes.art,
+  firstArt: {
+    x: 0,
+    y: 0,
+    width: 3264,
+    height: 2340,
+  },
   mana: regularBoxes.mana,
   title: regularBoxes.title,
   type: {
@@ -266,6 +291,12 @@ const aftermathBoxes: CardBoxes = {
 
 const aftermathSecondFaceBoxes: SecondFaceBoxes = {
   rotation: 270,
+  art: {
+    x: 2340,
+    y: 0,
+    width: 1660,
+    height: 3264,
+  },
   mana: {
     x: 2426,
     y: 350,
@@ -315,8 +346,17 @@ const aftermathSecondFaceBoxes: SecondFaceBoxes = {
 // art showing between the two. The second block is measured on the sheet
 // turned half way round, so it is the first one's numbers moved down to clear
 // the band, which is then at the top.
+//
+// Given a second art, each block has its own, split at y 2153 — midway
+// between the two blocks — with the second upside down like its text.
 const flipBoxes: CardBoxes = {
   art: regularBoxes.art,
+  firstArt: {
+    x: 0,
+    y: 0,
+    width: 3264,
+    height: 2153,
+  },
   mana: regularBoxes.mana,
   title: regularBoxes.title,
   rules: {
@@ -361,6 +401,12 @@ const flipBoxes: CardBoxes = {
 
 const flipSecondFaceBoxes: SecondFaceBoxes = {
   rotation: 180,
+  art: {
+    x: 0,
+    y: 440,
+    width: 3264,
+    height: 1847,
+  },
   title: {
     x: 396,
     y: 520,
