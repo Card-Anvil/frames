@@ -5,3 +5,10 @@
 export { defaultCollectorInfoBounds } from "./index";
 
 export { borderlessSourceMaterialLayoutConfig } from "./regular/config";
+
+export {
+  borderlessSourceMaterialSagaLayoutConfig,
+  borderlessSourceMaterialSectionedLayoutConfig,
+} from "./sectioned/config";
+
+export { borderlessSourceMaterialPlaneswalkerLayoutConfig } from "./planeswalker/config";

@@ -339,6 +339,21 @@ export const defaultSagaConfig: SagaRenderConfig = {
   badgeWidth: 180,
 };
 
+/**
+ * Configuration for a column of sections — a Class's levels, a Case's steps.
+ * Frame templates provide this via LayoutConfig.sectionConfig.
+ */
+export const SectionRenderConfigSchema = z.object({
+  /**
+   * Leave out a Class's opening reminder ("Gain the next level as a sorcery
+   * to add its ability.") and start the column at level 1, as
+   * `SagaRenderConfig.skipReminder` does for a Saga's.
+   */
+  skipReminder: z.boolean().optional(),
+});
+
+export type SectionRenderConfig = z.infer<typeof SectionRenderConfigSchema>;
+
 const CrownRenderConfigSchema = z.object({
   x: z.number(),
   y: z.number(),
@@ -432,6 +447,7 @@ export const LayoutConfigSchema = z.object({
   masks: LayoutMasksSchema.optional(),
   planeswalkerConfig: PlaneswalkerRenderConfigSchema.optional(),
   sagaConfig: SagaRenderConfigSchema.optional(),
+  sectionConfig: SectionRenderConfigSchema.optional(),
   crownConfig: CrownRenderConfigSchema.optional(),
   nicknameConfig: NicknameRenderConfigSchema.optional(),
   templateSettings: TemplateSettingsConfigSchema.optional(),

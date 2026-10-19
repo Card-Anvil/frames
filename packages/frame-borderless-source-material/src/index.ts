@@ -5,8 +5,21 @@ import {
   borderlessSourceMaterialAdventureLayoutConfig,
   borderlessSourceMaterialPrepareLayoutConfig,
 } from "./inset/config";
+import {
+  borderlessSourceMaterialDfcPlaneswalkerLayoutConfig,
+  borderlessSourceMaterialModalDfcLayoutConfig,
+  borderlessSourceMaterialPlaneswalkerLayoutConfig,
+  borderlessSourceMaterialTransformLayoutConfig,
+} from "./planeswalker/config";
 import borderlessSourceMaterialPreview from "./preview.jpg";
 import { borderlessSourceMaterialLayoutConfig } from "./regular/config";
+import {
+  borderlessSourceMaterialSagaCreatureLayoutConfig,
+  borderlessSourceMaterialSagaLayoutConfig,
+  borderlessSourceMaterialSagaTransformCreatureLayoutConfig,
+  borderlessSourceMaterialSagaTransformLayoutConfig,
+  borderlessSourceMaterialSectionedLayoutConfig,
+} from "./sectioned/config";
 import {
   borderlessSourceMaterialAftermathLayoutConfig,
   borderlessSourceMaterialBattleLayoutConfig,
@@ -75,6 +88,53 @@ export const borderlessSourceMaterialFrame = {
       ),
       flip: withCollectorInfoDefaults(
         borderlessSourceMaterialFlipLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      saga: withCollectorInfoDefaults(
+        borderlessSourceMaterialSagaLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      saga_creature: withCollectorInfoDefaults(
+        borderlessSourceMaterialSagaCreatureLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      saga_transform: withCollectorInfoDefaults(
+        borderlessSourceMaterialSagaTransformLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      saga_transform_creature: withCollectorInfoDefaults(
+        borderlessSourceMaterialSagaTransformCreatureLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      // A Class's levels and a Case's steps share one column of boxes.
+      class: withCollectorInfoDefaults(
+        borderlessSourceMaterialSectionedLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      case: withCollectorInfoDefaults(
+        borderlessSourceMaterialSectionedLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      normal_planeswalker: withCollectorInfoDefaults(
+        borderlessSourceMaterialPlaneswalkerLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      transform: withCollectorInfoDefaults(
+        borderlessSourceMaterialTransformLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      modal_dfc: withCollectorInfoDefaults(
+        borderlessSourceMaterialModalDfcLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      // The planeswalker face of a double-faced planeswalker; its other face,
+      // when it is not one, is drawn through `transform` or `modal_dfc`.
+      transform_planeswalker: withCollectorInfoDefaults(
+        borderlessSourceMaterialDfcPlaneswalkerLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      modal_dfc_planeswalker: withCollectorInfoDefaults(
+        borderlessSourceMaterialDfcPlaneswalkerLayoutConfig,
         defaultCollectorInfoBounds,
       ),
     },

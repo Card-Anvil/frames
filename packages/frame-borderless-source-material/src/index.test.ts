@@ -246,6 +246,239 @@ describe("Borderless Source Material frame", () => {
   });
 });
 
+describe("Borderless Source Material column layouts", () => {
+  const { layouts } = borderlessSourceMaterialFrame.config;
+  const bandTop = layouts.normal.boxes.art.height;
+
+  /** Every text box a set places, left out of it only the art. */
+  const textBoxes = (boxes: Record<string, unknown>) =>
+    Object.entries(boxes).filter(
+      (entry): entry is [string, Bounds] =>
+        entry[0] !== "art" &&
+        entry[0] !== "collectorInfo" &&
+        typeof entry[1] === "object" &&
+        entry[1] !== null,
+    );
+
+  // A Saga's chapters run down the left of the card; a Class's levels and a
+  // Case's steps down the right. The two columns are one shape, mirrored.
+  it("mirrors the saga column for classes and cases", () => {
+    const saga = layouts.saga.boxes.abilities;
+    for (const layout of ["class", "case"] as const) {
+      const column = layouts[layout].boxes.abilities;
+      expect(saga && column).toBeTruthy();
+      if (!saga || !column) {
+        continue;
+      }
+      expect(column.x).toBe(SHEET.width - (saga.x + saga.width));
+      expect(column.width).toBe(saga.width);
+      expect(column.y).toBe(saga.y);
+      expect(column.height).toBe(saga.height);
+    }
+  });
+
+  // The column replaces the rules box. Leaving it in would draw nothing but
+  // still outline an empty box in debug view.
+  it.each(["saga", "saga_creature", "class", "case"] as const)(
+    "draws the %s layout's text in a column, not a rules box",
+    (layout) => {
+      expect(layouts[layout].boxes.abilities).toBeDefined();
+      expect(layouts[layout].boxes.rules).toBeUndefined();
+    },
+  );
+
+  it.each([
+    "saga",
+    "saga_creature",
+    "saga_transform",
+    "saga_transform_creature",
+    "class",
+    "case",
+  ] as const)(
+    "keeps the %s layout's text on the art, off the band",
+    (layout) => {
+      const config: LayoutConfig = layouts[layout];
+      for (const boxes of [
+        config.boxes,
+        config.backBoxes,
+        config.sagaFrontBoxes,
+        config.sagaBackBoxes,
+      ]) {
+        for (const [key, box] of textBoxes(boxes ?? {})) {
+          expect(box.x, key).toBeGreaterThanOrEqual(0);
+          expect(box.y, key).toBeGreaterThanOrEqual(0);
+          expect(box.x + box.width, key).toBeLessThanOrEqual(SHEET.width);
+          expect(box.y + box.height, key).toBeLessThanOrEqual(bandTop);
+        }
+      }
+    },
+  );
+
+  // The column never crosses the type line under it.
+  it.each(["saga", "saga_creature", "class", "case"] as const)(
+    "ends the %s layout's column above its type line",
+    (layout) => {
+      const { abilities, type } = layouts[layout].boxes;
+      expect(abilities).toBeDefined();
+      if (abilities) {
+        expect(abilities.y + abilities.height).toBeLessThanOrEqual(type.y);
+      }
+    },
+  );
+
+  // Which face of a transforming Saga is the Saga varies per card, so the
+  // layout carries the Saga's boxes for either side and the regular layout's
+  // for the other face.
+  it("draws a transforming saga's plain face as a regular card", () => {
+    const { saga, saga_creature, saga_transform, saga_transform_creature } =
+      layouts;
+    for (const config of [saga_transform, saga_transform_creature]) {
+      expect(config.boxes.title).toBe(layouts.normal.boxes.title);
+      expect(config.boxes.rules).toBe(layouts.normal.boxes.rules);
+      expect(config.backBoxes?.rules).toBe(layouts.normal.boxes.rules);
+    }
+    expect(saga_transform.sagaFrontBoxes?.abilities).toBe(saga.boxes.abilities);
+    expect(saga_transform.sagaBackBoxes?.abilities).toBe(saga.boxes.abilities);
+    expect(saga_transform_creature.sagaFrontBoxes?.abilities).toBe(
+      saga_creature.boxes.abilities,
+    );
+    expect(saga_transform_creature.sagaBackBoxes?.keyword).toBe(
+      saga_creature.boxes.keyword,
+    );
+  });
+
+  // Neither a Saga's reminder nor a Class's is drawn: the column starts at
+  // chapter I or level 1.
+  it("leaves the reminder out of sagas and classes", () => {
+    for (const layout of [
+      "saga",
+      "saga_creature",
+      "saga_transform",
+      "saga_transform_creature",
+    ] as const) {
+      expect(layouts[layout].sagaConfig?.skipReminder, layout).toBe(true);
+    }
+    expect(layouts.class.sectionConfig?.skipReminder).toBe(true);
+  });
+
+  // No new frame art: every column layout is the regular layout's band and
+  // masks, and draws its chapter numerals as text rather than badges.
+  it.each([
+    "saga",
+    "saga_creature",
+    "saga_transform",
+    "saga_transform_creature",
+    "class",
+    "case",
+  ] as const)("gives the %s layout the regular layout's art", (layout) => {
+    const config: LayoutConfig = layouts[layout];
+    expect(config.frameAssets).toBe(layouts.normal.frameAssets);
+    expect(config.masks).toBe(layouts.normal.masks);
+    expect(config.frameAssets.saga).toBeUndefined();
+  });
+});
+
+describe("Borderless Source Material planeswalker layouts", () => {
+  const { layouts } = borderlessSourceMaterialFrame.config;
+  const bandTop = layouts.normal.boxes.art.height;
+  const PLANESWALKER_LAYOUTS = [
+    "normal_planeswalker",
+    "transform_planeswalker",
+    "modal_dfc_planeswalker",
+  ] as const;
+
+  /** Every box set a planeswalker layout may draw a face from. */
+  const boxSets = (config: LayoutConfig) =>
+    [
+      config.boxes,
+      config.twoAbilityBoxes,
+      config.tallBoxes,
+      config.backBoxes,
+    ].filter((boxes) => boxes !== undefined);
+
+  it.each(PLANESWALKER_LAYOUTS)(
+    "keeps the %s layout's text on the art, off the band",
+    (layout) => {
+      for (const boxes of boxSets(layouts[layout])) {
+        for (const [key, box] of Object.entries(boxes)) {
+          if (key === "art" || key === "collectorInfo") {
+            continue;
+          }
+          const { x, y, width, height } = box as Bounds;
+          expect(x, key).toBeGreaterThanOrEqual(0);
+          expect(y, key).toBeGreaterThanOrEqual(0);
+          expect(x + width, key).toBeLessThanOrEqual(SHEET.width);
+          expect(y + height, key).toBeLessThanOrEqual(bandTop);
+        }
+      }
+    },
+  );
+
+  // The starting loyalty takes the corner power and toughness take on a
+  // regular card, and the last ability wraps around it, so it has to sit in
+  // the abilities box's bottom-right corner.
+  it("sets the starting loyalty in the abilities' bottom-right corner", () => {
+    for (const boxes of boxSets(layouts.normal_planeswalker)) {
+      const { abilities, startingLoyalty, rules, pt } = boxes;
+      expect(rules).toBeUndefined();
+      expect(pt).toBeUndefined();
+      expect(abilities && startingLoyalty).toBeTruthy();
+      if (!abilities || !startingLoyalty) {
+        continue;
+      }
+      expect(startingLoyalty.x + startingLoyalty.width).toBe(
+        abilities.x + abilities.width,
+      );
+      expect(startingLoyalty.y).toBeLessThan(abilities.y + abilities.height);
+      expect(startingLoyalty.y).toBeGreaterThan(abilities.y);
+    }
+  });
+
+  // Four abilities need more room: the type line moves up, and the abilities
+  // with it.
+  it("raises the type line for a four-ability planeswalker", () => {
+    const { boxes, tallBoxes } = layouts.normal_planeswalker;
+    expect(tallBoxes).toBeDefined();
+    expect(tallBoxes?.type.y).toBeLessThan(boxes.type.y);
+    expect(tallBoxes?.abilities?.y).toBeLessThan(boxes.abilities?.y ?? 0);
+  });
+
+  // The cost column has to be wide enough to set a cost in, and a static
+  // ability, with no cost, starts at the column's left edge.
+  it("gives loyalty abilities a cost column and statics none", () => {
+    const config = layouts.normal_planeswalker.planeswalkerConfig;
+    expect(config?.textPaddingX).toBeGreaterThan(0);
+    expect(config?.staticTextPaddingX).toBe(0);
+  });
+
+  // No badge, band or separator art: Card Anvil draws a planeswalker without
+  // `frameAssets.planeswalker` as text alone.
+  it.each([...PLANESWALKER_LAYOUTS, "transform", "modal_dfc"] as const)(
+    "gives the %s layout the regular layout's art",
+    (layout) => {
+      const config: LayoutConfig = layouts[layout];
+      expect(config.frameAssets).toBe(layouts.normal.frameAssets);
+      expect(config.masks).toBe(layouts.normal.masks);
+      if (layout !== "normal_planeswalker") {
+        expect(config.backFrameAssets).toBe(layouts.normal.frameAssets);
+        expect(config.backMasks).toBe(layouts.normal.masks);
+      }
+      expect(config.frameAssets.planeswalker).toBeUndefined();
+    },
+  );
+
+  // Both faces of a double-faced card are regular cards here; only a
+  // transform front adds its back face's power and toughness.
+  it("draws both faces of a double-faced card as regular cards", () => {
+    const { transform, modal_dfc } = layouts;
+    for (const config of [transform, modal_dfc]) {
+      expect(config.boxes.rules).toBe(layouts.normal.boxes.rules);
+      expect(config.backBoxes?.rules).toBe(layouts.normal.boxes.rules);
+    }
+    expect(transform.boxes.flipsidePt).toBeDefined();
+  });
+});
+
 describe("frame.meta.json", () => {
   it("describes this package", () => {
     const meta = FrameMetaSchema.parse(frameMeta);
