@@ -159,6 +159,19 @@ export const CollectorInfoBoxSchema = TextBoxSchema.extend({
 export type CollectorInfoBox = z.infer<typeof CollectorInfoBoxSchema>;
 
 /**
+ * Where the set symbol goes. The symbol is fitted into the box, right-aligned
+ * and vertically centered. An outline is drawn around its silhouette only when
+ * both `outlineColor` and `outlineWidth` are set, centered on the edge like a
+ * text outline, so it reaches `outlineWidth / 2` past the symbol.
+ */
+export const SetSymbolBoxSchema = BoundsSchema.extend({
+  outlineColor: z.string().optional(),
+  outlineWidth: z.number().optional(),
+});
+
+export type SetSymbolBox = z.infer<typeof SetSymbolBoxSchema>;
+
+/**
  * How far a card is turned, in degrees clockwise, to read a box set. See
  * `rotation` on `CardBoxesSchema`.
  */
@@ -198,7 +211,7 @@ export const CardBoxesSchema = z.object({
   mana: TextBoxSchema,
   title: TextBoxSchema,
   type: TextBoxSchema,
-  setSymbol: BoundsSchema,
+  setSymbol: SetSymbolBoxSchema,
   rules: TextBoxSchema.optional(),
   abilities: TextBoxSchema.optional(),
   pt: TextBoxSchema.optional(),
@@ -272,7 +285,7 @@ export const SecondFaceBoxesSchema = z.object({
   title: TextBoxSchema,
   mana: TextBoxSchema.optional(),
   type: TextBoxSchema,
-  setSymbol: BoundsSchema.optional(),
+  setSymbol: SetSymbolBoxSchema.optional(),
   rules: TextBoxSchema.optional(),
   pt: TextBoxSchema.optional(),
 });
