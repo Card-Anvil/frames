@@ -51,6 +51,8 @@ const boxes: CardBoxes = {
     y: 2705,
     width: 300,
     height: 175,
+    outlineColor: "black",
+    outlineWidth: 38,
   },
   rules: {
     x: 390,

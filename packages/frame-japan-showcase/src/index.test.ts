@@ -31,12 +31,13 @@ describe("Japan Showcase frame", () => {
     expect(frameAssets.extendedOverlay).toBeUndefined();
   });
 
-  it("outlines every text box", () => {
+  it("outlines every text box, and the set symbol", () => {
     const { boxes } = japanShowcaseFrame.config.layouts.normal;
     for (const name of [
       "mana",
       "title",
       "type",
+      "setSymbol",
       "rules",
       "pt",
       "nicknameTitle",
