@@ -16,7 +16,8 @@ import { FrameSchema } from "../schema/frame.js";
  *
  * Version history:
  * - 1.8: added the optional `fullBorder` frame asset, border art drawn under
- *   the base frame while `useFullBorder` is on.
+ *   the base frame while `useFullBorder` is on; and the optional
+ *   `outlineColor`/`outlineWidth` on the set symbol box.
  * - 1.7: added the optional `firstArt` on a box set and `art` on a second
  *   face's set: the windows a card's two arts go in once it has a second one.
  * - 1.6: added the optional `rotation` on a box set, for text and art read
