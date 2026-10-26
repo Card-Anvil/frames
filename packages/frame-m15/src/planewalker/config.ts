@@ -14,6 +14,16 @@ import * as colorlessNicknameRegularMask from "./regular/masks";
 import * as tall from "./tall";
 import * as colorlessNicknameTallMask from "./tall/masks";
 
+// Loyalty icons and the ability separator. Other frames draw the same ones, so
+// they are exported through `extend` rather than copied.
+export const planeswalkerAbilityIcons = {
+  plus: abilityPlus,
+  minus: abilityMinus,
+  zero: abilityZero,
+  separator: abilitySeparator,
+  startingLoyalty: abilityStartingLoyalty,
+};
+
 // Shared non-ability box definitions (3264x4440 canvas)
 const sharedBoxes = {
   art: {
@@ -160,11 +170,7 @@ export const planeswalkerLayoutConfig: LayoutConfig = {
     tall,
     nickname,
     planeswalker: {
-      plus: abilityPlus,
-      minus: abilityMinus,
-      zero: abilityZero,
-      separator: abilitySeparator,
-      startingLoyalty: abilityStartingLoyalty,
+      ...planeswalkerAbilityIcons,
       masks: abilityMasks,
       colorlessNicknameMasks: {
         ...colorlessNicknameRegularMask,
