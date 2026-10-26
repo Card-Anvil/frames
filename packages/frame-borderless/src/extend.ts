@@ -8,6 +8,7 @@ export {
   borderlessMdfcLayoutConfig,
   borderlessMdfcTextlessLayoutConfig,
 } from "./mdfc/config";
+export { borderlessPlaneswalkerLayoutConfig } from "./planewalker/config";
 export {
   borderlessNormalBoxes,
   borderlessNormalLayoutConfig,
