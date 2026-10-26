@@ -5,6 +5,7 @@ import {
   borderlessMdfcLayoutConfig,
   borderlessMdfcTextlessLayoutConfig,
 } from "./mdfc/config";
+import { borderlessPlaneswalkerLayoutConfig } from "./planewalker/config";
 import borderlessPreview from "./preview.jpg";
 import {
   borderlessNormalLayoutConfig,
@@ -77,6 +78,10 @@ export const borderlessFrame = {
       // Tokens have no mana cost — widen the title by 10px and center it.
       token: withCollectorInfoDefaults(
         borderlessTokenLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      normal_planeswalker: withCollectorInfoDefaults(
+        borderlessPlaneswalkerLayoutConfig,
         defaultCollectorInfoBounds,
       ),
       saga: withCollectorInfoDefaults(

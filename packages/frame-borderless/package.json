@@ -20,6 +20,9 @@
     },
     "./package.json": "./package.json"
   },
+  "dependencies": {
+    "@cardanvil/frame-m15": "workspace:^"
+  },
   "peerDependencies": {
     "@cardanvil/frame-kit": "workspace:^"
   },
