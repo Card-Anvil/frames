@@ -42,6 +42,7 @@ describe("layoutSlots", () => {
       "sagaBackMasks",
       "sagaFrontCreatureMasks",
       "sagaFrontMasks",
+      "tallMasks",
     ]);
     // Recognised by shape (an object of numbers), not by name — so a knob
     // group added to the contract becomes editable with no change here.
