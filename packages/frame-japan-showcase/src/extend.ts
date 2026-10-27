@@ -3,3 +3,4 @@
  * `@cardanvil/frame-m15/extend`.
  */
 export { japanShowcaseLayoutConfig } from "./config";
+export { japanShowcasePlaneswalkerLayoutConfig } from "./planewalker/config";
