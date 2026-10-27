@@ -481,6 +481,12 @@ export const LayoutConfigSchema = z.object({
   secondFaceBoxes: SecondFaceBoxesSchema.optional(),
   frameAssets: FrameAssetsSchema,
   masks: LayoutMasksSchema.optional(),
+  /**
+   * Masks for the planeswalker tall frame, used instead of `masks` wherever
+   * `tallBoxes` is. The tall frame draws no color overlays, so `noBorder` is
+   * the one that matters.
+   */
+  tallMasks: LayoutMasksSchema.optional(),
   planeswalkerConfig: PlaneswalkerRenderConfigSchema.optional(),
   sagaConfig: SagaRenderConfigSchema.optional(),
   sectionConfig: SectionRenderConfigSchema.optional(),
