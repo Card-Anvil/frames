@@ -324,6 +324,21 @@ export const PlaneswalkerRenderConfigSchema = z.object({
    * ability box, and give the abilities box an outline so the text reads.
    */
   abilityBacking: z.boolean().optional(),
+  /**
+   * How far each loyalty badge sits below the center of its ability, in px.
+   * Defaults suit M15's badges — plus 0, minus 34, zero 16 — so a badge whose
+   * point hangs below its body sits low enough for the body to center.
+   */
+  plusBadgeOffsetY: z.number().optional(),
+  minusBadgeOffsetY: z.number().optional(),
+  zeroBadgeOffsetY: z.number().optional(),
+  /**
+   * How far the loyalty cost on each badge sits below the center of its
+   * ability, in px — moves the number alone, not its badge. Defaults to 0.
+   */
+  plusCostOffsetY: z.number().optional(),
+  minusCostOffsetY: z.number().optional(),
+  zeroCostOffsetY: z.number().optional(),
 });
 
 export type PlaneswalkerRenderConfig = z.infer<
