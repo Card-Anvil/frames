@@ -86,7 +86,8 @@ export const PlaneswalkerAssetConfigSchema = z.object({
   plus: AssetUrlSchema,
   minus: AssetUrlSchema,
   zero: AssetUrlSchema,
-  separator: AssetUrlSchema,
+  /** Drawn between the ability bands; not needed with `abilityBacking` off. */
+  separator: AssetUrlSchema.optional(),
   startingLoyalty: AssetUrlSchema,
   /** Ability box masks. */
   masks: PlaneswalkerMasksSchema.optional(),

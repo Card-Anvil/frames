@@ -318,6 +318,12 @@ export const PlaneswalkerRenderConfigSchema = z.object({
    * giving more breathing room between bands. Defaults to 1.0.
    */
   textFillThreshold: z.number().optional(),
+  /**
+   * Draw the translucent bands (and separators) behind the abilities.
+   * Defaults to true. Turn it off for a frame whose art shows through the
+   * ability box, and give the abilities box an outline so the text reads.
+   */
+  abilityBacking: z.boolean().optional(),
 });
 
 export type PlaneswalkerRenderConfig = z.infer<
