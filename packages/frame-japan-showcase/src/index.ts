@@ -2,6 +2,7 @@ import { Frame, TemplateSettingsConfig, TextBox } from "@cardanvil/frame-kit";
 import { withCollectorInfoDefaults } from "@cardanvil/frame-kit";
 
 import { japanShowcaseLayoutConfig } from "./config";
+import { japanShowcasePlaneswalkerLayoutConfig } from "./planewalker/config";
 import japanShowcasePreview from "./preview.jpg";
 
 // M15's position, without its "Color Entire Border" rule: with no override of
@@ -44,6 +45,10 @@ export const japanShowcaseFrame = {
     layouts: {
       normal: withCollectorInfoDefaults(
         japanShowcaseLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      normal_planeswalker: withCollectorInfoDefaults(
+        japanShowcasePlaneswalkerLayoutConfig,
         defaultCollectorInfoBounds,
       ),
     },

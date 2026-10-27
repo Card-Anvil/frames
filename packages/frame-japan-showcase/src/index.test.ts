@@ -80,6 +80,45 @@ describe("Japan Showcase frame", () => {
     );
   });
 
+  describe("planeswalker layout", () => {
+    const layout = japanShowcaseFrame.config.layouts.normal_planeswalker;
+
+    it("outlines the ability text, every box set", () => {
+      for (const boxes of [
+        layout.boxes,
+        layout.tallBoxes,
+        layout.twoAbilityBoxes,
+      ]) {
+        expect(boxes?.abilities?.color).toBe("white");
+        expect(boxes?.abilities?.outlineColor).toBe("black");
+        expect(boxes?.abilities?.outlineWidth).toBeGreaterThan(0);
+      }
+    });
+
+    // The art shows through the ability box, as on Borderless Source Material.
+    it("draws no ability backing", () => {
+      expect(layout.planeswalkerConfig?.abilityBacking).toBe(false);
+      expect(layout.frameAssets.planeswalker?.separator).toBeUndefined();
+    });
+
+    it("keeps the title and mana cost where the normal layout has them", () => {
+      const normal = japanShowcaseFrame.config.layouts.normal.boxes;
+      for (const boxes of [layout.boxes, layout.tallBoxes]) {
+        expect(boxes?.title).toEqual(normal.title);
+        expect(boxes?.mana).toEqual(normal.mana);
+      }
+    });
+
+    // The regular frame's rule is 280px below the tall frame's.
+    it("drops the type line and abilities 280px on the regular frame", () => {
+      const { boxes, tallBoxes } = layout;
+      expect(boxes.type.y - (tallBoxes?.type.y ?? 0)).toBe(280);
+      expect((boxes.abilities?.y ?? 0) - (tallBoxes?.abilities?.y ?? 0)).toBe(
+        280,
+      );
+    });
+  });
+
   // With no override of its own, the collector line takes frame-kit's
   // on-border default and follows the border color.
   it("adapts collector text to a light border", () => {
