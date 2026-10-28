@@ -11,6 +11,9 @@ export {
   sagaSettings,
 } from "./index";
 
-export { planeswalkerLayoutConfig } from "./planewalker/config";
+export {
+  planeswalkerAbilityIcons,
+  planeswalkerLayoutConfig,
+} from "./planewalker/config";
 export { regularLayoutConfig } from "./regular/config";
 export { sagaLayoutConfig } from "./saga/config";

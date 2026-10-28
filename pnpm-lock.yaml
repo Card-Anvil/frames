@@ -147,6 +147,10 @@ importers:
         version: 4.5.4
 
   packages/frame-borderless:
+    dependencies:
+      '@cardanvil/frame-m15':
+        specifier: workspace:^
+        version: link:../frame-m15
     devDependencies:
       '@cardanvil/frame-kit':
         specifier: workspace:^
