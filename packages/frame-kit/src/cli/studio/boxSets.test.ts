@@ -50,6 +50,7 @@ describe("layoutSlots", () => {
       "nicknameConfig",
       "planeswalkerConfig",
       "sagaConfig",
+      "sectionConfig",
     ]);
   });
 
