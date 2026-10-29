@@ -2,6 +2,7 @@ import { Frame, TemplateSettingsConfig, TextBox } from "@cardanvil/frame-kit";
 import { withCollectorInfoDefaults } from "@cardanvil/frame-kit";
 
 import { borderlessAdventureLayoutConfig } from "./adventureStorybooks/config";
+import { borderlessCaseLayoutConfig } from "./caseClass/config";
 import {
   borderlessMdfcLayoutConfig,
   borderlessMdfcTextlessLayoutConfig,
@@ -83,6 +84,10 @@ export const borderlessFrame = {
       ),
       adventure: withCollectorInfoDefaults(
         borderlessAdventureLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      case: withCollectorInfoDefaults(
+        borderlessCaseLayoutConfig,
         defaultCollectorInfoBounds,
       ),
       normal_planeswalker: withCollectorInfoDefaults(
