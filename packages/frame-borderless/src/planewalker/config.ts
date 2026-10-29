@@ -5,7 +5,9 @@ import * as abilityMasks from "./abilities/masks";
 import * as nickname from "./nickname";
 // Regular frames (3-ability) + tall frames (4-ability)
 import * as base from "./regular";
+import * as masks from "./regular/masks";
 import * as tall from "./tall";
+import * as tallMasks from "./tall/masks";
 
 // Shared non-ability box definitions (3264x4440 canvas). The title, type and
 // ability boxes sit where M15's do, so their text boxes carry over; collector
@@ -123,6 +125,11 @@ export const borderlessPlaneswalkerLayoutConfig: LayoutConfig = {
       masks: abilityMasks,
     },
   },
+  masks,
+  tallMasks,
+  // As on Borderless's other layouts, a hybrid's colorless wash covers only
+  // the title.
+  hybridTitleMask: "title",
   planeswalkerConfig: {
     abilitySpacing: 0.005,
     separatorHeight: 61 / 4440, // SEPARATOR_PIXEL_HEIGHT (61px) normalized to card height (4440px)
