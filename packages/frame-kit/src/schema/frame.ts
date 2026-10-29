@@ -405,6 +405,24 @@ export const SectionRenderConfigSchema = z.object({
 
 export type SectionRenderConfig = z.infer<typeof SectionRenderConfigSchema>;
 
+/**
+ * Where one of a layout's fixed dividers goes: the frame's `sectionDivider`,
+ * drawn `length` long from (`x`, `y`) — rightwards for a horizontal one,
+ * downwards for a vertical one, turned a quarter. `x`, `y` is on the line's
+ * centre across its thickness, which the divider's own aspect ratio sets.
+ * Measured on the sheet.
+ */
+export const SectionDividerPlacementSchema = z.object({
+  x: z.number(),
+  y: z.number(),
+  length: z.number(),
+  orientation: z.enum(["horizontal", "vertical"]).optional(),
+});
+
+export type SectionDividerPlacement = z.infer<
+  typeof SectionDividerPlacementSchema
+>;
+
 const CrownRenderConfigSchema = z.object({
   x: z.number(),
   y: z.number(),
@@ -505,6 +523,13 @@ export const LayoutConfigSchema = z.object({
   planeswalkerConfig: PlaneswalkerRenderConfigSchema.optional(),
   sagaConfig: SagaRenderConfigSchema.optional(),
   sectionConfig: SectionRenderConfigSchema.optional(),
+  /**
+   * Dividers that stay put whatever the card says — an inset spell's rules
+   * set off from its name and type line, and the inset from the card's own
+   * rules beside it. Drawn with `frameAssets.sectionDivider`, so a layout
+   * without one draws none.
+   */
+  sectionDividers: z.array(SectionDividerPlacementSchema).optional(),
   crownConfig: CrownRenderConfigSchema.optional(),
   nicknameConfig: NicknameRenderConfigSchema.optional(),
   templateSettings: TemplateSettingsConfigSchema.optional(),
@@ -621,7 +646,10 @@ export const TemplateConfigSchema = z.object({
   // opt-in variants — each entry is a full `LayoutConfig` for a layout that
   // already exists in `layouts`, the same way `saga_creature` is a full
   // standalone config. The active variant is chosen by the `frameVariant`
-  // template setting; see `getLayoutConfig`.
+  // template setting; see `getLayoutConfig`. A layout's own select setting
+  // can name one too, for that layout alone: Borderless's "Adventure" setting
+  // set to "inset" draws an Adventure from `alternateLayouts.inset.adventure`.
+  // The frame variant wins where both name a config for the card's layout.
   alternateLayouts: z
     .record(z.string(), z.partialRecord(LayoutEnum, LayoutConfigSchema))
     .optional(),
