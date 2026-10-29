@@ -7,6 +7,7 @@ import {
   frameDetailsFor,
   orderColors,
   selectFrameLayers,
+  selectStorybookFrameLayers,
   splitTwoColor,
 } from "./frameLayers.js";
 
@@ -241,6 +242,98 @@ describe("selectFrameLayers", () => {
       { hasPinlineMask: false },
     );
     expect(layers.baseFrame).toEqual({ family: "base", color: "m" });
+  });
+});
+
+describe("selectStorybookFrameLayers", () => {
+  const storybook = (shape: CardShape, adventureColors: string) =>
+    selectStorybookFrameLayers(frameDetailsFor(shape), adventureColors, {
+      family: familyFor(shape),
+    });
+  const pages = (layers: ReturnType<typeof storybook>) =>
+    layers.overlays?.map((o) => [o.frame.color, o.mask]);
+
+  it("draws a card and adventure of one colour as the one frame", () => {
+    const layers = storybook({ colors: ["r"] }, "R");
+    expect(layers.baseFrame).toEqual({ family: "base", color: "r" });
+    expect(layers.overlays).toBeUndefined();
+  });
+
+  it("colours the left page by an adventure of another colour", () => {
+    const layers = storybook({ colors: ["g"] }, "W");
+    expect(layers.baseFrame).toEqual({ family: "base", color: "g" });
+    expect(pages(layers)).toEqual([["w", "adventureRules"]]);
+  });
+
+  it("fades a two-colour adventure across the left page", () => {
+    expect(pages(storybook({ colors: ["g"] }, "WU"))).toEqual([
+      ["w", "adventureRules"],
+      ["u", "adventureRulesRight"],
+    ]);
+  });
+
+  it("puts a three-colour adventure on gold", () => {
+    expect(pages(storybook({ colors: ["g"] }, "WUB"))).toEqual([
+      ["m", "adventureRules"],
+    ]);
+  });
+
+  // Kellan, Inquisitive Prodigy: the base is halved so the frame's pinlines
+  // split, gold goes over the bars and page edges, and both pages fade their
+  // two colours.
+  it("halves a two-colour gold card under gold bars and wings", () => {
+    const layers = storybook({ colors: ["g", "u"] }, "UG");
+    expect(layers.baseFrame).toEqual({ family: "base", color: "u" });
+    expect(pages(layers)).toEqual([
+      ["g", "rightHalf"],
+      ["m", "titleAndType"],
+      ["m", "wings"],
+      ["u", "rules"],
+      ["g", "rulesRight"],
+      ["u", "adventureRules"],
+      ["g", "adventureRulesRight"],
+    ]);
+  });
+
+  // The halves run into the left page, so a one-colour adventure in the base
+  // colour still repaints it.
+  it("repaints a halved card's left page in its adventure's colour", () => {
+    expect(pages(storybook({ colors: ["b", "g"] }, "B"))).toEqual([
+      ["g", "rightHalf"],
+      ["m", "titleAndType"],
+      ["m", "wings"],
+      ["b", "rules"],
+      ["g", "rulesRight"],
+      ["b", "adventureRules"],
+    ]);
+  });
+
+  // The hybrid halves run into both pages, so even a page in the base colour
+  // is painted over.
+  it("repaints both pages over a hybrid card's halves", () => {
+    const layers = storybook({ colors: ["r", "g"], isHybrid: true }, "R");
+    expect(layers.baseFrame).toEqual({ family: "base", color: "r" });
+    expect(pages(layers)).toEqual([
+      ["g", "rightHalf"],
+      ["c2", "titleAndType"],
+      ["r", "rules"],
+      ["g", "rulesRight"],
+      ["r", "adventureRules"],
+    ]);
+  });
+
+  it("colours the right page of a coloured artifact", () => {
+    const layers = storybook({ colors: ["r"], isArtifact: true }, "R");
+    expect(layers.baseFrame).toEqual({ family: "base", color: "a" });
+    expect(pages(layers)).toEqual([
+      ["r", "titleAndType"],
+      ["r", "rules"],
+      ["r", "adventureRules"],
+    ]);
+  });
+
+  it("gives a colourless adventure the card's colours", () => {
+    expect(storybook({ colors: ["u"] }, "").overlays).toBeUndefined();
   });
 });
 

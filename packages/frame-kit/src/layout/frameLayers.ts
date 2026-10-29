@@ -52,7 +52,15 @@ export type FrameFamily = "normal" | "land" | "nyx";
 
 /** A mask that recolours one section of the frame. */
 export type OverlayMaskName =
-  "pinlines" | "rules" | "titleAndType" | "title" | "rightHalf";
+  | "pinlines"
+  | "rules"
+  | "titleAndType"
+  | "title"
+  | "rightHalf"
+  | "rulesRight"
+  | "adventureRules"
+  | "adventureRulesRight"
+  | "wings";
 
 export interface FrameOverlay {
   frame: FrameRef;
@@ -320,6 +328,116 @@ export function selectFrameLayers(
 
   return {
     baseFrame: baseRef,
+    ...(overlays.length > 0 ? { overlays } : {}),
+  };
+}
+
+/**
+ * Overlays colouring one page of a storybook: a colour on its own, two with
+ * the second faded in through the page's `Right` mask, gold at three or more.
+ * A one-colour page that matches the base frame needs nothing — unless the
+ * base was halved, which runs the second colour into the pages too.
+ */
+function pageOverlays(
+  colors: string,
+  mask: "rules" | "adventureRules",
+  rightMask: "rulesRight" | "adventureRulesRight",
+  family: FrameFamily,
+  baseRef: FrameRef,
+  halved: boolean,
+): FrameOverlay[] {
+  const split = splitTwoColor(colors);
+  if (split) {
+    return [
+      { frame: makeFamilyRef(split[0], family), mask, preserveAlpha: true },
+      {
+        frame: makeFamilyRef(split[1], family),
+        mask: rightMask,
+        preserveAlpha: true,
+      },
+    ];
+  }
+  const page = makeFamilyRef(colorToken(colors), family);
+  return sameRef(page, baseRef) && !halved
+    ? []
+    : [{ frame: page, mask, preserveAlpha: true }];
+}
+
+/**
+ * The art to composite for a storybook Adventure, whose text box is an open
+ * book: the card's rules on the right page, its adventure on the left.
+ *
+ * Everything outside the book is selected as for any card, as though the
+ * layout had pinlines, with one exception: the book has no pinline art, so a
+ * two-colour gold card halves its base frame between its colours, which
+ * splits the frame's own pinlines, and lays gold over the title and type bars
+ * as the regular frame has them, and over the book's page edges (`wings`).
+ * Each page is then coloured on its own: the right by the card's pinline
+ * colours, the left by `adventureColors`, the adventure's colours in WUBRG
+ * order. An adventure with no colours takes the card's.
+ */
+export function selectStorybookFrameLayers(
+  details: FrameDetails,
+  adventureColors: string,
+  options: SelectOptions = {},
+): FrameLayers {
+  const family = options.family ?? "normal";
+  const goldSplit =
+    details.background === LAYERS.GOLD &&
+    !details.isHybrid &&
+    !details.isColorless
+      ? splitTwoColor(details.pinlines)
+      : null;
+  const card: FrameLayers = goldSplit
+    ? {
+        baseFrame: makeFamilyRef(goldSplit[0], family),
+        overlays: [
+          {
+            frame: makeFamilyRef(goldSplit[1], family),
+            mask: "rightHalf",
+            preserveAlpha: true,
+          },
+          {
+            frame: makeFamilyRef(colorToken(details.twins), family),
+            mask: "titleAndType",
+            preserveAlpha: true,
+          },
+          {
+            frame: makeFamilyRef("m", family),
+            mask: "wings",
+            preserveAlpha: true,
+          },
+        ],
+      }
+    : selectFrameLayers(details, { ...options, hasPinlineMask: true });
+  // The book replaces the text box and has no pinlines, so the overlays meant
+  // for those are dropped and the pages coloured instead.
+  const kept = (card.overlays ?? []).filter(
+    (overlay) => overlay.mask !== "rules" && overlay.mask !== "pinlines",
+  );
+  const halved = kept.some((overlay) => overlay.mask === "rightHalf");
+  const overlays = [
+    ...kept,
+    ...pageOverlays(
+      details.pinlines,
+      "rules",
+      "rulesRight",
+      family,
+      card.baseFrame,
+      halved,
+    ),
+    ...pageOverlays(
+      adventureColors || details.pinlines,
+      "adventureRules",
+      "adventureRulesRight",
+      family,
+      card.baseFrame,
+      halved,
+    ),
+  ];
+
+  return {
+    baseFrame: card.baseFrame,
     ...(overlays.length > 0 ? { overlays } : {}),
   };
 }

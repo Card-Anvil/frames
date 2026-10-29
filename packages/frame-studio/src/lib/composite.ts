@@ -24,6 +24,7 @@ import {
   resolvePtBoxAsset,
   ringMaskFor,
   selectFrameLayers,
+  selectStorybookFrameLayers,
 } from "@cardanvil/frame-kit/layout";
 
 import type { FramePayload, FrameSlot } from "../api/types.js";
@@ -145,13 +146,22 @@ export function composite(input: CompositeInput): CompositeResult {
     ...(boxSlot?.path.slice(0, -1) ?? []),
     "hybridTitleMask",
   ]);
-  const selected = selectFrameLayers(details, {
+  const selectOptions = {
     family,
-    hasPinlineMask: maskUrl("pinlines") !== undefined,
     ...(hybridTitleMask === "title"
       ? { hybridTitleMask: "title" as const }
       : {}),
-  });
+  };
+  // A storybook Adventure colours its pages on their own, as the renderer
+  // does for a layout with an `adventureRules` mask. A shape has no adventure
+  // of its own, so the left page takes the card's colours.
+  const selected =
+    maskUrl("adventureRules") !== undefined
+      ? selectStorybookFrameLayers(details, "", selectOptions)
+      : selectFrameLayers(details, {
+          ...selectOptions,
+          hasPinlineMask: maskUrl("pinlines") !== undefined,
+        });
 
   const layers: ArtLayer[] = [];
 

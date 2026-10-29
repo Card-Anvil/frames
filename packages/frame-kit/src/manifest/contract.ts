@@ -15,6 +15,9 @@ import { FrameSchema } from "../schema/frame.js";
  *   render with reduced fidelity.
  *
  * Version history:
+ * - 1.9: added the optional `adventureRules`, `adventureRulesRight`,
+ *   `rulesRight` and `wings` layout masks, colouring the two pages and the
+ *   page edges of a storybook Adventure's text box on their own.
  * - 1.8: added the optional `fullBorder` frame asset, border art drawn under
  *   the base frame while `useFullBorder` is on; the optional
  *   `outlineColor`/`outlineWidth` on the set symbol box; the optional
@@ -40,7 +43,7 @@ import { FrameSchema } from "../schema/frame.js";
  * - 1.2: added the optional `mask` asset URL on text boxes (shaped text).
  * - 1.1: added the optional `license` field on the manifest.
  */
-export const CONTRACT_VERSION = "1.8";
+export const CONTRACT_VERSION = "1.9";
 
 /** The only manifest kind any loader understands today. */
 export const DECLARATIVE_KIND = "declarative";
