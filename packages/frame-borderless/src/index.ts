@@ -1,6 +1,7 @@
 import { Frame, TemplateSettingsConfig, TextBox } from "@cardanvil/frame-kit";
 import { withCollectorInfoDefaults } from "@cardanvil/frame-kit";
 
+import { borderlessAdventureLayoutConfig } from "./adventureStorybooks/config";
 import {
   borderlessMdfcLayoutConfig,
   borderlessMdfcTextlessLayoutConfig,
@@ -78,6 +79,10 @@ export const borderlessFrame = {
       // Tokens have no mana cost — widen the title by 10px and center it.
       token: withCollectorInfoDefaults(
         borderlessTokenLayoutConfig,
+        defaultCollectorInfoBounds,
+      ),
+      adventure: withCollectorInfoDefaults(
+        borderlessAdventureLayoutConfig,
         defaultCollectorInfoBounds,
       ),
       normal_planeswalker: withCollectorInfoDefaults(
