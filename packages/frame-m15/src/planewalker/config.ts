@@ -10,9 +10,11 @@ import abilityStartingLoyalty from "./abilities/startingLoyalty.png";
 import * as nickname from "./nickname";
 // Regular frames (3-ability) + tall frames (4-ability)
 import * as base from "./regular";
-import * as colorlessNicknameRegularMask from "./regular/masks";
+import * as masks from "./regular/masks";
+import colorlessNicknameRegularMask from "./regular/masks/nickname.png";
 import * as tall from "./tall";
-import * as colorlessNicknameTallMask from "./tall/masks";
+import * as tallMasks from "./tall/masks";
+import colorlessNicknameTallMask from "./tall/masks/nickname.png";
 
 // Loyalty icons and the ability separator. Other frames draw the same ones, so
 // they are exported through `extend` rather than copied.
@@ -173,11 +175,13 @@ export const planeswalkerLayoutConfig: LayoutConfig = {
       ...planeswalkerAbilityIcons,
       masks: abilityMasks,
       colorlessNicknameMasks: {
-        ...colorlessNicknameRegularMask,
-        ...colorlessNicknameTallMask,
+        regular: colorlessNicknameRegularMask,
+        tall: colorlessNicknameTallMask,
       },
     },
   },
+  masks,
+  tallMasks,
   planeswalkerConfig: {
     abilitySpacing: 0.005,
     separatorHeight: 61 / 4440, // SEPARATOR_PIXEL_HEIGHT (61px) normalized to card height (4440px)
