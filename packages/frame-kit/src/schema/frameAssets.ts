@@ -280,12 +280,39 @@ export const LayoutMasksSchema = z.object({
    */
   topHalf: AssetUrlSchema.optional(),
   bottomHalf: AssetUrlSchema.optional(),
+  /**
+   * A storybook Adventure's text box is an open book, each page coloured on
+   * its own: the right page (`rules`) by the card, the left page
+   * (`adventureRules`) by its adventure. A two-colour page lays its second
+   * colour over the first through `rulesRight`/`adventureRulesRight`, a copy
+   * of the page's mask faded in towards its right edge. A layout that ships
+   * `adventureRules` has its pages coloured this way — see
+   * `selectStorybookFrameLayers`.
+   */
+  rulesRight: AssetUrlSchema.optional(),
+  adventureRules: AssetUrlSchema.optional(),
+  adventureRulesRight: AssetUrlSchema.optional(),
+  /**
+   * The storybook's page edges either side of the book. A two-colour gold
+   * card halves its frame between its colours, and lays gold over these as
+   * it does over the title and type bars.
+   */
+  wings: AssetUrlSchema.optional(),
 });
 export type LayoutMasks = z.infer<typeof LayoutMasksSchema>;
 
 /** Mask names an overlay may reference. `rightHalf` falls back to globalMasks. */
 export type OverlayMaskName =
-  "pinlines" | "titleAndType" | "rules" | "rightHalf" | "title" | "type";
+  | "pinlines"
+  | "titleAndType"
+  | "rules"
+  | "rightHalf"
+  | "title"
+  | "type"
+  | "rulesRight"
+  | "adventureRules"
+  | "adventureRulesRight"
+  | "wings";
 
 /**
  * A structured reference to one frame image. "c2" is valid only in the base
