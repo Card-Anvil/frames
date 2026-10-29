@@ -1,1 +1,7 @@
-export { default as tall } from "./nickname.png";
+export { default as border } from "./border.png";
+export { default as borderFull } from "./fullBorder.png";
+export { default as noBorder } from "./noBorder.png";
+export { default as pinlines } from "./pinlines.png";
+export { default as title } from "./title.png";
+export { default as titleAndType } from "./titleAndType.png";
+export { default as type } from "./type.png";
