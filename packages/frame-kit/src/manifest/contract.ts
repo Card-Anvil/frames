@@ -15,6 +15,8 @@ import { FrameSchema } from "../schema/frame.js";
  *   render with reduced fidelity.
  *
  * Version history:
+ * - 1.10: added the optional `sectionDivider` frame asset, drawn between the
+ *   sections of a Case's or Class's column.
  * - 1.9: added the optional `adventureRules`, `adventureRulesRight`,
  *   `rulesRight` and `wings` layout masks, colouring the two pages and the
  *   page edges of a storybook Adventure's text box on their own.
@@ -43,7 +45,7 @@ import { FrameSchema } from "../schema/frame.js";
  * - 1.2: added the optional `mask` asset URL on text boxes (shaped text).
  * - 1.1: added the optional `license` field on the manifest.
  */
-export const CONTRACT_VERSION = "1.9";
+export const CONTRACT_VERSION = "1.10";
 
 /** The only manifest kind any loader understands today. */
 export const DECLARATIVE_KIND = "declarative";
