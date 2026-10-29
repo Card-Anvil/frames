@@ -4,6 +4,13 @@ import { withCollectorInfoDefaults } from "@cardanvil/frame-kit";
 import { borderlessAdventureLayoutConfig } from "./adventureStorybooks/config";
 import { borderlessCaseLayoutConfig } from "./caseClass/config";
 import {
+  adventureStyleSettings,
+  borderlessInsetLayoutConfig,
+  borderlessPrepareInsetLayoutConfig,
+  omenStyleSettings,
+  prepareStyleSettings,
+} from "./inset/config";
+import {
   borderlessMdfcLayoutConfig,
   borderlessMdfcTextlessLayoutConfig,
 } from "./mdfc/config";
@@ -83,7 +90,22 @@ export const borderlessFrame = {
         defaultCollectorInfoBounds,
       ),
       adventure: withCollectorInfoDefaults(
-        borderlessAdventureLayoutConfig,
+        {
+          ...borderlessAdventureLayoutConfig,
+          templateSettings: adventureStyleSettings,
+        },
+        defaultCollectorInfoBounds,
+      ),
+      // Omen and Prepare have no storybook art yet, so they are drawn inset.
+      omen: withCollectorInfoDefaults(
+        { ...borderlessInsetLayoutConfig, templateSettings: omenStyleSettings },
+        defaultCollectorInfoBounds,
+      ),
+      prepare: withCollectorInfoDefaults(
+        {
+          ...borderlessPrepareInsetLayoutConfig,
+          templateSettings: prepareStyleSettings,
+        },
         defaultCollectorInfoBounds,
       ),
       case: withCollectorInfoDefaults(
@@ -121,9 +143,10 @@ export const borderlessFrame = {
     },
     // Alternate configs used instead of `layouts` (per-layout) when a
     // non-default frame variant is selected. Each key is a variant name
-    // matching an option in the `frameVariant` select setting; only layouts
-    // listed under that key get the alternate look, any other layout falls
-    // back to its normal config unaffected.
+    // matching an option in the `frameVariant` select setting — or in a
+    // layout's own select setting, as `inset` is; only layouts listed under
+    // that key get the alternate look, any other layout falls back to its
+    // normal config unaffected.
     alternateLayouts: {
       textless: {
         normal: withCollectorInfoDefaults(
@@ -168,6 +191,15 @@ export const borderlessFrame = {
         // Tokens have no mana cost — widen the title by 10px and center it.
         token: withCollectorInfoDefaults(
           borderlessTokenShortLayoutConfig,
+          defaultCollectorInfoBounds,
+        ),
+      },
+      // Not a frame variant: named by the Adventure layout's own "Adventure"
+      // setting, which draws an Adventure inset on the regular frame instead
+      // of in its storybook.
+      inset: {
+        adventure: withCollectorInfoDefaults(
+          borderlessInsetLayoutConfig,
           defaultCollectorInfoBounds,
         ),
       },
