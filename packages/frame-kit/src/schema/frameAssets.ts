@@ -155,6 +155,13 @@ export const FrameAssetsSchema = z.object({
   black: AssetUrlSchema.optional(),
   planeswalker: PlaneswalkerAssetConfigSchema.optional(),
   saga: SagaAssetConfigSchema.optional(),
+  /**
+   * Drawn between the sections of a column — a Case's steps, a Class's
+   * levels — the way a Saga's divider is drawn between its chapters: across
+   * nine tenths of the `abilities` box, centered, at its own aspect ratio.
+   * Without it the sections keep only their gaps.
+   */
+  sectionDivider: AssetUrlSchema.optional(),
   /** Extended-art overlay drawn on top of the masked frame. */
   extendedOverlay: AssetUrlSchema.optional(),
   /**
