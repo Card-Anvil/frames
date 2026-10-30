@@ -376,12 +376,14 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
             continue; // laid out dynamically by the renderer; nothing to draw
           }
           const target = item.part === "frame" ? body : stack;
-          const node = new Konva.Image({
-            image,
-            x: origin.x,
-            y: origin.y,
-            listening: false,
-          });
+          const imageNode = () =>
+            new Konva.Image({
+              image,
+              x: origin.x,
+              y: origin.y,
+              listening: false,
+            });
+          const node = imageNode();
 
           if (item.recolor !== undefined) {
             // Keep the art's own alpha and replace its colour. Cached so
@@ -416,7 +418,7 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
             // deep its ink is opaque in its own colour, so it replaces the
             // colour under it, as the renderer's `opaqueInk` does.
             for (let i = 1; i < 8; i++) {
-              clipped.add(node.clone());
+              clipped.add(imageNode());
             }
           }
           for (const maskImage of [mask, secondary]) {
