@@ -1,3 +1,4 @@
+export { default as noBorder } from "./noBorder.png";
 export { default as pinlines } from "./pinlines.png";
 export { default as title } from "./title.png";
 export { default as titleAndType } from "./titleAndType.png";
