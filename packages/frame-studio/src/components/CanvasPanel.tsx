@@ -411,6 +411,14 @@ export function CanvasPanel(props: CanvasPanelProps): React.JSX.Element {
           // alone rather than everything drawn beneath it.
           const clipped = new Konva.Group({ listening: false });
           clipped.add(node);
+          if (item.preserveAlpha === true) {
+            // `source-atop` blends by the overlay's own alpha. Stacked eight
+            // deep its ink is opaque in its own colour, so it replaces the
+            // colour under it, as the renderer's `opaqueInk` does.
+            for (let i = 1; i < 8; i++) {
+              clipped.add(node.clone());
+            }
+          }
           for (const maskImage of [mask, secondary]) {
             if (maskImage) {
               clipped.add(sheetMask(maskImage, "destination-in"));
