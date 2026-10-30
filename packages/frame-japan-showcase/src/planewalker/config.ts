@@ -155,11 +155,6 @@ export const japanShowcasePlaneswalkerLayoutConfig: LayoutConfig = {
     // Clears the frame's bar, which ends 42px into the abilities box.
     staticTextPaddingX: 90,
     textPaddingRight: 10,
-    topPadding: 30,
-    bottomPadding: 30,
-    // Shrink the font sooner when abilities have more text, giving more
-    // breathing room between abilities.
-    textFillThreshold: 0.85,
     abilityBacking: false,
     // These badges' bodies are centered in their images, unlike M15's, so
     // none needs M15's drop to center it on its ability.
