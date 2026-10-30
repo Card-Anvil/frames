@@ -307,17 +307,59 @@ export const PlaneswalkerRenderConfigSchema = z.object({
   staticTextPaddingX: z.number(),
   /** Right padding for all ability text in pixels */
   textPaddingRight: z.number().optional(),
-  /** Top padding before the first ability in pixels (background still fills from box top) */
-  topPadding: z.number().optional(),
-  /** Bottom padding after the last ability in pixels (background still fills to box bottom) */
-  bottomPadding: z.number().optional(),
   /**
-   * Fraction of the available height at which the shrink loop starts
-   * shrinking the font. 1.0 = only shrink when text literally doesn't fit.
-   * Set lower (e.g. 0.85) to shrink sooner when abilities have more text,
-   * giving more breathing room between bands. Defaults to 1.0.
+   * Top padding before the first ability in pixels. Unused since 1.12: the
+   * abilities are spaced by `abilityFill`.
    */
+  topPadding: z.number().optional(),
+  /**
+   * Bottom padding after the last ability in pixels. Unused since 1.12: see
+   * `loyaltyReserve`.
+   */
+  bottomPadding: z.number().optional(),
+  /** Unused since 1.12: the font is fitted to `abilityFill`. */
   textFillThreshold: z.number().optional(),
+  /**
+   * The most of the abilities' height their text may take, 0–1, at
+   * `abilityFillSize`; the rest is shared out evenly as padding around each
+   * ability. The font shrinks in quarter printed points (3.125 of the sheet's
+   * points), from the largest at or below the abilities box's `fontSize` down
+   * to `minFontSize`, until the text fits it. Printed M15 planeswalkers fill
+   * about 0.62 at 88. Defaults to 0.62.
+   */
+  abilityFill: z.number().optional(),
+  /**
+   * The size `abilityFill` holds at, in points. Smaller text may fill more of
+   * the height and larger text less, in proportion: printed M15 planeswalkers
+   * with little text set it larger, with more room around it. Defaults to 88.
+   */
+  abilityFillSize: z.number().optional(),
+  /** The smallest size the abilities' font shrinks to, in points. Defaults to 70. */
+  minFontSize: z.number().optional(),
+  /**
+   * The abilities' line height as a multiple of their font size. Printed M15
+   * planeswalkers set about 1.32. Defaults to 1.32.
+   */
+  lineHeightRatio: z.number().optional(),
+  /**
+   * The least height a loyalty ability takes, in px, however short its text,
+   * so its badge has room. Defaults to 200.
+   */
+  badgeSlotHeight: z.number().optional(),
+  /**
+   * Height at the abilities box's bottom, in px, that the abilities are laid
+   * out above: the room beside the starting loyalty. The last ability's band
+   * still reaches the box's bottom, and its text can run into the reserve
+   * where it clears the badge. Defaults to 60.
+   */
+  loyaltyReserve: z.number().optional(),
+  /**
+   * How far each separator sits below where its two bands meet, in px. The
+   * separator's wave is the top edge a band shows, so this moves where an
+   * ability looks to start inside its band; its text stays put. Defaults to
+   * 24, where printed M15 planeswalkers have it.
+   */
+  separatorOffsetY: z.number().optional(),
   /**
    * Draw the translucent bands (and separators) behind the abilities.
    * Defaults to true. Turn it off for a frame whose art shows through the
