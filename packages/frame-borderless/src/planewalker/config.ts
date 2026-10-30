@@ -75,16 +75,18 @@ const regularAbilities = {
   height: 1210,
 };
 
-// Boxes for 2-ability planeswalkers (normal frame, larger ability font)
+// Boxes for 2-ability planeswalkers (normal frame, larger ability font). Each
+// abilities box's `fontSize` is the largest its text is set at, in quarter
+// printed points (3.125 here), as on printed cards: 9, 8.75 and 6.75 pt.
 const boxes2: CardBoxes = {
   ...regularBoxes,
-  abilities: { ...regularAbilities, fontSize: 110 },
+  abilities: { ...regularAbilities, fontSize: 112.5 },
 };
 
 // Boxes for 3-ability planeswalkers (normal frame)
 const boxes3: CardBoxes = {
   ...regularBoxes,
-  abilities: { ...regularAbilities, fontSize: 94 },
+  abilities: { ...regularAbilities, fontSize: 109.375 },
 };
 
 // Boxes for 4-ability planeswalkers (tall frame)
@@ -108,7 +110,7 @@ const boxes4: CardBoxes = {
     y: 2475,
     width: 2415,
     height: 1490,
-    fontSize: 94,
+    fontSize: 84.375,
   },
 };
 
@@ -135,15 +137,8 @@ export const borderlessPlaneswalkerLayoutConfig: LayoutConfig = {
     separatorHeight: 61 / 4440, // SEPARATOR_PIXEL_HEIGHT (61px) normalized to card height (4440px)
     textPaddingX: 188,
     staticTextPaddingX: 50,
-    textPaddingRight: 10,
-    topPadding: 30,
-    // The abilities box (bottom = y+height) overlaps the starting loyalty
-    // badge (top = 3860) by ~105px. Reserve that as bottom padding so the
-    // last ability's text doesn't clip into the loyalty badge.
-    bottomPadding: 30,
-    // Shrink the font sooner when abilities have more text, giving more
-    // breathing room between bands.
-    textFillThreshold: 0.85,
+    // Printed planeswalkers break their ability lines at about x = 2846.
+    textPaddingRight: 59,
   },
   // The nickname banners are trimmed (`frame-kit trim --shared`); this is
   // where they sit on the sheet.
