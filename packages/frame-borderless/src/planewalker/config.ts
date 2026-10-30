@@ -129,9 +129,9 @@ export const borderlessPlaneswalkerLayoutConfig: LayoutConfig = {
   },
   masks,
   tallMasks,
-  // As on Borderless's other layouts, a hybrid's colorless wash covers only
-  // the title.
-  hybridTitleMask: "title",
+  // Unlike Borderless's other layouts, a hybrid planeswalker's colorless wash
+  // covers its type line as well as its title.
+  hybridTitleMask: "titleAndType",
   planeswalkerConfig: {
     abilitySpacing: 0.005,
     separatorHeight: 61 / 4440, // SEPARATOR_PIXEL_HEIGHT (61px) normalized to card height (4440px)
