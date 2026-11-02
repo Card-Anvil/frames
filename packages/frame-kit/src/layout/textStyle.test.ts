@@ -29,6 +29,13 @@ describe("textShadowFor", () => {
     expect(shadow?.color).toBe(TEXT_SHADOW_COLOR);
     expect(shadow?.offsetX).toBeCloseTo(-2.9);
     expect(shadow?.offsetY).toBeCloseTo(7.5);
+    expect(shadow?.blur).toBe(0);
+  });
+
+  it("blurs by the box's shadowBlur", () => {
+    expect(textShadowFor({ ...text, shadow: true, shadowBlur: 6 })?.blur).toBe(
+      6,
+    );
   });
 
   it("takes the box's own offsets over the derived ones", () => {

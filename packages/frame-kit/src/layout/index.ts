@@ -76,10 +76,19 @@ export {
   splitTwoColor,
 } from "./frameLayers.js";
 export {
+  type PaintStop,
+  cardColorParts,
+  gradientStops,
+  printedColorOrder,
+  tintColor,
+} from "./paint.js";
+export {
   type ResolvedBaseFrame,
+  hasFrameArt,
   resolveBaseFrame,
   resolveFrameAsset,
 } from "./resolveFrameAsset.js";
+export { rulesSlideOffset, slideBoxes } from "./rulesSlide.js";
 export {
   type SettingValue,
   type TemplateSettingValues,

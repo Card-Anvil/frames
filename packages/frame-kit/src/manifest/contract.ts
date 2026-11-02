@@ -15,6 +15,11 @@ import { FrameSchema } from "../schema/frame.js";
  *   render with reduced fidelity.
  *
  * Version history:
+ * - 1.13: added the optional `fonts` a frame ships; the optional `gradients`,
+ *   `tintedImages`, `rulesSlide` and `manaSymbols` on a layout; the optional
+ *   `power` and `toughness` text boxes; the optional `shadowBlur` on text
+ *   boxes; and the optional `frameColor` condition on text box `overrides`.
+ *   A layout's `base` frame art may now be empty, for a frame with none.
  * - 1.12: added the optional planeswalker knobs `abilityFill`,
  *   `abilityFillSize`, `minFontSize`, `lineHeightRatio`, `badgeSlotHeight` and
  *   `loyaltyReserve`, which space and size abilities laid out as a column of
@@ -54,7 +59,7 @@ import { FrameSchema } from "../schema/frame.js";
  * - 1.2: added the optional `mask` asset URL on text boxes (shaped text).
  * - 1.1: added the optional `license` field on the manifest.
  */
-export const CONTRACT_VERSION = "1.12";
+export const CONTRACT_VERSION = "1.13";
 
 /** The only manifest kind any loader understands today. */
 export const DECLARATIVE_KIND = "declarative";

@@ -8,6 +8,7 @@ import {
   LayoutMasksSchema,
 } from "./frameAssets.js";
 import { LayoutEnum } from "./layout.js";
+import { GradientSchema, HexColorSchema, TintedImageSchema } from "./paint.js";
 
 export interface Bounds {
   x: number;
@@ -60,6 +61,9 @@ const TextBoxFieldsSchema = BoundsSchema.extend({
    * `shadow` is true. */
   shadowOffsetX: z.number().optional(),
   shadowOffsetY: z.number().optional(),
+  /** How far the drop-shadow is blurred, in px. Defaults to 0, a hard edge.
+   * Plain-text boxes only, and only meaningful when `shadow` is true. */
+  shadowBlur: z.number().nonnegative().optional(),
   /** Shaped-text mask: a full-canvas-sized PNG whose opaque pixels define the
    * region text in this box may occupy. Alpha is what matters (any pixel with
    * alpha > ~12% counts as inside), so color is irrelevant. Each wrapped line
@@ -112,6 +116,15 @@ export const TextBoxOverrideSchema = z.object({
     settings: z
       .record(z.string(), z.union([z.boolean(), z.string(), z.number()]))
       .optional(),
+    /**
+     * The card's frame color — its background, the color its base frame is
+     * picked by: `w`/`u`/`b`/`r`/`g` for one color, `m` for gold and
+     * two-color hybrids, `a`, `c`, `l` or `v` for artifacts, colorless cards,
+     * lands and vehicles. An array matches any of its colors.
+     */
+    frameColor: z
+      .union([FrameColorEnum, z.array(FrameColorEnum).readonly()])
+      .optional(),
   }),
   /**
    * The fields to replace. Style only: parts of the app read box geometry
@@ -125,6 +138,7 @@ export const TextBoxOverrideSchema = z.object({
     shadow: true,
     shadowOffsetX: true,
     shadowOffsetY: true,
+    shadowBlur: true,
     opacity: true,
   }),
 });
@@ -216,6 +230,13 @@ export const CardBoxesSchema = z.object({
   abilities: TextBoxSchema.optional(),
   pt: TextBoxSchema.optional(),
   ptImage: z.object({ x: z.number(), y: z.number() }).optional(),
+  /**
+   * Power and toughness each in a box of its own, for a frame that prints
+   * them apart rather than as one `power/toughness`. Both are needed; with
+   * them, `pt` is not drawn.
+   */
+  power: TextBoxSchema.optional(),
+  toughness: TextBoxSchema.optional(),
   collectorInfo: CollectorInfoBoxSchema.optional(),
   startingLoyalty: TextBoxSchema.optional(),
   nicknameTitle: TextBoxSchema.optional(),
@@ -288,6 +309,9 @@ export const SecondFaceBoxesSchema = z.object({
   setSymbol: SetSymbolBoxSchema.optional(),
   rules: TextBoxSchema.optional(),
   pt: TextBoxSchema.optional(),
+  /** Power and toughness apart, as on the first face's set. */
+  power: TextBoxSchema.optional(),
+  toughness: TextBoxSchema.optional(),
 });
 
 export type SecondFaceBoxes = z.infer<typeof SecondFaceBoxesSchema>;
@@ -465,6 +489,58 @@ export type SectionDividerPlacement = z.infer<
   typeof SectionDividerPlacementSchema
 >;
 
+/** The boxes a `rulesSlide` can move. */
+export const SlidingBoxEnum = z.enum(["mana", "title", "type", "setSymbol"]);
+
+export type SlidingBox = z.infer<typeof SlidingBoxEnum>;
+
+/**
+ * Moves the boxes above the rules text down when the text leaves room, so
+ * short text shows more art — in whole `step`s, never more than `maxSteps`.
+ *
+ * The room is the `rules` box's height less the fitted text's and `padding`.
+ * The listed `boxes`, and every gradient and tinted image marked `slides`, go
+ * down by the slide; the `rules` box's top goes down with them while its
+ * bottom stays, so the text, centered in it, goes down by half. Everything
+ * else — collector info, power and toughness — stays put.
+ *
+ * Only a card whose rules are drawn in the `rules` box slides: not a
+ * planeswalker, Saga, Class or Case.
+ */
+export const RulesSlideSchema = z.object({
+  padding: z.number().nonnegative(),
+  step: z.number().positive(),
+  maxSteps: z.number().int().nonnegative(),
+  boxes: z.array(SlidingBoxEnum).readonly(),
+});
+
+export type RulesSlide = z.infer<typeof RulesSlideSchema>;
+
+/** The five colors and colorless, the keys of a mana symbol color map. */
+export const ManaColorEnum = z.enum(["W", "U", "B", "R", "G", "C"]);
+
+/**
+ * How the card's mana symbols are drawn, wherever they appear: the mana cost,
+ * rules text, abilities, and the keyword and flipside boxes alike.
+ */
+export const ManaSymbolStyleSchema = z.object({
+  /**
+   * `"filled"` is the usual solid pip. `"hollow"` draws the same symbols as a
+   * ring with the glyph inside it, and a hybrid as two half rings.
+   */
+  style: z.enum(["filled", "hollow"]).optional(),
+  /** The pip (or ring) color per mana color, in place of the app's. */
+  colors: z.partialRecord(ManaColorEnum, HexColorSchema).optional(),
+  /**
+   * The glyph color per mana color, in place of the app's black. `C` is also
+   * the glyph color of every symbol of no color: generic mana, `{C}`, `{T}`,
+   * `{X}` and the like.
+   */
+  glyphColors: z.partialRecord(ManaColorEnum, HexColorSchema).optional(),
+});
+
+export type ManaSymbolStyle = z.infer<typeof ManaSymbolStyleSchema>;
+
 const CrownRenderConfigSchema = z.object({
   x: z.number(),
   y: z.number(),
@@ -572,6 +648,12 @@ export const LayoutConfigSchema = z.object({
    * without one draws none.
    */
   sectionDividers: z.array(SectionDividerPlacementSchema).optional(),
+  /** Painted over the art and under the text, in order. See `GradientSchema`. */
+  gradients: z.array(GradientSchema).readonly().optional(),
+  /** Shapes painted in the card's colors. See `TintedImageSchema`. */
+  tintedImages: z.array(TintedImageSchema).readonly().optional(),
+  rulesSlide: RulesSlideSchema.optional(),
+  manaSymbols: ManaSymbolStyleSchema.optional(),
   crownConfig: CrownRenderConfigSchema.optional(),
   nicknameConfig: NicknameRenderConfigSchema.optional(),
   templateSettings: TemplateSettingsConfigSchema.optional(),
@@ -700,6 +782,33 @@ export const TemplateConfigSchema = z.object({
 
 export type TemplateConfig = z.infer<typeof TemplateConfigSchema>;
 
+/**
+ * A font the frame ships, for its text boxes to name in `fontFamily`.
+ *
+ * `family` is the frame's own name for it and only means something inside
+ * this frame: the app keeps each frame's fonts apart, so a frame can neither
+ * replace a font the app has (a `family` of "Beleren" is still the frame's
+ * file, not the app's) nor clash with another frame's. A box naming a family
+ * the frame does not ship gets the app's font of that name, as before.
+ *
+ * Ship only a font whose license lets it be redistributed. One entry per
+ * weight and style; a family with a bold face lists it as a second entry.
+ */
+export const FrameFontSchema = z.object({
+  family: z.string().min(1),
+  src: AssetUrlSchema,
+  weight: z.enum(["normal", "bold"]).optional(),
+  style: z.enum(["normal", "italic"]).optional(),
+  /**
+   * The font's PostScript name, which a PSD export names its text layers by
+   * so Photoshop finds the font when it is installed. Left out, a PSD export
+   * leaves text in this font as pixels rather than a text layer.
+   */
+  postScriptName: z.string().optional(),
+});
+
+export type FrameFont = z.infer<typeof FrameFontSchema>;
+
 export const FrameSchema = z.object({
   name: z.string(),
   description: z.string(),
@@ -707,6 +816,8 @@ export const FrameSchema = z.object({
   tags: z.array(z.string()),
   disabled: z.boolean().optional(),
   templateSettings: TemplateSettingsConfigSchema.optional(),
+  /** Fonts the frame ships. See `FrameFontSchema`. */
+  fonts: z.array(FrameFontSchema).readonly().optional(),
   config: TemplateConfigSchema,
 });
 
