@@ -104,7 +104,7 @@ export const TextBoxOverrideSchema = z.object({
 
 export type TextBoxOverride = z.infer<typeof TextBoxOverrideSchema>;
 
-export const TextBoxSchema = TextBoxFieldsSchema.extend({
+const textBoxSchema = TextBoxFieldsSchema.extend({
   /**
    * Conditional restyles, applied in order at render time — where two matches
    * set the same field, the later one wins. This is how a box adapts to the
@@ -115,6 +115,18 @@ export const TextBoxSchema = TextBoxFieldsSchema.extend({
    */
   overrides: z.array(TextBoxOverrideSchema).readonly().optional(),
 });
+
+type TextBoxSchemaShape = typeof textBoxSchema;
+
+/**
+ * `TextBoxSchema`'s type, named. A text box appears in every box set of every
+ * layout, and spelled out in full at each of them the declaration output
+ * outgrows what TypeScript will write (TS7056); named, it is written once.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- a name for the type, nothing more
+export interface TextBoxSchemaType extends TextBoxSchemaShape {}
+
+export const TextBoxSchema: TextBoxSchemaType = textBoxSchema;
 
 export type TextBox = z.infer<typeof TextBoxSchema>;
 
