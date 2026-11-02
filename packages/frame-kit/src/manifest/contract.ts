@@ -18,7 +18,9 @@ import { FrameSchema } from "../schema/frame.js";
  * - 1.13: added the optional `fonts` a frame ships; the optional `gradients`,
  *   `tintedImages`, `rulesSlide` and `manaSymbols` on a layout; the optional
  *   `power` and `toughness` text boxes; the optional `shadowBlur` on text
- *   boxes; and the optional `frameColor` condition on text box `overrides`.
+ *   boxes; the optional `frameColor` condition on text box `overrides`; and
+ *   the optional `when` on gradients and tinted images, the same conditions
+ *   as `overrides`, so a template setting can pick which are drawn.
  *   A layout's `base` frame art may now be empty, for a frame with none.
  * - 1.12: added the optional planeswalker knobs `abilityFill`,
  *   `abilityFillSize`, `minFontSize`, `lineHeightRatio`, `badgeSlotHeight` and

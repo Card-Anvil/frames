@@ -1,10 +1,5 @@
-import type {
-  BorderState,
-  CardBoxes,
-  SecondFaceBoxes,
-  TextBox,
-  TextBoxOverride,
-} from "../schema/frame.js";
+import type { BorderState, RenderCondition } from "../schema/condition.js";
+import type { CardBoxes, SecondFaceBoxes, TextBox } from "../schema/frame.js";
 import type { FrameColor } from "../schema/frameAssets.js";
 
 /** What text boxes' `overrides` are matched against, for one render. */
@@ -63,9 +58,12 @@ const SECOND_FACE_TEXT_BOX_KEYS = [
   "toughness",
 ] as const satisfies readonly (keyof SecondFaceBoxes)[];
 
-/** Whether every condition an override names holds for one render. */
+/**
+ * Whether every condition a `RenderCondition` names holds for one render — a
+ * text box override's, a gradient's or a tinted image's.
+ */
 export function overrideMatches(
-  when: TextBoxOverride["when"],
+  when: RenderCondition,
   state: OverrideState,
 ): boolean {
   if (when.border !== undefined) {

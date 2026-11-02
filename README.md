@@ -311,6 +311,21 @@ the layout paints whatever else it wants over it.
   own alpha: one shape shipped once instead of a copy per color. `part` picks
   which of a multicolor card's colors, and `showWith: "powerToughness"` draws it
   only on a card with power and toughness.
+- A gradient or tinted image with a **`when`** is drawn only where it holds —
+  the same conditions as a text box's `overrides`. A template setting can pick
+  between sets of them:
+
+  ```ts
+  templateSettings: {
+    ptSymbols: { type: "select", label: "P/T Symbols", defaultValue: "Trix", options: ["Trix", "Portal"] },
+  },
+  // …
+  tintedImages: [
+    { src: trixSword, /* … */ when: { settings: { ptSymbols: "Trix" } } },
+    { src: portalSword, /* … */ when: { settings: { ptSymbols: "Portal" } } },
+  ],
+  ```
+
 - **`power` and `toughness`** boxes print the two apart rather than as `P/T`.
 - **`rulesSlide`** moves the boxes above the rules text down, in steps, when
   the text leaves room, and every gradient and tinted image marked `slides` with

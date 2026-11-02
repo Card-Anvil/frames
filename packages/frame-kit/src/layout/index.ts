@@ -79,6 +79,7 @@ export {
   type PaintStop,
   cardColorParts,
   gradientStops,
+  paintedFor,
   printedColorOrder,
   tintColor,
 } from "./paint.js";

@@ -1,3 +1,5 @@
+import type { RenderCondition } from "../schema/condition.js";
+import type { LayoutConfig } from "../schema/frame.js";
 import type { FrameColor } from "../schema/frameAssets.js";
 import type {
   CardColors,
@@ -5,6 +7,7 @@ import type {
   OpacityStop,
   TintedImage,
 } from "../schema/paint.js";
+import { type OverrideState, overrideMatches } from "./boxOverrides.js";
 import { type RgbColor, parseNormalizedCssColor } from "./color.js";
 import {
   COLOR_ORDER,
@@ -210,6 +213,24 @@ export function gradientStops(
       color: `rgba(${channels.join(", ")}, ${String(round(opacity, 4))})`,
     };
   });
+}
+
+/**
+ * A layout as one render paints it: only the gradients and tinted images
+ * whose `when` holds for `state`. Everything else passes through untouched.
+ */
+export function paintedFor<
+  Config extends Pick<LayoutConfig, "gradients" | "tintedImages">,
+>(config: Config, state: OverrideState): Config {
+  const holds = ({ when }: { when?: RenderCondition | undefined }) =>
+    when === undefined || overrideMatches(when, state);
+  return {
+    ...config,
+    ...(config.gradients && { gradients: config.gradients.filter(holds) }),
+    ...(config.tintedImages && {
+      tintedImages: config.tintedImages.filter(holds),
+    }),
+  };
 }
 
 /** The color a tinted image is painted for one card, if its palette has one. */

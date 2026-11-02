@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { AssetUrlSchema } from "./assetUrl.js";
+import { RenderConditionSchema } from "./condition.js";
 import { FrameColorEnum } from "./frameAssets.js";
 
 /** A color written `#rrggbb`. */
@@ -64,6 +65,8 @@ export const GradientSchema = z.object({
   opacity: z.array(OpacityStopSchema).min(2).readonly(),
   /** Moves with the boxes when the layout's `rulesSlide` moves them. */
   slides: z.boolean().optional(),
+  /** Drawn only on a render where this holds, e.g. a template setting's value. */
+  when: RenderConditionSchema.optional(),
 });
 
 export type Gradient = z.infer<typeof GradientSchema>;
@@ -90,6 +93,11 @@ export const TintedImageSchema = z.object({
   showWith: z.literal("powerToughness").optional(),
   /** Moves with the boxes when the layout's `rulesSlide` moves them. */
   slides: z.boolean().optional(),
+  /**
+   * Drawn only on a render where this holds — a frame offering two sets of
+   * symbols lists both, each under the value of the setting that picks it.
+   */
+  when: RenderConditionSchema.optional(),
 });
 
 export type TintedImage = z.infer<typeof TintedImageSchema>;

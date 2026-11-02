@@ -5,6 +5,7 @@ import { type FrameDetails, frameDetailsFor } from "./frameLayers.js";
 import {
   cardColorParts,
   gradientStops,
+  paintedFor,
   printedColorOrder,
   tintColor,
 } from "./paint.js";
@@ -181,5 +182,52 @@ describe("tintColor", () => {
     expect(tintColor({ ...sword, color: "#123456" }, details({}))).toBe(
       "#123456",
     );
+  });
+});
+
+describe("paintedFor", () => {
+  const symbol = (set: string): TintedImage => ({
+    src: `${set}.svg`,
+    x: 0,
+    y: 0,
+    color: "#ffffff",
+    when: { settings: { ptSymbols: set } },
+  });
+  const always: Gradient = {
+    x: 0,
+    y: 0,
+    width: 10,
+    height: 10,
+    color: "#000000",
+    opacity: [
+      { at: 0, opacity: 0 },
+      { at: 1, opacity: 1 },
+    ],
+  };
+  const layout = {
+    gradients: [always, { ...always, when: { frameColor: "l" as const } }],
+    tintedImages: [symbol("Trix"), symbol("Portal")],
+  };
+
+  it("keeps what the setting in effect picks", () => {
+    const painted = paintedFor(layout, {
+      border: "default",
+      settings: { ptSymbols: "Portal" },
+    });
+    expect(painted.tintedImages.map(({ src }) => src)).toEqual(["Portal.svg"]);
+  });
+
+  it("keeps what has no condition, and drops what does not hold", () => {
+    const painted = paintedFor(layout, {
+      border: "default",
+      settings: {},
+      frameColor: "w",
+    });
+    expect(painted.gradients).toEqual([always]);
+    expect(painted.tintedImages).toEqual([]);
+  });
+
+  it("leaves a layout without them alone", () => {
+    expect(paintedFor({}, { border: "default", settings: {} })).toEqual({});
   });
 });
