@@ -487,6 +487,29 @@ export const RulesSlideSchema = z.object({
 
 export type RulesSlide = z.infer<typeof RulesSlideSchema>;
 
+/**
+ * Power and toughness laid out as a row from its right edge, for a frame that
+ * prints them apart: the toughness ends at `right`, its symbol sits `gap`
+ * left of it, the power ends `spacing` left of that symbol, and the power's
+ * symbol sits `gap` left of the power. A wider number — `10`, `100`, `*`
+ * — moves everything left of it.
+ *
+ * The symbols are the tinted images marked `ptSlot`. The `power` and
+ * `toughness` boxes still give each number's font, size, color and height;
+ * only their `x` and `width` are worked out. First face only, as tinted
+ * images are.
+ *
+ * With no symbol drawn in either slot, say when a setting turns them off, the
+ * two print as one `P/T` ending at `right`, in the `toughness` box's style.
+ */
+export const PowerToughnessRowSchema = z.object({
+  right: z.number(),
+  gap: z.number(),
+  spacing: z.number(),
+});
+
+export type PowerToughnessRow = z.infer<typeof PowerToughnessRowSchema>;
+
 /** The five colors and colorless, the keys of a mana symbol color map. */
 export const ManaColorEnum = z.enum(["W", "U", "B", "R", "G", "C"]);
 
@@ -624,6 +647,7 @@ export const LayoutConfigSchema = z.object({
   /** Shapes painted in the card's colors. See `TintedImageSchema`. */
   tintedImages: z.array(TintedImageSchema).readonly().optional(),
   rulesSlide: RulesSlideSchema.optional(),
+  powerToughnessRow: PowerToughnessRowSchema.optional(),
   manaSymbols: ManaSymbolStyleSchema.optional(),
   crownConfig: CrownRenderConfigSchema.optional(),
   nicknameConfig: NicknameRenderConfigSchema.optional(),

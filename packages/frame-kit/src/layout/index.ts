@@ -89,6 +89,11 @@ export {
   resolveBaseFrame,
   resolveFrameAsset,
 } from "./resolveFrameAsset.js";
+export {
+  type PowerToughnessRowPlacement,
+  type PowerToughnessRowWidths,
+  powerToughnessRow,
+} from "./powerToughnessRow.js";
 export { rulesSlideOffset, slideBoxes } from "./rulesSlide.js";
 export {
   type SettingValue,

@@ -91,6 +91,13 @@ export const TintedImageSchema = z.object({
   ]),
   /** Drawn only on a card with power and toughness, as the P/T is. */
   showWith: z.literal("powerToughness").optional(),
+  /**
+   * Placed beside a number of the layout's `powerToughnessRow`: the image's
+   * right edge goes the row's `gap` left of that number, so it moves with
+   * the number as it widens, and `x` only nudges it from there (usually 0).
+   * Without a row, `x` places it as usual.
+   */
+  ptSlot: z.enum(["power", "toughness"]).optional(),
   /** Moves with the boxes when the layout's `rulesSlide` moves them. */
   slides: z.boolean().optional(),
   /**

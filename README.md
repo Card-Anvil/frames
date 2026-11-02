@@ -327,6 +327,21 @@ the layout paints whatever else it wants over it.
   ```
 
 - **`power` and `toughness`** boxes print the two apart rather than as `P/T`.
+  With a **`powerToughnessRow`**, they are laid out from the row's right edge,
+  each with the tinted images marked `ptSlot` beside it, so `10` or `100` moves
+  everything left of it instead of overflowing its box:
+
+  ```ts
+  powerToughnessRow: { right: 2883, gap: 18, spacing: 59 },
+  tintedImages: [
+    { src: sword, x: 0, y: 4035, width: 113, height: 110, ptSlot: "power", /* … */ },
+    { src: shield, x: 0, y: 4033, width: 106, height: 117, ptSlot: "toughness", /* … */ },
+  ],
+  ```
+
+  With no symbol drawn in either slot, say when a setting turns them off, the
+  two print as one `P/T` ending at `right`, in the `toughness` box's style.
+
 - **`rulesSlide`** moves the boxes above the rules text down, in steps, when
   the text leaves room, and every gradient and tinted image marked `slides` with
   them, so short text shows more art.

@@ -67,7 +67,7 @@ const KIND_BY_SCHEMA = new Map<z.ZodType, SlotKind>([
 /**
  * Whether a schema is a plain object of numbers — a layout's render knobs
  * (`planeswalkerConfig`, `sagaConfig`, `sectionConfig`, `crownConfig`,
- * `nicknameConfig`).
+ * `nicknameConfig`, `powerToughnessRow`).
  *
  * Recognised by shape rather than by name, so a knob group added to the
  * contract is editable in the studio without a change here. Records and enums
