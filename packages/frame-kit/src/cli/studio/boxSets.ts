@@ -65,9 +65,10 @@ const KIND_BY_SCHEMA = new Map<z.ZodType, SlotKind>([
 ]);
 
 /**
- * Whether a schema is a plain object of numbers — a layout's render knobs
+ * Whether a schema is an object of numbers — a layout's render knobs
  * (`planeswalkerConfig`, `sagaConfig`, `sectionConfig`, `crownConfig`,
- * `nicknameConfig`, `powerToughnessRow`).
+ * `nicknameConfig`, `powerToughnessRow`). A group may also hold objects, such
+ * as `planeswalkerConfig.abilityDivider`; the studio edits only its numbers.
  *
  * Recognised by shape rather than by name, so a knob group added to the
  * contract is editable in the studio without a change here. Records and enums
@@ -80,12 +81,13 @@ function isNumericObject(schema: z.ZodType): boolean {
     return false;
   }
   const fields: z.ZodType[] = Object.values(node.shape);
+  const types = fields.map(
+    (field) => (unwrap(field).inner.def as SchemaNode).type,
+  );
+  const isKnob = (type: string) => type === "number" || type === "boolean";
   return (
-    fields.length > 0 &&
-    fields.every((field) => {
-      const inner = unwrap(field).inner.def as SchemaNode;
-      return inner.type === "number" || inner.type === "boolean";
-    })
+    types.some(isKnob) &&
+    types.every((type) => isKnob(type) || type === "object")
   );
 }
 

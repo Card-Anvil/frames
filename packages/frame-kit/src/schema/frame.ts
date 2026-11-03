@@ -362,6 +362,13 @@ export const PlaneswalkerRenderConfigSchema = z.object({
    */
   abilityBacking: z.boolean().optional(),
   /**
+   * A rule painted where each two abilities meet, as a layout's `gradients`
+   * are: over the art, under the text. Its `y` is measured from where they
+   * meet rather than from the sheet's top, so `-height / 2` centers it there.
+   * For a frame without bands, whose art shows through the ability box.
+   */
+  abilityDivider: GradientSchema.omit({ slides: true, when: true }).optional(),
+  /**
    * How far each loyalty badge sits below the center of its ability, in px.
    * Defaults suit M15's badges — plus 0, minus 34, zero 16 — so a badge whose
    * point hangs below its body sits low enough for the body to center.
