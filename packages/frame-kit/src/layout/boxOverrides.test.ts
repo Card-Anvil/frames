@@ -53,6 +53,24 @@ function collector(
 }
 
 describe("resolveBoxOverrides", () => {
+  const byFrameColor = {
+    ...text,
+    overrides: [
+      { when: { frameColor: "l" }, style: { color: "orange" } },
+      { when: { frameColor: ["a", "c", "v"] }, style: { color: "cyan" } },
+    ],
+  } satisfies TextBox;
+
+  it("merges an override whose frame color matches", () => {
+    expect(collector(byFrameColor, { frameColor: "l" })?.color).toBe("orange");
+    expect(collector(byFrameColor, { frameColor: "v" })?.color).toBe("cyan");
+    expect(collector(byFrameColor, { frameColor: "w" })?.color).toBe("white");
+  });
+
+  it("never matches a frame color without a card", () => {
+    expect(collector(byFrameColor)?.color).toBe("white");
+  });
+
   it("merges an override whose border matches", () => {
     expect(collector(onBorder, { border: "light" })).toEqual({
       ...text,

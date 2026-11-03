@@ -13,6 +13,8 @@ export interface TextShadow {
   /** In canvas pixels. */
   offsetX: number;
   offsetY: number;
+  /** In canvas pixels; 0 is a hard edge. */
+  blur: number;
 }
 
 type StyledBox = Pick<
@@ -23,6 +25,7 @@ type StyledBox = Pick<
   | "shadow"
   | "shadowOffsetX"
   | "shadowOffsetY"
+  | "shadowBlur"
 >;
 
 /** A box's outline, when it sets both an `outlineColor` and an `outlineWidth`. */
@@ -49,5 +52,6 @@ export function textShadowFor(box: StyledBox): TextShadow | undefined {
     color: TEXT_SHADOW_COLOR,
     offsetX: box.shadowOffsetX ?? -(box.fontSize * 0.029),
     offsetY: box.shadowOffsetY ?? box.fontSize * 0.075,
+    blur: box.shadowBlur ?? 0,
   };
 }

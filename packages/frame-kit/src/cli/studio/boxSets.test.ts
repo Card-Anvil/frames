@@ -50,6 +50,7 @@ describe("layoutSlots", () => {
       "crownConfig",
       "nicknameConfig",
       "planeswalkerConfig",
+      "powerToughnessRow",
       "sagaConfig",
       "sectionConfig",
     ]);

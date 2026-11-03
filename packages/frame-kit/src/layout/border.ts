@@ -1,4 +1,4 @@
-import type { BorderState } from "../schema/frame.js";
+import type { BorderState } from "../schema/condition.js";
 import type { LayoutMasks } from "../schema/frameAssets.js";
 import { getReadableTextColor, parseNormalizedCssColor } from "./color.js";
 

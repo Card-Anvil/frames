@@ -2,12 +2,19 @@ import { z } from "zod";
 
 import { AssetUrlSchema } from "./assetUrl.js";
 import { CollectorInfoLineSchema } from "./collectorInfo.js";
+import { RenderConditionSchema } from "./condition.js";
 import {
   FrameAssetsSchema,
   FrameColorEnum,
   LayoutMasksSchema,
 } from "./frameAssets.js";
 import { LayoutEnum } from "./layout.js";
+import {
+  GradientSchema,
+  HexColorSchema,
+  SlidingBoxEnum,
+  TintedImageSchema,
+} from "./paint.js";
 
 export interface Bounds {
   x: number;
@@ -60,6 +67,9 @@ const TextBoxFieldsSchema = BoundsSchema.extend({
    * `shadow` is true. */
   shadowOffsetX: z.number().optional(),
   shadowOffsetY: z.number().optional(),
+  /** How far the drop-shadow is blurred, in px. Defaults to 0, a hard edge.
+   * Plain-text boxes only, and only meaningful when `shadow` is true. */
+  shadowBlur: z.number().nonnegative().optional(),
   /** Shaped-text mask: a full-canvas-sized PNG whose opaque pixels define the
    * region text in this box may occupy. Alpha is what matters (any pixel with
    * alpha > ~12% counts as inside), so color is irrelevant. Each wrapped line
@@ -74,45 +84,12 @@ const TextBoxFieldsSchema = BoundsSchema.extend({
 });
 
 /**
- * The frame's outer border as the renderer is about to draw it — what a text
- * box's `overrides` match on through `when.border`:
- *
- * - `"default"`: the frame's own border art, untouched by any border setting.
- * - `"light"` / `"dark"`: a user border color recolors the ring, because the
- *   layout ships a `border` mask (or `borderFull`, under `useFullBorder`).
- *   `"light"` when black text reads better on the chosen color (WCAG
- *   contrast), `"dark"` when white does.
- * - `"none"`: "No Border" is on and the layout ships a `noBorder` mask, so the
- *   ring is cut away and whatever sat on it now sits over the art.
- *
- * Only a layout with those masks ever leaves `"default"`, so a condition on
- * any other state never fires for a frame whose border cannot be recolored or
- * removed.
- */
-export const BorderStateSchema = z.enum(["default", "light", "dark", "none"]);
-
-export type BorderState = z.infer<typeof BorderStateSchema>;
-
-/**
  * One conditional restyle of a text box: when every condition in `when` holds
  * for a render, `style` is merged over the box. A condition left out matches
  * anything.
  */
 export const TextBoxOverrideSchema = z.object({
-  when: z.object({
-    /** The border state to match; an array matches any of its states. */
-    border: z
-      .union([BorderStateSchema, z.array(BorderStateSchema).readonly()])
-      .optional(),
-    /**
-     * Template settings that must hold, each compared with `===` against the
-     * value in effect for the layout — frame- and layout-level settings
-     * merged, defaults included. E.g. `{ useFullBorder: true }`.
-     */
-    settings: z
-      .record(z.string(), z.union([z.boolean(), z.string(), z.number()]))
-      .optional(),
-  }),
+  when: RenderConditionSchema,
   /**
    * The fields to replace. Style only: parts of the app read box geometry
    * without resolving overrides, so a conditional size or position would put
@@ -125,13 +102,14 @@ export const TextBoxOverrideSchema = z.object({
     shadow: true,
     shadowOffsetX: true,
     shadowOffsetY: true,
+    shadowBlur: true,
     opacity: true,
   }),
 });
 
 export type TextBoxOverride = z.infer<typeof TextBoxOverrideSchema>;
 
-export const TextBoxSchema = TextBoxFieldsSchema.extend({
+const textBoxSchema = TextBoxFieldsSchema.extend({
   /**
    * Conditional restyles, applied in order at render time — where two matches
    * set the same field, the later one wins. This is how a box adapts to the
@@ -142,6 +120,18 @@ export const TextBoxSchema = TextBoxFieldsSchema.extend({
    */
   overrides: z.array(TextBoxOverrideSchema).readonly().optional(),
 });
+
+type TextBoxSchemaShape = typeof textBoxSchema;
+
+/**
+ * `TextBoxSchema`'s type, named. A text box appears in every box set of every
+ * layout, and spelled out in full at each of them the declaration output
+ * outgrows what TypeScript will write (TS7056); named, it is written once.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- a name for the type, nothing more
+export interface TextBoxSchemaType extends TextBoxSchemaShape {}
+
+export const TextBoxSchema: TextBoxSchemaType = textBoxSchema;
 
 export type TextBox = z.infer<typeof TextBoxSchema>;
 
@@ -216,6 +206,13 @@ export const CardBoxesSchema = z.object({
   abilities: TextBoxSchema.optional(),
   pt: TextBoxSchema.optional(),
   ptImage: z.object({ x: z.number(), y: z.number() }).optional(),
+  /**
+   * Power and toughness each in a box of its own, for a frame that prints
+   * them apart rather than as one `power/toughness`. Both are needed; with
+   * them, `pt` is not drawn.
+   */
+  power: TextBoxSchema.optional(),
+  toughness: TextBoxSchema.optional(),
   collectorInfo: CollectorInfoBoxSchema.optional(),
   startingLoyalty: TextBoxSchema.optional(),
   nicknameTitle: TextBoxSchema.optional(),
@@ -288,6 +285,9 @@ export const SecondFaceBoxesSchema = z.object({
   setSymbol: SetSymbolBoxSchema.optional(),
   rules: TextBoxSchema.optional(),
   pt: TextBoxSchema.optional(),
+  /** Power and toughness apart, as on the first face's set. */
+  power: TextBoxSchema.optional(),
+  toughness: TextBoxSchema.optional(),
 });
 
 export type SecondFaceBoxes = z.infer<typeof SecondFaceBoxesSchema>;
@@ -366,6 +366,17 @@ export const PlaneswalkerRenderConfigSchema = z.object({
    * ability box, and give the abilities box an outline so the text reads.
    */
   abilityBacking: z.boolean().optional(),
+  /**
+   * A rule painted where each two abilities meet, as a layout's `gradients`
+   * are: over the art, under the text. Its `y` is measured from where they
+   * meet rather than from the sheet's top, so `-height / 2` centers it there.
+   * For a frame without bands, whose art shows through the ability box.
+   */
+  abilityDivider: GradientSchema.omit({
+    anchor: true,
+    slides: true,
+    when: true,
+  }).optional(),
   /**
    * How far each loyalty badge sits below the center of its ability, in px.
    * Defaults suit M15's badges — plus 0, minus 34, zero 16 — so a badge whose
@@ -464,6 +475,77 @@ export const SectionDividerPlacementSchema = z.object({
 export type SectionDividerPlacement = z.infer<
   typeof SectionDividerPlacementSchema
 >;
+
+/**
+ * Moves the boxes above the rules text down when the text leaves room, so
+ * short text shows more art — in whole `step`s, never more than `maxSteps`.
+ *
+ * The room is the `rules` box's height less the fitted text's and `padding`.
+ * The listed `boxes`, every gradient anchored to one of them, and every
+ * gradient and tinted image marked `slides`, go down by the slide; the
+ * `rules` box's top goes down with them while its bottom stays, so the text,
+ * centered in it, goes down by half. Everything else — collector info, power
+ * and toughness — stays put.
+ *
+ * Only a card whose rules are drawn in the `rules` box slides: not a
+ * planeswalker, Saga, Class or Case.
+ */
+export const RulesSlideSchema = z.object({
+  padding: z.number().nonnegative(),
+  step: z.number().positive(),
+  maxSteps: z.number().int().nonnegative(),
+  boxes: z.array(SlidingBoxEnum).readonly(),
+});
+
+export type RulesSlide = z.infer<typeof RulesSlideSchema>;
+
+/**
+ * Power and toughness laid out as a row from its right edge, for a frame that
+ * prints them apart: the toughness ends at `right`, its symbol sits `gap`
+ * left of it, the power ends `spacing` left of that symbol, and the power's
+ * symbol sits `gap` left of the power. A wider number — `10`, `100`, `*`
+ * — moves everything left of it.
+ *
+ * The symbols are the tinted images marked `ptSlot`. The `power` and
+ * `toughness` boxes still give each number's font, size, color and height;
+ * only their `x` and `width` are worked out. First face only, as tinted
+ * images are.
+ *
+ * With no symbol drawn in either slot, say when a setting turns them off, the
+ * two print as one `P/T` ending at `right`, in the `toughness` box's style.
+ */
+export const PowerToughnessRowSchema = z.object({
+  right: z.number(),
+  gap: z.number(),
+  spacing: z.number(),
+});
+
+export type PowerToughnessRow = z.infer<typeof PowerToughnessRowSchema>;
+
+/** The five colors and colorless, the keys of a mana symbol color map. */
+export const ManaColorEnum = z.enum(["W", "U", "B", "R", "G", "C"]);
+
+/**
+ * How the card's mana symbols are drawn, wherever they appear: the mana cost,
+ * rules text, abilities, and the keyword and flipside boxes alike.
+ */
+export const ManaSymbolStyleSchema = z.object({
+  /**
+   * `"filled"` is the usual solid pip. `"hollow"` draws the same symbols as a
+   * ring with the glyph inside it, and a hybrid as two half rings.
+   */
+  style: z.enum(["filled", "hollow"]).optional(),
+  /** The pip (or ring) color per mana color, in place of the app's. */
+  colors: z.partialRecord(ManaColorEnum, HexColorSchema).optional(),
+  /**
+   * The glyph color per mana color, in place of the app's black. `C` is also
+   * the glyph color of every symbol of no color: generic mana, `{C}`, `{T}`,
+   * `{X}` and the like.
+   */
+  glyphColors: z.partialRecord(ManaColorEnum, HexColorSchema).optional(),
+});
+
+export type ManaSymbolStyle = z.infer<typeof ManaSymbolStyleSchema>;
 
 const CrownRenderConfigSchema = z.object({
   x: z.number(),
@@ -572,6 +654,13 @@ export const LayoutConfigSchema = z.object({
    * without one draws none.
    */
   sectionDividers: z.array(SectionDividerPlacementSchema).optional(),
+  /** Painted over the art and under the text, in order. See `GradientSchema`. */
+  gradients: z.array(GradientSchema).readonly().optional(),
+  /** Shapes painted in the card's colors. See `TintedImageSchema`. */
+  tintedImages: z.array(TintedImageSchema).readonly().optional(),
+  rulesSlide: RulesSlideSchema.optional(),
+  powerToughnessRow: PowerToughnessRowSchema.optional(),
+  manaSymbols: ManaSymbolStyleSchema.optional(),
   crownConfig: CrownRenderConfigSchema.optional(),
   nicknameConfig: NicknameRenderConfigSchema.optional(),
   templateSettings: TemplateSettingsConfigSchema.optional(),
@@ -700,6 +789,33 @@ export const TemplateConfigSchema = z.object({
 
 export type TemplateConfig = z.infer<typeof TemplateConfigSchema>;
 
+/**
+ * A font the frame ships, for its text boxes to name in `fontFamily`.
+ *
+ * `family` is the frame's own name for it and only means something inside
+ * this frame: the app keeps each frame's fonts apart, so a frame can neither
+ * replace a font the app has (a `family` of "Beleren" is still the frame's
+ * file, not the app's) nor clash with another frame's. A box naming a family
+ * the frame does not ship gets the app's font of that name, as before.
+ *
+ * Ship only a font whose license lets it be redistributed. One entry per
+ * weight and style; a family with a bold face lists it as a second entry.
+ */
+export const FrameFontSchema = z.object({
+  family: z.string().min(1),
+  src: AssetUrlSchema,
+  weight: z.enum(["normal", "bold"]).optional(),
+  style: z.enum(["normal", "italic"]).optional(),
+  /**
+   * The font's PostScript name, which a PSD export names its text layers by
+   * so Photoshop finds the font when it is installed. Left out, a PSD export
+   * leaves text in this font as pixels rather than a text layer.
+   */
+  postScriptName: z.string().optional(),
+});
+
+export type FrameFont = z.infer<typeof FrameFontSchema>;
+
 export const FrameSchema = z.object({
   name: z.string(),
   description: z.string(),
@@ -707,6 +823,8 @@ export const FrameSchema = z.object({
   tags: z.array(z.string()),
   disabled: z.boolean().optional(),
   templateSettings: TemplateSettingsConfigSchema.optional(),
+  /** Fonts the frame ships. See `FrameFontSchema`. */
+  fonts: z.array(FrameFontSchema).readonly().optional(),
   config: TemplateConfigSchema,
 });
 
