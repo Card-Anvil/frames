@@ -1,5 +1,5 @@
 import type { RenderCondition } from "../schema/condition.js";
-import type { LayoutConfig } from "../schema/frame.js";
+import type { CardBoxes, LayoutConfig } from "../schema/frame.js";
 import type { FrameColor } from "../schema/frameAssets.js";
 import type {
   CardColors,
@@ -213,6 +213,22 @@ export function gradientStops(
       color: `rgba(${channels.join(", ")}, ${String(round(opacity, 4))})`,
     };
   });
+}
+
+/**
+ * How far down from its own `y` a gradient is painted for a card drawn with
+ * `boxes`, which a `rulesSlide` has moved `slideOffset`: its anchor box's top
+ * if it has one, otherwise `slideOffset` if it `slides`, else 0.
+ */
+export function gradientOffsetY(
+  gradient: Gradient,
+  boxes: CardBoxes,
+  slideOffset: number,
+): number {
+  if (gradient.anchor) {
+    return boxes[gradient.anchor].y;
+  }
+  return gradient.slides === true ? slideOffset : 0;
 }
 
 /**

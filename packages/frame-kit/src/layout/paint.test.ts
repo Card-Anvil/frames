@@ -4,6 +4,7 @@ import type { Gradient, TintedImage } from "../schema/paint.js";
 import { type FrameDetails, frameDetailsFor } from "./frameLayers.js";
 import {
   cardColorParts,
+  gradientOffsetY,
   gradientStops,
   paintedFor,
   printedColorOrder,
@@ -229,5 +230,41 @@ describe("paintedFor", () => {
 
   it("leaves a layout without them alone", () => {
     expect(paintedFor({}, { border: "default", settings: {} })).toEqual({});
+  });
+});
+
+describe("gradientOffsetY", () => {
+  const rule: Gradient = {
+    x: 0,
+    y: 120,
+    width: 10,
+    height: 9,
+    color: "#000000",
+    opacity: [
+      { at: 0, opacity: 0 },
+      { at: 1, opacity: 1 },
+    ],
+  };
+  const box = (y: number) => ({ x: 0, y, width: 10, height: 10, fontSize: 70 });
+  const boxes = {
+    art: { x: 0, y: 0, width: 10, height: 10 },
+    mana: box(2544),
+    title: box(2729),
+    type: box(2885),
+    setSymbol: { x: 0, y: 2880, width: 10, height: 10 },
+  };
+
+  it("moves an anchored gradient to its box, slid or not", () => {
+    const anchored = { ...rule, anchor: "type" as const };
+    expect(gradientOffsetY(anchored, boxes, 148)).toBe(2885);
+    expect(gradientOffsetY({ ...anchored, slides: true }, boxes, 148)).toBe(
+      2885,
+    );
+    expect(gradientOffsetY({ ...rule, anchor: "mana" }, boxes, 0)).toBe(2544);
+  });
+
+  it("moves an unanchored gradient only when it slides", () => {
+    expect(gradientOffsetY(rule, boxes, 148)).toBe(0);
+    expect(gradientOffsetY({ ...rule, slides: true }, boxes, 148)).toBe(148);
   });
 });

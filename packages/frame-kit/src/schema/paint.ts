@@ -40,6 +40,14 @@ export const OpacityStopSchema = z.object({
 export type OpacityStop = z.infer<typeof OpacityStopSchema>;
 
 /**
+ * The boxes a `rulesSlide` can move, and a gradient can be anchored to: the
+ * header above the rules text.
+ */
+export const SlidingBoxEnum = z.enum(["mana", "title", "type", "setSymbol"]);
+
+export type SlidingBox = z.infer<typeof SlidingBoxEnum>;
+
+/**
  * A rectangle painted on the sheet over the art and under the text, its
  * opacity changing along `direction` by `opacity`, which needs at least two
  * stops. Drawn in the order listed, above the frame art.
@@ -63,6 +71,14 @@ export const GradientSchema = z.object({
     }),
   ]),
   opacity: z.array(OpacityStopSchema).min(2).readonly(),
+  /**
+   * The box the gradient moves with. Its `y` is then measured from that box's
+   * top in the boxes the card is drawn with — whichever set the layout picks
+   * for it (a planeswalker's by how many abilities it has) and wherever a
+   * `rulesSlide` has moved them. Takes the place of `slides`, which it
+   * ignores.
+   */
+  anchor: SlidingBoxEnum.optional(),
   /** Moves with the boxes when the layout's `rulesSlide` moves them. */
   slides: z.boolean().optional(),
   /** Drawn only on a render where this holds, e.g. a template setting's value. */

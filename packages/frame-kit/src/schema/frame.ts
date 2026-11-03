@@ -9,7 +9,12 @@ import {
   LayoutMasksSchema,
 } from "./frameAssets.js";
 import { LayoutEnum } from "./layout.js";
-import { GradientSchema, HexColorSchema, TintedImageSchema } from "./paint.js";
+import {
+  GradientSchema,
+  HexColorSchema,
+  SlidingBoxEnum,
+  TintedImageSchema,
+} from "./paint.js";
 
 export interface Bounds {
   x: number;
@@ -367,7 +372,11 @@ export const PlaneswalkerRenderConfigSchema = z.object({
    * meet rather than from the sheet's top, so `-height / 2` centers it there.
    * For a frame without bands, whose art shows through the ability box.
    */
-  abilityDivider: GradientSchema.omit({ slides: true, when: true }).optional(),
+  abilityDivider: GradientSchema.omit({
+    anchor: true,
+    slides: true,
+    when: true,
+  }).optional(),
   /**
    * How far each loyalty badge sits below the center of its ability, in px.
    * Defaults suit M15's badges — plus 0, minus 34, zero 16 — so a badge whose
@@ -467,20 +476,16 @@ export type SectionDividerPlacement = z.infer<
   typeof SectionDividerPlacementSchema
 >;
 
-/** The boxes a `rulesSlide` can move. */
-export const SlidingBoxEnum = z.enum(["mana", "title", "type", "setSymbol"]);
-
-export type SlidingBox = z.infer<typeof SlidingBoxEnum>;
-
 /**
  * Moves the boxes above the rules text down when the text leaves room, so
  * short text shows more art — in whole `step`s, never more than `maxSteps`.
  *
  * The room is the `rules` box's height less the fitted text's and `padding`.
- * The listed `boxes`, and every gradient and tinted image marked `slides`, go
- * down by the slide; the `rules` box's top goes down with them while its
- * bottom stays, so the text, centered in it, goes down by half. Everything
- * else — collector info, power and toughness — stays put.
+ * The listed `boxes`, every gradient anchored to one of them, and every
+ * gradient and tinted image marked `slides`, go down by the slide; the
+ * `rules` box's top goes down with them while its bottom stays, so the text,
+ * centered in it, goes down by half. Everything else — collector info, power
+ * and toughness — stays put.
  *
  * Only a card whose rules are drawn in the `rules` box slides: not a
  * planeswalker, Saga, Class or Case.

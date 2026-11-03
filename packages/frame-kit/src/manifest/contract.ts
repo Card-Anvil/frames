@@ -22,8 +22,9 @@ import { FrameSchema } from "../schema/frame.js";
  *   the optional `when` on gradients and tinted images, the same conditions
  *   as `overrides`, so a template setting can pick which are drawn; and the
  *   optional `powerToughnessRow` on a layout, with `ptSlot` on the tinted
- *   images it places; and the optional planeswalker `abilityDivider`, a
- *   gradient painted where each two abilities meet.
+ *   images it places; the optional planeswalker `abilityDivider`, a
+ *   gradient painted where each two abilities meet; and the optional
+ *   `anchor` on gradients, the box one moves with.
  *   A layout's `base` frame art may now be empty, for a frame with none.
  * - 1.12: added the optional planeswalker knobs `abilityFill`,
  *   `abilityFillSize`, `minFontSize`, `lineHeightRatio`, `badgeSlotHeight` and

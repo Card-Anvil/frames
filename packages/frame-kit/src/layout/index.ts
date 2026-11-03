@@ -78,6 +78,7 @@ export {
 export {
   type PaintStop,
   cardColorParts,
+  gradientOffsetY,
   gradientStops,
   paintedFor,
   printedColorOrder,
