@@ -417,8 +417,9 @@ function pageOverlays(
  * splits the frame's own pinlines, and lays gold over the title and type bars
  * as the regular frame has them, and over the book's page edges (`wings`).
  * Each page is then coloured on its own: the right by the card's pinline
- * colours, the left by `adventureColors`, the adventure's colours in WUBRG
- * order. An adventure with no colours takes the card's.
+ * colours, the left by `adventureColors`, the adventure's colours in the
+ * order cards print them (see `printedColorOrder`). An adventure with no
+ * colours takes the card's.
  */
 export function selectStorybookFrameLayers(
   details: FrameDetails,
@@ -512,10 +513,17 @@ export interface CardShape {
   readonly isLegendary?: boolean;
 }
 
-/** WUBRG order, which every colour combination is normalised into. */
+/**
+ * A card's colours as one string, in the order cards print them: `GW`, not
+ * `WG`. Card Anvil orders a card's identity the same way, and a two-colour
+ * split reads its left half from the first letter, so a plain WUBRG sort
+ * would swap the halves of GW, GU and RW cards. Four colours stay WUBRG.
+ */
 export function orderColors(colors: readonly FrameColor[]): string {
   const wanted = new Set(colors.map((color) => color.toUpperCase()));
-  return COLOR_ORDER.filter((letter) => wanted.has(letter)).join("");
+  return printedColorOrder(
+    COLOR_ORDER.filter((letter) => wanted.has(letter)).join(""),
+  );
 }
 
 /**
