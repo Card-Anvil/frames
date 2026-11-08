@@ -71,6 +71,7 @@ export {
   frameFamily,
   makeFamilyRef,
   orderColors,
+  printedColorOrder,
   selectFrameLayers,
   selectStorybookFrameLayers,
   splitTwoColor,
@@ -81,7 +82,6 @@ export {
   gradientOffsetY,
   gradientStops,
   paintedFor,
-  printedColorOrder,
   tintColor,
 } from "./paint.js";
 export {

@@ -6,6 +6,7 @@ import {
   familyFor,
   frameDetailsFor,
   orderColors,
+  printedColorOrder,
   selectFrameLayers,
   selectStorybookFrameLayers,
   splitTwoColor,
@@ -21,6 +22,21 @@ describe("orderColors", () => {
     expect(orderColors(["g", "w", "u"])).toBe("WUG");
     expect(orderColors(["u", "w"])).toBe("WU");
     expect(orderColors([])).toBe("");
+  });
+});
+
+describe("printedColorOrder", () => {
+  it("puts pairs and triples in the order cards print them", () => {
+    expect(printedColorOrder("UW")).toBe("WU");
+    expect(printedColorOrder("WG")).toBe("GW");
+    expect(printedColorOrder("UGW")).toBe("GWU");
+    expect(printedColorOrder("WUR")).toBe("URW");
+  });
+
+  it("leaves anything else as it came", () => {
+    expect(printedColorOrder("W")).toBe("W");
+    expect(printedColorOrder("WUBR")).toBe("WUBR");
+    expect(printedColorOrder("Gold")).toBe("Gold");
   });
 });
 

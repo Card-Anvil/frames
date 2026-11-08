@@ -10,48 +10,12 @@ import type {
 import { type OverrideState, overrideMatches } from "./boxOverrides.js";
 import { type RgbColor, parseNormalizedCssColor } from "./color.js";
 import {
-  COLOR_ORDER,
+  COLOR_LETTERS,
   type FrameDetails,
   LAYERS,
   colorToken,
+  printedColorOrder,
 } from "./frameLayers.js";
-
-/**
- * Two- and three-color combinations in the order cards print them: allied
- * pairs then enemy pairs, shards then wedges. Mirrors Card Anvil's
- * `frameLogic.ts` lookup.
- */
-const PRINTED_ORDERS = [
-  "WU",
-  "UB",
-  "BR",
-  "RG",
-  "GW",
-  "WB",
-  "BG",
-  "GU",
-  "UR",
-  "RW",
-  "GWU",
-  "WUB",
-  "UBR",
-  "BRG",
-  "RGW",
-  "WBG",
-  "URW",
-  "BGU",
-  "RWB",
-  "GUR",
-] as const;
-
-const sortedKey = (colors: string): string =>
-  Array.from(colors).sort().join("");
-
-const PRINTED_ORDER_BY_KEY = new Map<string, string>(
-  PRINTED_ORDERS.map((combo) => [sortedKey(combo), combo]),
-);
-
-const COLOR_LETTERS = new Set<string>(COLOR_ORDER);
 
 /** Whether `value` is two or three distinct mana colors, e.g. `UW`. */
 function isColorCombo(value: string): boolean {
@@ -60,14 +24,6 @@ function isColorCombo(value: string): boolean {
     new Set(value).size === value.length &&
     Array.from(value).every((letter) => COLOR_LETTERS.has(letter))
   );
-}
-
-/**
- * Two or three colors in the order cards print them (`UW` → `WU`, `UGW` →
- * `GWU`); anything else as it came.
- */
-export function printedColorOrder(colors: string): string {
-  return PRINTED_ORDER_BY_KEY.get(sortedKey(colors)) ?? colors;
 }
 
 /**

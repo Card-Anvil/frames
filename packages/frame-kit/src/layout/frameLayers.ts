@@ -22,7 +22,51 @@ export const LAYERS = {
 /** WUBRG in canonical order, which every multi-colour string is sorted into. */
 export const COLOR_ORDER = ["W", "U", "B", "R", "G"] as const;
 
-const COLOR_LETTERS = new Set<string>(COLOR_ORDER);
+/** The five colour letters, for checking a string is made of them. */
+export const COLOR_LETTERS: ReadonlySet<string> = new Set<string>(COLOR_ORDER);
+
+/**
+ * Two- and three-colour combinations in the order cards print them: allied
+ * pairs then enemy pairs, shards then wedges. Mirrors Card Anvil's
+ * `frameLogic.ts` lookup.
+ */
+const PRINTED_ORDERS = [
+  "WU",
+  "UB",
+  "BR",
+  "RG",
+  "GW",
+  "WB",
+  "BG",
+  "GU",
+  "UR",
+  "RW",
+  "GWU",
+  "WUB",
+  "UBR",
+  "BRG",
+  "RGW",
+  "WBG",
+  "URW",
+  "BGU",
+  "RWB",
+  "GUR",
+] as const;
+
+const sortedKey = (colors: string): string =>
+  Array.from(colors).sort().join("");
+
+const PRINTED_ORDER_BY_KEY = new Map<string, string>(
+  PRINTED_ORDERS.map((combo) => [sortedKey(combo), combo]),
+);
+
+/**
+ * Two or three colours in the order cards print them (`UW` → `WU`, `UGW` →
+ * `GWU`); anything else as it came.
+ */
+export function printedColorOrder(colors: string): string {
+  return PRINTED_ORDER_BY_KEY.get(sortedKey(colors)) ?? colors;
+}
 
 /**
  * What the frame logic concluded about a card, before any art is chosen.

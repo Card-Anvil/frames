@@ -7,7 +7,6 @@ import {
   gradientOffsetY,
   gradientStops,
   paintedFor,
-  printedColorOrder,
   tintColor,
 } from "./paint.js";
 
@@ -33,21 +32,6 @@ const palette = {
   l: "#d9c272",
   v: "#6f533d",
 } as const;
-
-describe("printedColorOrder", () => {
-  it("puts pairs and triples in the order cards print them", () => {
-    expect(printedColorOrder("UW")).toBe("WU");
-    expect(printedColorOrder("WG")).toBe("GW");
-    expect(printedColorOrder("UGW")).toBe("GWU");
-    expect(printedColorOrder("WUR")).toBe("URW");
-  });
-
-  it("leaves anything else as it came", () => {
-    expect(printedColorOrder("W")).toBe("W");
-    expect(printedColorOrder("WUBR")).toBe("WUBR");
-    expect(printedColorOrder("Gold")).toBe("Gold");
-  });
-});
 
 describe("cardColorParts", () => {
   it("paints a mono-color card its color", () => {
