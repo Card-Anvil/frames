@@ -268,6 +268,89 @@ gives them to the collector info it fills in, because the collector line usually
 sits on the ring. Give the bounds your own `overrides` to replace them — `[]`
 when your collector line sits somewhere the border settings never reach.
 
+`when.frameColor` matches the card's frame color — `w u b r g` for one color,
+`m` for gold and two-color hybrids, `a c l v` for artifacts, colorless cards,
+lands and vehicles — so text can take the card's color:
+
+```ts
+type: {
+  ...bounds,
+  color: "#ecd379",
+  overrides: [
+    { when: { frameColor: "r" }, style: { color: "#f13e35" } },
+    { when: { frameColor: ["a", "c", "v"] }, style: { color: "#c0fffa" } },
+  ],
+}
+```
+
+## Frames without frame art
+
+A layout whose `base` is empty has no frame art: the art runs to the edges, and
+the layout paints whatever else it wants over it.
+
+- **`gradients`** paint rectangles whose opacity changes down or across them, in
+  one color or in the card's colors from a `palette` — split side by side for a
+  two- or three-color card up to `maxParts`, blended over `blend` px. Write the
+  opacity from a formula with `opacityStopsFrom`:
+
+  ```ts
+  import { opacityStopsFrom } from "@cardanvil/frame-kit";
+
+  const fade = {
+    x: 0,
+    y: 1592,
+    width: 3264,
+    height: 3231,
+    color: "#000000",
+    opacity: opacityStopsFrom((t) => (253 / 255) * (1 - (1 - t * t) ** 8)),
+    slides: true,
+  };
+  ```
+
+- **`tintedImages`** draw an image recolored in the card's colors, keeping its
+  own alpha: one shape shipped once instead of a copy per color. `part` picks
+  which of a multicolor card's colors, and `showWith: "powerToughness"` draws it
+  only on a card with power and toughness.
+- A gradient or tinted image with a **`when`** is drawn only where it holds —
+  the same conditions as a text box's `overrides`. A template setting can pick
+  between sets of them:
+
+  ```ts
+  templateSettings: {
+    ptSymbols: { type: "select", label: "P/T Symbols", defaultValue: "Trix", options: ["Trix", "Portal"] },
+  },
+  // …
+  tintedImages: [
+    { src: trixSword, /* … */ when: { settings: { ptSymbols: "Trix" } } },
+    { src: portalSword, /* … */ when: { settings: { ptSymbols: "Portal" } } },
+  ],
+  ```
+
+- **`power` and `toughness`** boxes print the two apart rather than as `P/T`.
+  With a **`powerToughnessRow`**, they are laid out from the row's right edge,
+  each with the tinted images marked `ptSlot` beside it, so `10` or `100` moves
+  everything left of it instead of overflowing its box:
+
+  ```ts
+  powerToughnessRow: { right: 2883, gap: 18, spacing: 59 },
+  tintedImages: [
+    { src: sword, x: 0, y: 4035, width: 113, height: 110, ptSlot: "power", /* … */ },
+    { src: shield, x: 0, y: 4033, width: 106, height: 117, ptSlot: "toughness", /* … */ },
+  ],
+  ```
+
+  With no symbol drawn in either slot, say when a setting turns them off, the
+  two print as one `P/T` ending at `right`, in the `toughness` box's style.
+
+- **`rulesSlide`** moves the boxes above the rules text down, in steps, when
+  the text leaves room, and every gradient and tinted image marked `slides` with
+  them, so short text shows more art.
+- **`manaSymbols`** draws the card's mana symbols hollow, or in colors of the
+  frame's own.
+- **`fonts`** ship fonts for text boxes to name in `fontFamily`. A frame's fonts
+  are its own: naming one the app also has, such as "Beleren", still draws the
+  frame's file. Ship only fonts whose license allows redistribution.
+
 ## Extending another frame
 
 Frames may build on other frames. Depend on the package and import from its

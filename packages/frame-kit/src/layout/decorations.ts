@@ -37,8 +37,12 @@ export function identityColors(
   if (details.identity.length > 1) {
     return "m";
   }
-  // No identity: a colourless artifact takes the artifact token so its crown
-  // matches its artifact pinlines; anything else stays colourless.
+  // No identity: a land takes the land token so its banners match its land
+  // pinlines, and a colourless artifact the artifact token so they match its
+  // artifact pinlines; anything else stays colourless.
+  if (facts.isLand === true) {
+    return "l";
+  }
   return facts.isArtifact === true ? "a" : "c";
 }
 
@@ -50,19 +54,11 @@ export function crownColors(
   return identityColors(details, facts);
 }
 
-/**
- * Nickname banner colour(s).
- *
- * A land with no resolved identity uses the dedicated land nickname art rather
- * than the colourless one.
- */
+/** Nickname banner colour(s). */
 export function nicknameColors(
   details: FrameDetails,
   facts: DecorationFacts = {},
 ): BannerColors {
-  if (facts.isLand === true && !details.identity) {
-    return "l";
-  }
   return identityColors(details, facts);
 }
 

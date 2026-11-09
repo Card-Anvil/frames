@@ -36,6 +36,15 @@ export function resolveFrameAsset(
   }
 }
 
+/**
+ * Whether a layout has frame art at all. One whose `base` is empty has none:
+ * its art runs to the edges, and whatever it puts over the art — gradients,
+ * tinted images, text — is all there is.
+ */
+export function hasFrameArt(assets: FrameAssets): boolean {
+  return Object.values(assets.base).length > 0;
+}
+
 export interface ResolvedBaseFrame {
   ref: FrameRef;
   url: string;

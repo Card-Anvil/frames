@@ -37,9 +37,12 @@ describe("banner colours", () => {
     expect(colorsFor(crownColors, { isColorless: true })).toBe("c");
   });
 
-  // A land with no colour has its own nickname art, unlike its crown.
-  it("gives a colourless land the land nickname banner", () => {
+  // A land with no colour has its own crown and nickname art, matching its
+  // land pinlines (Academy Ruins taps only for {C}).
+  it("gives a colourless land the land banners", () => {
+    expect(colorsFor(crownColors, { isLand: true })).toBe("l");
     expect(colorsFor(nicknameColors, { isLand: true })).toBe("l");
+    expect(colorsFor(crownColors, { colors: ["g"], isLand: true })).toBe("g");
     expect(colorsFor(nicknameColors, { colors: ["g"], isLand: true })).toBe(
       "g",
     );

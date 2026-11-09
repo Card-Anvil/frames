@@ -1,10 +1,6 @@
-import type {
-  BorderState,
-  CardBoxes,
-  SecondFaceBoxes,
-  TextBox,
-  TextBoxOverride,
-} from "../schema/frame.js";
+import type { BorderState, RenderCondition } from "../schema/condition.js";
+import type { CardBoxes, SecondFaceBoxes, TextBox } from "../schema/frame.js";
+import type { FrameColor } from "../schema/frameAssets.js";
 
 /** What text boxes' `overrides` are matched against, for one render. */
 export interface OverrideState {
@@ -12,6 +8,11 @@ export interface OverrideState {
   border: BorderState;
   /** The template settings in effect for the layout, defaults included. */
   settings: Readonly<Record<string, unknown>>;
+  /**
+   * The card's frame color, when there is a card. A condition on it never
+   * matches without one.
+   */
+  frameColor?: FrameColor;
 }
 
 /**
@@ -25,6 +26,8 @@ const TEXT_BOX_KEYS = [
   "rules",
   "abilities",
   "pt",
+  "power",
+  "toughness",
   "collectorInfo",
   "startingLoyalty",
   "nicknameTitle",
@@ -51,17 +54,29 @@ const SECOND_FACE_TEXT_BOX_KEYS = [
   "type",
   "rules",
   "pt",
+  "power",
+  "toughness",
 ] as const satisfies readonly (keyof SecondFaceBoxes)[];
 
-/** Whether every condition an override names holds for one render. */
+/**
+ * Whether every condition a `RenderCondition` names holds for one render — a
+ * text box override's, a gradient's or a tinted image's.
+ */
 export function overrideMatches(
-  when: TextBoxOverride["when"],
+  when: RenderCondition,
   state: OverrideState,
 ): boolean {
   if (when.border !== undefined) {
     const borders =
       typeof when.border === "string" ? [when.border] : when.border;
     if (!borders.includes(state.border)) {
+      return false;
+    }
+  }
+  if (when.frameColor !== undefined) {
+    const colors =
+      typeof when.frameColor === "string" ? [when.frameColor] : when.frameColor;
+    if (state.frameColor === undefined || !colors.includes(state.frameColor)) {
       return false;
     }
   }

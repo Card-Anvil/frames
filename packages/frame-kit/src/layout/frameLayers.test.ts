@@ -6,6 +6,7 @@ import {
   familyFor,
   frameDetailsFor,
   orderColors,
+  printedColorOrder,
   selectFrameLayers,
   selectStorybookFrameLayers,
   splitTwoColor,
@@ -17,10 +18,29 @@ const layersFor = (shape: CardShape) =>
 const base = (shape: CardShape) => layersFor(shape).baseFrame;
 
 describe("orderColors", () => {
-  it("normalises to WUBRG regardless of input order", () => {
-    expect(orderColors(["g", "w", "u"])).toBe("WUG");
+  it("puts colours in the order cards print them, whatever the input order", () => {
+    expect(orderColors(["g", "w", "u"])).toBe("GWU");
     expect(orderColors(["u", "w"])).toBe("WU");
+    expect(orderColors(["w", "g"])).toBe("GW");
+    expect(orderColors(["u", "g"])).toBe("GU");
+    expect(orderColors(["w", "r"])).toBe("RW");
+    expect(orderColors(["g", "r", "b", "w"])).toBe("WBRG");
     expect(orderColors([])).toBe("");
+  });
+});
+
+describe("printedColorOrder", () => {
+  it("puts pairs and triples in the order cards print them", () => {
+    expect(printedColorOrder("UW")).toBe("WU");
+    expect(printedColorOrder("WG")).toBe("GW");
+    expect(printedColorOrder("UGW")).toBe("GWU");
+    expect(printedColorOrder("WUR")).toBe("URW");
+  });
+
+  it("leaves anything else as it came", () => {
+    expect(printedColorOrder("W")).toBe("W");
+    expect(printedColorOrder("WUBR")).toBe("WUBR");
+    expect(printedColorOrder("Gold")).toBe("Gold");
   });
 });
 
@@ -282,16 +302,16 @@ describe("selectStorybookFrameLayers", () => {
   // split, gold goes over the bars and page edges, and both pages fade their
   // two colours.
   it("halves a two-colour gold card under gold bars and wings", () => {
-    const layers = storybook({ colors: ["g", "u"] }, "UG");
-    expect(layers.baseFrame).toEqual({ family: "base", color: "u" });
+    const layers = storybook({ colors: ["g", "u"] }, "GU");
+    expect(layers.baseFrame).toEqual({ family: "base", color: "g" });
     expect(pages(layers)).toEqual([
-      ["g", "rightHalf"],
+      ["u", "rightHalf"],
       ["m", "titleAndType"],
       ["m", "wings"],
-      ["u", "rules"],
-      ["g", "rulesRight"],
-      ["u", "adventureRules"],
-      ["g", "adventureRulesRight"],
+      ["g", "rules"],
+      ["u", "rulesRight"],
+      ["g", "adventureRules"],
+      ["u", "adventureRulesRight"],
     ]);
   });
 

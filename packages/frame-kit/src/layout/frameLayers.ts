@@ -22,7 +22,51 @@ export const LAYERS = {
 /** WUBRG in canonical order, which every multi-colour string is sorted into. */
 export const COLOR_ORDER = ["W", "U", "B", "R", "G"] as const;
 
-const COLOR_LETTERS = new Set<string>(COLOR_ORDER);
+/** The five colour letters, for checking a string is made of them. */
+export const COLOR_LETTERS: ReadonlySet<string> = new Set<string>(COLOR_ORDER);
+
+/**
+ * Two- and three-colour combinations in the order cards print them: allied
+ * pairs then enemy pairs, shards then wedges. Mirrors Card Anvil's
+ * `frameLogic.ts` lookup.
+ */
+const PRINTED_ORDERS = [
+  "WU",
+  "UB",
+  "BR",
+  "RG",
+  "GW",
+  "WB",
+  "BG",
+  "GU",
+  "UR",
+  "RW",
+  "GWU",
+  "WUB",
+  "UBR",
+  "BRG",
+  "RGW",
+  "WBG",
+  "URW",
+  "BGU",
+  "RWB",
+  "GUR",
+] as const;
+
+const sortedKey = (colors: string): string =>
+  Array.from(colors).sort().join("");
+
+const PRINTED_ORDER_BY_KEY = new Map<string, string>(
+  PRINTED_ORDERS.map((combo) => [sortedKey(combo), combo]),
+);
+
+/**
+ * Two or three colours in the order cards print them (`UW` → `WU`, `UGW` →
+ * `GWU`); anything else as it came.
+ */
+export function printedColorOrder(colors: string): string {
+  return PRINTED_ORDER_BY_KEY.get(sortedKey(colors)) ?? colors;
+}
 
 /**
  * What the frame logic concluded about a card, before any art is chosen.
@@ -373,8 +417,9 @@ function pageOverlays(
  * splits the frame's own pinlines, and lays gold over the title and type bars
  * as the regular frame has them, and over the book's page edges (`wings`).
  * Each page is then coloured on its own: the right by the card's pinline
- * colours, the left by `adventureColors`, the adventure's colours in WUBRG
- * order. An adventure with no colours takes the card's.
+ * colours, the left by `adventureColors`, the adventure's colours in the
+ * order cards print them (see `printedColorOrder`). An adventure with no
+ * colours takes the card's.
  */
 export function selectStorybookFrameLayers(
   details: FrameDetails,
@@ -468,10 +513,17 @@ export interface CardShape {
   readonly isLegendary?: boolean;
 }
 
-/** WUBRG order, which every colour combination is normalised into. */
+/**
+ * A card's colours as one string, in the order cards print them: `GW`, not
+ * `WG`. Card Anvil orders a card's identity the same way, and a two-colour
+ * split reads its left half from the first letter, so a plain WUBRG sort
+ * would swap the halves of GW, GU and RW cards. Four colours stay WUBRG.
+ */
 export function orderColors(colors: readonly FrameColor[]): string {
   const wanted = new Set(colors.map((color) => color.toUpperCase()));
-  return COLOR_ORDER.filter((letter) => wanted.has(letter)).join("");
+  return printedColorOrder(
+    COLOR_ORDER.filter((letter) => wanted.has(letter)).join(""),
+  );
 }
 
 /**
